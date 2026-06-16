@@ -219,6 +219,16 @@ func (h *PointsHandler) UpdatePointsConfig(w http.ResponseWriter, r *http.Reques
 	writeJSONResponse(w, http.StatusOK, result)
 }
 
+// GetPointsConfig handles GET /v1/admin/points/config.
+func (h *PointsHandler) GetPointsConfig(w http.ResponseWriter, r *http.Request) {
+	result, err := h.service.GetPointsConfig(r.Context())
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	writeJSONResponse(w, http.StatusOK, result)
+}
+
 // ToggleLeaderboardOptOut handles PATCH /v1/student/leaderboard/opt-out
 //
 // @Summary      Toggle leaderboard opt-out

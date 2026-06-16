@@ -78,6 +78,22 @@ func (h *ForumHandler) ListPosts(w http.ResponseWriter, r *http.Request) {
 	writeJSONResponse(w, http.StatusOK, result)
 }
 
+// GetPost handles GET /v1/forum/posts/:postId.
+func (h *ForumHandler) GetPost(w http.ResponseWriter, r *http.Request) {
+	postID, err := uuid.Parse(r.PathValue("postId"))
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_ID", "invalid post ID"))
+		return
+	}
+
+	result, err := h.service.GetPost(r.Context(), postID)
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	writeJSONResponse(w, http.StatusOK, result)
+}
+
 // ─── Authenticated endpoints ──────────────────────────────────────────────────
 
 // CreatePost handles POST /v1/forum/posts (authenticated)

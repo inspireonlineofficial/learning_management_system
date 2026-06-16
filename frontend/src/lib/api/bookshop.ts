@@ -253,7 +253,15 @@ export function listMyOrders(params: { page?: number; limit?: number } = {}) {
 }
 
 export function listMyLibrary(params: { page?: number; limit?: number } = {}) {
-  return listBooks(params);
+  return apiRequest<{
+    data: Array<
+      BackendBook & { order_id?: string; purchased_at?: string; last_page_read?: number }
+    >;
+    meta: Paginated<BookSummary>["meta"];
+  }>("/v1/student/bookshop/library", { auth: true, query: params }).then((result) => ({
+    data: result.data.map((book) => ({ ...toSummary(book), in_library: true })),
+    meta: result.meta,
+  }));
 }
 
 export type BookContent = {

@@ -5,6 +5,7 @@ import {
   adminUpdateSlide,
   listSlides,
 } from "./slides";
+import { apiRequest } from "./client";
 
 export type Ad = {
   id: string;
@@ -27,6 +28,25 @@ export type AdSettings = {
 };
 
 export type AdInput = Omit<Ad, "id">;
+
+type SystemSettings = {
+  feature_flags?: Record<string, unknown>;
+};
+
+function readMarketingSettings(settings: SystemSettings, placement: AdPlacement): AdSettings {
+  const marketing = settings.feature_flags?.marketing as
+    | Partial<Record<AdPlacement, Partial<AdSettings>>>
+    | undefined;
+  const placementSettings = marketing?.[placement] ?? {};
+  return {
+    slide_interval_ms: placementSettings.slide_interval_ms ?? 5000,
+    autoplay: placementSettings.autoplay ?? true,
+  };
+}
+
+async function getSystemSettings() {
+  return apiRequest<SystemSettings>("/v1/admin/system/settings", { auth: true });
+}
 
 // ---------- Public ----------
 export function listAds(placement: AdPlacement = "home_top") {
@@ -100,14 +120,23 @@ export function adminReorderAds(ids: string[], placement: AdPlacement = "home_to
 }
 
 export function adminGetAdSettings(placement: AdPlacement = "home_top") {
-  void placement;
-  return Promise.resolve({ slide_interval_ms: 5000, autoplay: true });
+  return getSystemSettings().then((settings) => readMarketingSettings(settings, placement));
 }
 
-export function adminUpdateAdSettings(placement: AdPlacement, input: Partial<AdSettings>) {
-  void placement;
-  return Promise.resolve({
-    slide_interval_ms: input.slide_interval_ms ?? 5000,
-    autoplay: input.autoplay ?? true,
-  });
+export async function adminUpdateAdSettings(placement: AdPlacement, input: Partial<AdSettings>) {
+  const settings = await getSystemSettings();
+  const featureFlags = { ...(settings.feature_flags ?? {}) };
+  const marketing = {
+    ...((featureFlags.marketing as Partial<Record<AdPlacement, Partial<AdSettings>>>) ?? {}),
+  };
+  marketing[placement] = {
+    ...readMarketingSettings(settings, placement),
+    ...input,
+  };
+  featureFlags.marketing = marketing;
+  return apiRequest<SystemSettings>("/v1/admin/system/settings", {
+    method: "PATCH",
+    auth: true,
+    body: { feature_flags: featureFlags },
+  }).then((updated) => readMarketingSettings(updated, placement));
 }

@@ -36,6 +36,9 @@ type Service interface {
 	// Requirements: 17.9
 	UpdatePointsConfig(ctx context.Context, cmd UpdatePointsConfigCommand) (*PointsConfigResponse, error)
 
+	// GetPointsConfig returns the current platform-wide config for admin settings.
+	GetPointsConfig(ctx context.Context) (*PointsConfigResponse, error)
+
 	// GetLeaderboard returns the top-N ranked students for weekly or alltime periods.
 	// Opted-out students appear as "Anonymous" to other users.
 	// Requirements: 17.10, 17.11
@@ -540,6 +543,15 @@ func (s *service) GetPointsHistory(ctx context.Context, cmd GetPointsHistoryComm
 	}, nil
 }
 
+// GetPointsConfig returns the current platform-wide points configuration.
+func (s *service) GetPointsConfig(ctx context.Context) (*PointsConfigResponse, error) {
+	cfg, err := s.configRepo.Get(ctx)
+	if err != nil {
+		return nil, apperrors.NewInternalError("CONFIG_LOAD_FAILED", "failed to load points configuration")
+	}
+	return toPointsConfigResponse(cfg), nil
+}
+
 // UpdatePointsConfig updates the platform-wide points config and records an audit log.
 // Requirements: 17.9
 func (s *service) UpdatePointsConfig(ctx context.Context, cmd UpdatePointsConfigCommand) (*PointsConfigResponse, error) {
@@ -586,11 +598,15 @@ func (s *service) UpdatePointsConfig(ctx context.Context, cmd UpdatePointsConfig
 		"bonus_points_perfect_score", cfg.BonusPointsPerfectScore,
 	)
 
+	return toPointsConfigResponse(cfg), nil
+}
+
+func toPointsConfigResponse(cfg *points.PointsConfig) *PointsConfigResponse {
 	return &PointsConfigResponse{
 		PointsPerVideo:          cfg.PointsPerVideo,
 		PointsPerQuizPass:       cfg.PointsPerQuizPass,
 		BonusPointsPerfectScore: cfg.BonusPointsPerfectScore,
-	}, nil
+	}
 }
 
 // startOfWeek returns the UTC midnight of the most recent Monday.

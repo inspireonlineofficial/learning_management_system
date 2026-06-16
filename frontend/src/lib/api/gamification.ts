@@ -52,24 +52,29 @@ export type LeaderboardScope = "weekly" | "monthly" | "all_time";
 
 export function getGamificationOverview() {
   return apiRequest<{
-    total_points: number;
-    global_rank: number;
-    streak_days: number;
+    total?: number;
+    total_points?: number;
+    global_rank?: number;
+    rank?: number;
+    streak_days?: number;
     longest_streak_days?: number;
     milestones?: Array<{ id: string; label: string; threshold: number; achieved_at?: string }>;
     recent_events?: Array<{ id: string; reason: string; points: number; created_at: string }>;
   }>("/v1/student/points", { auth: true }).then((points) => ({
-    level: {
-      level: Math.max(1, Math.floor(points.total_points / 100) + 1),
-      title: "Scholar",
-      points: points.total_points,
-      points_to_next: 100 - (points.total_points % 100),
-      level_progress_percent: points.total_points % 100,
-    },
-    total_points: points.total_points,
-    rank: points.global_rank,
-    streak_days: points.streak_days,
-    longest_streak: points.longest_streak_days ?? points.streak_days,
+    level: (() => {
+      const total = points.total_points ?? points.total ?? 0;
+      return {
+        level: Math.max(1, Math.floor(total / 100) + 1),
+        title: "Scholar",
+        points: total,
+        points_to_next: 100 - (total % 100),
+        level_progress_percent: total % 100,
+      };
+    })(),
+    total_points: points.total_points ?? points.total ?? 0,
+    rank: points.global_rank ?? points.rank,
+    streak_days: points.streak_days ?? 0,
+    longest_streak: points.longest_streak_days ?? points.streak_days ?? 0,
     badges_earned: (points.milestones ?? []).filter((m) => m.achieved_at).length,
     badges_total: points.milestones?.length ?? 0,
     recent_achievements: (points.recent_events ?? []).map((event) => ({
@@ -104,39 +109,55 @@ export function listBadges(params: { earned?: boolean } = {}) {
 
 export function listAchievements(params: { page?: number; limit?: number } = {}) {
   return apiRequest<{
-    events: Array<{
+    events?: Array<{
       id: string;
       type: string;
       source_title: string;
       points: number;
       earned_at: string;
     }>;
-    meta: { page: number; limit: number; total: number; total_pages: number };
+    meta?: { page: number; limit: number; total: number; total_pages: number };
   }>("/v1/student/points/history", { auth: true, query: params }).then((history) => ({
-    data: history.events.map((event) => ({
+    data: (history.events ?? []).map((event) => ({
       id: event.id,
       title: event.source_title || event.type,
       description: event.type,
       points: event.points,
       earned_at: event.earned_at,
     })),
-    meta: history.meta,
+    meta: history.meta ?? {
+      page: params.page ?? 1,
+      limit: params.limit ?? 25,
+      total: 0,
+      total_pages: 1,
+    },
   }));
 }
 
 export function getLeaderboard(params: { scope?: LeaderboardScope; limit?: number } = {}) {
   return apiRequest<{
-    entries: Array<{ rank: number; student_id: string; display_name: string; score: number }>;
+    entries: Array<{
+      rank: number;
+      student_id?: string;
+      user_id?: string;
+      display_name?: string;
+      full_name?: string;
+      score?: number;
+      points?: number;
+    }>;
   }>("/v1/leaderboard", {
     auth: true,
     query: { period: params.scope === "weekly" ? "weekly" : "alltime", limit: params.limit },
   }).then((result) => ({
-    data: result.entries.map((entry) => ({
-      rank: entry.rank,
-      user_id: entry.student_id,
-      full_name: entry.display_name,
-      points: Math.round(entry.score),
-      level: Math.max(1, Math.floor(entry.score / 100) + 1),
-    })),
+    data: result.entries.map((entry, index) => {
+      const points = Math.round(entry.score ?? entry.points ?? 0);
+      return {
+        rank: entry.rank,
+        user_id: entry.student_id ?? entry.user_id ?? `leaderboard-${index}`,
+        full_name: entry.display_name ?? entry.full_name ?? "Student",
+        points,
+        level: Math.max(1, Math.floor(points / 100) + 1),
+      };
+    }),
   }));
 }

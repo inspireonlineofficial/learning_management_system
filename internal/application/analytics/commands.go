@@ -26,6 +26,14 @@ type GetCourseStudentsCommand struct {
 	Limit    int
 }
 
+// GetTeacherCourseStudentsCommand scopes a course roster to the owning teacher.
+type GetTeacherCourseStudentsCommand struct {
+	TeacherID uuid.UUID
+	CourseID  uuid.UUID
+	Page      int
+	Limit     int
+}
+
 // GetStudentAnalyticsCommand is the input for a specific student's analytics.
 type GetStudentAnalyticsCommand struct {
 	StudentID uuid.UUID

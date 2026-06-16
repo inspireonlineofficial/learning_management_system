@@ -39,6 +39,24 @@ type BroadcastResponse struct {
 	RecipientCount int `json:"recipient_count"`
 }
 
+// BroadcastHistoryItemResponse is a persisted admin broadcast summary.
+// Requirements: 22.6
+type BroadcastHistoryItemResponse struct {
+	ID        uuid.UUID `json:"id"`
+	Audience  string    `json:"audience"`
+	Title     string    `json:"title"`
+	Body      string    `json:"body"`
+	SentCount int       `json:"sent_count"`
+	CreatedAt time.Time `json:"created_at"`
+	Status    string    `json:"status"`
+}
+
+// BroadcastHistoryResponse wraps paginated broadcast history.
+type BroadcastHistoryResponse struct {
+	Items []BroadcastHistoryItemResponse `json:"items"`
+	Meta  map[string]any                 `json:"meta"`
+}
+
 // TemplateResponse is the public-facing template representation.
 type TemplateResponse struct {
 	ID               uuid.UUID                       `json:"id"`

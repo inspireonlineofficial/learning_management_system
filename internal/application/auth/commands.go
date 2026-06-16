@@ -73,6 +73,15 @@ type UpdateProfileCommand struct {
 	FullName *string `json:"full_name,omitempty"`
 }
 
+// UpdateUserSettingsCommand represents a partial account preference update.
+type UpdateUserSettingsCommand struct {
+	EmailNotifications *bool   `json:"email_notifications,omitempty"`
+	PushNotifications  *bool   `json:"push_notifications,omitempty"`
+	NewsletterOptIn    *bool   `json:"newsletter_opt_in,omitempty"`
+	Language           *string `json:"language,omitempty"`
+	Timezone           *string `json:"timezone,omitempty"`
+}
+
 // OAuthRedirectCommand represents an OAuth redirect request
 type OAuthRedirectCommand struct {
 	Provider string `json:"provider"`

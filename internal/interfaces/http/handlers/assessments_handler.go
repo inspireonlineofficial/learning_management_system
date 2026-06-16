@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"lms-backend/internal/application/assessments"
@@ -18,6 +19,12 @@ type Service = assessments.Service
 type AssessmentsHandler struct {
 	service Service
 }
+
+const (
+	maxAssignmentFiles              = 5
+	maxAssignmentFileBytes    int64 = 50 * 1024 * 1024
+	maxAssignmentRequestBytes       = maxAssignmentFiles*maxAssignmentFileBytes + 1024*1024
+)
 
 // NewAssessmentsHandler creates a new assessments handler
 func NewAssessmentsHandler(service Service) *AssessmentsHandler {
@@ -386,6 +393,29 @@ func (h *AssessmentsHandler) GetStudentQuizAttemptResult(w http.ResponseWriter, 
 	writeJSONResponse(w, http.StatusOK, result)
 }
 
+// GetStudentAttempt handles GET /v1/student/assessments/attempts/:attemptId.
+func (h *AssessmentsHandler) GetStudentAttempt(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserIDFromContext(r)
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+
+	attemptID, err := uuid.Parse(r.PathValue("attemptId"))
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_ID", "invalid attempt ID"))
+		return
+	}
+
+	result, err := h.service.GetStudentAttempt(r.Context(), attemptID, userID)
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+
+	writeJSONResponse(w, http.StatusOK, result)
+}
+
 // CreateAssignment handles POST /v1/teacher/courses/:courseId/assignments
 //
 // @Summary      Create an assignment
@@ -696,6 +726,44 @@ func (h *AssessmentsHandler) SubmitQuizAttempt(w http.ResponseWriter, r *http.Re
 	writeJSONResponse(w, http.StatusOK, result)
 }
 
+// SaveQuizAttemptAnswers handles PATCH /v1/quizzes/:quizId/attempts/:attemptId.
+func (h *AssessmentsHandler) SaveQuizAttemptAnswers(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	userID := ctx.Value("user_id").(uuid.UUID)
+
+	if _, err := uuid.Parse(r.PathValue("quizId")); err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_ID", "invalid quiz ID"))
+		return
+	}
+	attemptID, err := uuid.Parse(r.PathValue("attemptId"))
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_ID", "invalid attempt ID"))
+		return
+	}
+
+	var req struct {
+		Answers map[string]interface{} `json:"answers"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_JSON", "invalid request body"))
+		return
+	}
+	if req.Answers == nil {
+		req.Answers = map[string]interface{}{}
+	}
+
+	result, err := h.service.SaveAttemptAnswers(ctx, assessments.SaveAttemptAnswersCommand{
+		AttemptID: attemptID,
+		StudentID: userID,
+		Answers:   req.Answers,
+	})
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	writeJSONResponse(w, http.StatusOK, result)
+}
+
 // SubmitAssignment handles POST /v1/assignments/:assignmentId/submissions
 //
 // @Summary      Submit an assignment
@@ -726,8 +794,10 @@ func (h *AssessmentsHandler) SubmitAssignment(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	r.Body = http.MaxBytesReader(w, r.Body, maxAssignmentRequestBytes)
+
 	// Parse multipart form (for file uploads)
-	err = r.ParseMultipartForm(50 << 20) // 50 MB max
+	err = r.ParseMultipartForm(8 << 20)
 	if err != nil {
 		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_FORM", "failed to parse form data"))
 		return
@@ -742,12 +812,17 @@ func (h *AssessmentsHandler) SubmitAssignment(w http.ResponseWriter, r *http.Req
 	var files []assessments.SubmissionFileCommand
 	if r.MultipartForm != nil && r.MultipartForm.File != nil {
 		fileHeaders := r.MultipartForm.File["files"]
-		if len(fileHeaders) > 5 {
+		if len(fileHeaders) > maxAssignmentFiles {
 			writeErrorResponse(w, apperrors.NewSimpleValidationError("TOO_MANY_FILES", "maximum 5 files allowed"))
 			return
 		}
 
 		for _, fileHeader := range fileHeaders {
+			if fileHeader.Size <= 0 || fileHeader.Size > maxAssignmentFileBytes {
+				writeErrorResponse(w, apperrors.NewSimpleValidationError("FILE_TOO_LARGE", "each file must be between 1 byte and 50 MB"))
+				return
+			}
+
 			file, err := fileHeader.Open()
 			if err != nil {
 				writeErrorResponse(w, apperrors.NewSimpleValidationError("FILE_READ_ERROR", "failed to read file"))
@@ -760,10 +835,14 @@ func (h *AssessmentsHandler) SubmitAssignment(w http.ResponseWriter, r *http.Req
 				writeErrorResponse(w, apperrors.NewSimpleValidationError("FILE_READ_ERROR", "failed to read file content"))
 				return
 			}
+			if !isAllowedAssignmentFile(fileHeader.Header.Get("Content-Type"), content) {
+				writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_FILE_TYPE", "file type is not allowed"))
+				return
+			}
 
 			files = append(files, assessments.SubmissionFileCommand{
 				OriginalFilename: fileHeader.Filename,
-				MimeType:         fileHeader.Header.Get("Content-Type"),
+				MimeType:         http.DetectContentType(firstBytes(content, 512)),
 				SizeBytes:        fileHeader.Size,
 				Content:          content,
 			})
@@ -787,6 +866,32 @@ func (h *AssessmentsHandler) SubmitAssignment(w http.ResponseWriter, r *http.Req
 	}
 
 	writeJSONResponse(w, http.StatusCreated, result)
+}
+
+func isAllowedAssignmentFile(declared string, content []byte) bool {
+	detected := http.DetectContentType(firstBytes(content, 512))
+	allowed := map[string]bool{
+		"application/pdf":           true,
+		"image/jpeg":                true,
+		"image/png":                 true,
+		"image/webp":                true,
+		"text/plain":                true,
+		"text/plain; charset=utf-8": true,
+	}
+	if !allowed[detected] {
+		return false
+	}
+	return declared == "" ||
+		declared == "application/octet-stream" ||
+		declared == detected ||
+		bytes.HasPrefix([]byte(declared), []byte(detected))
+}
+
+func firstBytes(content []byte, max int) []byte {
+	if len(content) <= max {
+		return content
+	}
+	return content[:max]
 }
 
 // ListTeacherAssignmentSubmissions handles GET /v1/teacher/assignments/:assignmentId/submissions.

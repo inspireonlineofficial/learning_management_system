@@ -177,6 +177,7 @@ func TestProperty9_ListResponsesIncludeMeta(t *testing.T) {
 func TestProperty10_ErrorResponsesFollowStandardShape(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		req := httptest.NewRequest(http.MethodGet, "/v1/test", nil)
+		req.Header.Set("X-Forwarded-Proto", "https")
 		rec := httptest.NewRecorder()
 
 		// Handler that triggers auth error
@@ -243,6 +244,7 @@ func TestProperty11_RequestIDPropagated(t *testing.T) {
 func TestProperty64_SecurityHeadersPresent(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		req := httptest.NewRequest(http.MethodGet, "/v1/test", nil)
+		req.Header.Set("X-Forwarded-Proto", "https")
 		rec := httptest.NewRecorder()
 
 		// Apply SecurityHeaders middleware
@@ -259,6 +261,7 @@ func TestProperty64_SecurityHeadersPresent(t *testing.T) {
 			"Strict-Transport-Security": "max-age=31536000; includeSubDomains",
 			"Content-Security-Policy":   "default-src 'none'; frame-ancestors 'none'",
 			"Referrer-Policy":           "no-referrer",
+			"Permissions-Policy":        "camera=(), microphone=(), geolocation=(), payment=()",
 		}
 
 		for header, expectedValue := range requiredHeaders {

@@ -471,6 +471,56 @@ func (h *AuthHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, profile)
 }
 
+// GetUserSettings handles GET /v1/auth/me/settings.
+func (h *AuthHandler) GetUserSettings(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed", nil)
+		return
+	}
+
+	userID, err := getUserIDFromContext(r)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required", nil)
+		return
+	}
+
+	settings, err := h.authService.GetUserSettings(r.Context(), userID)
+	if err != nil {
+		handleServiceError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, settings)
+}
+
+// UpdateUserSettings handles PATCH /v1/auth/me/settings.
+func (h *AuthHandler) UpdateUserSettings(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPatch {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "Method not allowed", nil)
+		return
+	}
+
+	userID, err := getUserIDFromContext(r)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Authentication required", nil)
+		return
+	}
+
+	var req auth.UpdateUserSettingsCommand
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, "VALIDATION_ERROR", "Invalid request body", nil)
+		return
+	}
+
+	settings, err := h.authService.UpdateUserSettings(r.Context(), userID, req)
+	if err != nil {
+		handleServiceError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, settings)
+}
+
 // ImpersonateUser handles POST /v1/admin/users/:userId/impersonate.
 func (h *AuthHandler) ImpersonateUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {

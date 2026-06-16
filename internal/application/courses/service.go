@@ -20,6 +20,7 @@ type Service interface {
 	CreateCourse(ctx context.Context, cmd CreateCourseCommand) (*CourseResponse, error)
 	UpdateCourse(ctx context.Context, cmd UpdateCourseCommand) (*CourseResponse, error)
 	SubmitCourse(ctx context.Context, cmd SubmitCourseCommand) error
+	DeleteCourse(ctx context.Context, cmd DeleteCourseCommand) error
 	GetTeacherCoursePreview(ctx context.Context, courseID, teacherID uuid.UUID) (*CourseDetailResponse, error)
 	ListTeacherCourses(ctx context.Context, teacherID uuid.UUID, page, limit int) ([]CourseResponse, int, error)
 
@@ -244,6 +245,30 @@ func (s *service) SubmitCourse(ctx context.Context, cmd SubmitCourseCommand) err
 
 	course.Status = courses.CourseStatusPending
 	return s.courseRepo.Update(ctx, course)
+}
+
+// DeleteCourse soft-deletes a teacher-owned editable course.
+func (s *service) DeleteCourse(ctx context.Context, cmd DeleteCourseCommand) error {
+	course, err := s.courseRepo.FindByID(ctx, cmd.CourseID)
+	if err != nil {
+		return apperrors.NewNotFoundError("COURSE_NOT_FOUND", "course not found")
+	}
+	if !course.IsOwnedBy(cmd.TeacherID) {
+		return apperrors.NewForbiddenError("FORBIDDEN", "not authorized to delete this course")
+	}
+	if !course.IsEditable() {
+		return apperrors.NewValidationErrorWithDetails("COURSE_LOCKED", "course is pending review and cannot be deleted", nil)
+	}
+	if course.TotalEnrolled > 0 {
+		return apperrors.NewValidationErrorWithDetails("COURSE_HAS_ENROLLMENTS", "courses with enrolled students cannot be deleted", nil)
+	}
+	if err := s.courseRepo.SoftDelete(ctx, cmd.CourseID); err != nil {
+		return err
+	}
+	if idxErr := s.indexer.DeleteCourse(ctx, course.ID.String()); idxErr != nil {
+		log.Printf("typesense index error: %v", idxErr)
+	}
+	return nil
 }
 
 // GetTeacherCoursePreview returns course preview as student would see it

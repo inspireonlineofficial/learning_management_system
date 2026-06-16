@@ -94,9 +94,11 @@ type CourseStudentsResponse struct {
 type StudentProgressEntry struct {
 	StudentID              uuid.UUID  `json:"student_id"`
 	StudentName            string     `json:"student_name"`
+	StudentEmail           string     `json:"student_email,omitempty"`
 	OverallProgressPercent float64    `json:"overall_progress_percent"`
 	ModulesCompleted       int        `json:"modules_completed"`
 	ModulesInProgress      int        `json:"modules_in_progress"`
+	EnrolledAt             time.Time  `json:"enrolled_at"`
 	LastActiveAt           *time.Time `json:"last_active_at"`
 }
 

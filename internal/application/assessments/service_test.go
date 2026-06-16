@@ -287,6 +287,15 @@ func (m *mockQuizAttemptRepo) Update(ctx context.Context, attempt *assessments.Q
 	return nil
 }
 
+func (m *mockQuizAttemptRepo) SaveDraftAnswers(ctx context.Context, attemptID uuid.UUID, draftAnswers []byte) error {
+	attempt, exists := m.attempts[attemptID]
+	if !exists {
+		return &apperrors.AppError{Code: "ATTEMPT_NOT_FOUND"}
+	}
+	attempt.DraftAnswers = draftAnswers
+	return nil
+}
+
 func (m *mockQuizAttemptRepo) FindInProgressAttempts(ctx context.Context) ([]*assessments.QuizAttempt, error) {
 	var result []*assessments.QuizAttempt
 	for _, a := range m.attempts {

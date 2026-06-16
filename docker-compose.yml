@@ -70,6 +70,9 @@ services:
       start_period: 10s
     security_opt:
       - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
     restart: unless-stopped
 
   app:

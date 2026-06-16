@@ -62,6 +62,17 @@ function readAttemptQuizId(attemptId: string) {
   return window.localStorage.getItem(attemptQuizKey(attemptId));
 }
 
+async function resolveAttemptQuizId(attemptId: string) {
+  const localQuizId = readAttemptQuizId(attemptId);
+  if (localQuizId) return localQuizId;
+  const attempt = await apiRequest<{ quiz_id: string }>(
+    `/v1/student/assessments/attempts/${encodeURIComponent(attemptId)}`,
+    { auth: true },
+  );
+  rememberAttempt(attemptId, attempt.quiz_id);
+  return attempt.quiz_id;
+}
+
 function toQuizSummary(q: BackendQuizSummary): QuizSummary {
   return {
     id: q.id,
@@ -184,18 +195,16 @@ export function startQuizAttempt(quizId: string) {
       expires_at: attempt.expires_at,
       status: "in_progress",
       questions: attempt.questions.map(toQuestion),
-      answers: {},
+      answers: (attempt as { answers?: QuizAttempt["answers"] }).answers ?? {},
     };
   });
 }
 
-export function getQuizAttempt(attemptId: string) {
-  const quizId = readAttemptQuizId(attemptId);
-  if (!quizId) {
-    return Promise.reject(new Error("Quiz result can only be opened from the active attempt."));
-  }
+export async function getQuizAttempt(attemptId: string) {
+  const quizId = await resolveAttemptQuizId(attemptId);
   return apiRequest<{
     id: string;
+    quiz_id?: string;
     status: string;
     started_at: string;
     submitted_at?: string;
@@ -209,7 +218,7 @@ export function getQuizAttempt(attemptId: string) {
     },
   ).then((result) => ({
     id: result.id,
-    quiz_id: quizId,
+    quiz_id: result.quiz_id ?? quizId,
     started_at: result.started_at,
     submitted_at: result.submitted_at,
     status: result.status === "submitted" ? "graded" : "in_progress",
@@ -224,17 +233,20 @@ export function getQuizAttempt(attemptId: string) {
   }));
 }
 
-export function saveQuizAnswers(attemptId: string, answers: QuizAttempt["answers"]) {
-  void attemptId;
-  void answers;
-  return Promise.resolve({ saved_at: new Date().toISOString() });
+export async function saveQuizAnswers(attemptId: string, answers: QuizAttempt["answers"]) {
+  const quizId = await resolveAttemptQuizId(attemptId);
+  return apiRequest<{ answers?: QuizAttempt["answers"] }>(
+    `/v1/quizzes/${encodeURIComponent(quizId)}/attempts/${encodeURIComponent(attemptId)}`,
+    {
+      method: "PATCH",
+      auth: true,
+      body: { answers },
+    },
+  ).then(() => ({ saved_at: new Date().toISOString() }));
 }
 
-export function submitQuizAttempt(attemptId: string, answers: QuizAttempt["answers"]) {
-  const quizId = readAttemptQuizId(attemptId);
-  if (!quizId) {
-    return Promise.reject(new Error("Missing quiz metadata for this attempt."));
-  }
+export async function submitQuizAttempt(attemptId: string, answers: QuizAttempt["answers"]) {
+  const quizId = await resolveAttemptQuizId(attemptId);
   return apiRequest<{
     score_percent: number;
     passed: boolean;

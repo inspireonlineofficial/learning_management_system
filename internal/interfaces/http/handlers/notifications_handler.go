@@ -248,6 +248,24 @@ func (h *NotificationsHandler) SendBroadcast(w http.ResponseWriter, r *http.Requ
 	writeJSONResponse(w, http.StatusOK, result)
 }
 
+// ListBroadcasts handles GET /v1/admin/notifications/broadcasts
+// Returns persisted broadcast history from audit logs.
+// Requirements: 22.6
+func (h *NotificationsHandler) ListBroadcasts(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	page, limit := parseNotifPaginationParams(q)
+
+	result, err := h.service.ListBroadcasts(r.Context(), appnotif.ListBroadcastsCommand{
+		Page:  page,
+		Limit: limit,
+	})
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	writeJSONResponse(w, http.StatusOK, result)
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 func parseNotifPaginationParams(q interface{ Get(string) string }) (page, limit int) {

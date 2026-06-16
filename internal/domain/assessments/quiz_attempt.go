@@ -1,6 +1,7 @@
 package assessments
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -27,6 +28,7 @@ type QuizAttempt struct {
 	TimeTakenSeconds *int
 	PointsAwarded    int
 	Status           QuizAttemptStatus
+	DraftAnswers     json.RawMessage
 }
 
 // IsInProgress returns true if the attempt is still in progress

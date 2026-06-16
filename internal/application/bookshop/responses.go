@@ -34,6 +34,21 @@ type BookListResponse struct {
 	Meta map[string]interface{} `json:"meta"`
 }
 
+// LibraryBookResponse represents a purchased digital book in a student's library.
+type LibraryBookResponse struct {
+	*BookResponse
+	OrderID        uuid.UUID `json:"order_id"`
+	PurchasedAt    time.Time `json:"purchased_at"`
+	LastPageRead   int       `json:"last_page_read"`
+	ReadingEnabled bool      `json:"reading_enabled"`
+}
+
+// LibraryBookListResponse wraps a paginated student library list.
+type LibraryBookListResponse struct {
+	Data []*LibraryBookResponse `json:"data"`
+	Meta map[string]interface{} `json:"meta"`
+}
+
 // BookPreviewResponse contains the presigned preview URL.
 // The raw file URL is never exposed.
 // Requirements: 19.2

@@ -29,7 +29,6 @@ function Page() {
     title: "",
     body: "",
   });
-  const [schedule, setSchedule] = useState(false);
 
   const history = useQuery({ queryKey: ["broadcasts"], queryFn: listBroadcasts });
   const templates = useQuery({
@@ -51,7 +50,6 @@ function Page() {
           : `Sent to ${r.sent_count} user${r.sent_count === 1 ? "" : "s"}`,
       );
       setForm({ audience: form.audience, title: "", body: "" });
-      setSchedule(false);
       qc.invalidateQueries({ queryKey: ["broadcasts"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -73,12 +71,7 @@ function Page() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const canSend =
-    form.title.trim().length > 0 &&
-    form.body.trim().length > 0 &&
-    (form.audience !== "course" || !!form.course_id) &&
-    (form.audience !== "user" || (form.user_ids?.length ?? 0) > 0) &&
-    (!schedule || !!form.scheduled_for);
+  const canSend = form.title.trim().length > 0 && form.body.trim().length > 0;
 
   return (
     <AppShell eyebrow="Notifications" title="Notification center">
@@ -94,42 +87,8 @@ function Page() {
               <option value="all">Everyone</option>
               <option value="students">All students</option>
               <option value="teachers">All teachers</option>
-              <option value="course">Enrolled in a course</option>
-              <option value="user">Specific users</option>
             </select>
           </label>
-
-          {form.audience === "course" && (
-            <label className="block">
-              <span className="text-xs eyebrow text-brand/45">Course ID</span>
-              <input
-                className="mt-1 w-full border border-brand/15 bg-white px-3 py-2 text-sm"
-                value={form.course_id ?? ""}
-                onChange={(e) => setForm({ ...form, course_id: e.target.value })}
-                placeholder="course_…"
-              />
-            </label>
-          )}
-
-          {form.audience === "user" && (
-            <label className="block">
-              <span className="text-xs eyebrow text-brand/45">User IDs (comma-separated)</span>
-              <textarea
-                rows={2}
-                className="mt-1 w-full border border-brand/15 bg-white p-3 text-sm font-mono"
-                value={form.user_ids?.join(", ") ?? ""}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    user_ids: e.target.value
-                      .split(",")
-                      .map((s) => s.trim())
-                      .filter(Boolean),
-                  })
-                }
-              />
-            </label>
-          )}
 
           <label className="block">
             <div className="flex justify-between items-baseline">
@@ -162,43 +121,13 @@ function Page() {
             />
           </label>
 
-          <label className="block">
-            <span className="text-xs eyebrow text-brand/45">Action URL (optional)</span>
-            <input
-              className="mt-1 w-full border border-brand/15 bg-white px-3 py-2 text-sm"
-              placeholder="/student/courses/abc or https://…"
-              value={form.action_url ?? ""}
-              onChange={(e) => setForm({ ...form, action_url: e.target.value })}
-            />
-          </label>
-
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={schedule}
-              onChange={(e) => {
-                setSchedule(e.target.checked);
-                if (!e.target.checked) setForm({ ...form, scheduled_for: undefined });
-              }}
-            />
-            Schedule for later
-          </label>
-          {schedule && (
-            <input
-              type="datetime-local"
-              className="border border-brand/15 bg-white px-3 py-2 text-sm"
-              value={form.scheduled_for ?? ""}
-              onChange={(e) => setForm({ ...form, scheduled_for: e.target.value })}
-            />
-          )}
-
           <button
             onClick={() => mut.mutate()}
             disabled={mut.isPending || !canSend}
             className="inline-flex items-center gap-2 bg-brand text-white px-6 py-2 text-sm disabled:opacity-50"
           >
             <Send className="h-4 w-4" />
-            {mut.isPending ? "Sending…" : schedule ? "Schedule broadcast" : "Send broadcast"}
+            {mut.isPending ? "Sending…" : "Send broadcast"}
           </button>
         </div>
 
@@ -213,11 +142,6 @@ function Page() {
                   <p className="mt-1 text-xs text-brand/70 whitespace-pre-line">
                     {form.body || "Notification body preview…"}
                   </p>
-                  {form.action_url && (
-                    <p className="mt-2 text-xs text-accent underline underline-offset-2 truncate">
-                      {form.action_url}
-                    </p>
-                  )}
                 </div>
               </div>
             </div>

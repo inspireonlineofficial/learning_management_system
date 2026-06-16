@@ -3,6 +3,7 @@ package audit
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -56,19 +57,13 @@ func (l *Logger) LogAction(ctx context.Context, actorID uuid.UUID, actorName, ac
 	id := uuid.New()
 	now := time.Now().UTC()
 
-	// Convert metadata map to JSON string
-	metadataJSON := "null"
+	metadataJSON := []byte("null")
 	if metadata != nil && len(metadata) > 0 {
-		metadataJSON = "{"
-		first := true
-		for k, v := range metadata {
-			if !first {
-				metadataJSON += ","
-			}
-			metadataJSON += fmt.Sprintf(`"%s":"%v"`, k, v)
-			first = false
+		var err error
+		metadataJSON, err = json.Marshal(metadata)
+		if err != nil {
+			return fmt.Errorf("failed to marshal audit metadata: %w", err)
 		}
-		metadataJSON += "}"
 	}
 
 	_, err := l.db.ExecContext(ctx, query,

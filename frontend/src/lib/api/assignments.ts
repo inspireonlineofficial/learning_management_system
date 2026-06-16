@@ -43,6 +43,10 @@ type BackendAssignment = {
   allow_late_submission?: boolean;
   total_marks?: number;
   total_points?: number;
+  submission?: {
+    status?: AssignmentStatus;
+    latest_grade?: { score?: number } | null;
+  } | null;
 };
 
 export type Assignment = AssignmentSummary & {
@@ -184,7 +188,8 @@ function toAssignmentSummary(assignment: BackendAssignment): AssignmentSummary {
     title: assignment.title,
     due_at: assignment.due_at ?? null,
     total_points: assignment.total_points ?? assignment.total_marks ?? 0,
-    status: "not_submitted",
+    status: assignment.submission?.status ?? "not_submitted",
+    grade: assignment.submission?.latest_grade?.score ?? null,
   };
 }
 

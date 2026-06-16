@@ -3,6 +3,7 @@ package assessments
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -32,7 +33,9 @@ type Service interface {
 	ListStudentQuizzes(ctx context.Context, studentID uuid.UUID) ([]StudentQuizSummaryResponse, error)
 	GetStudentQuizDetail(ctx context.Context, quizID, studentID uuid.UUID) (*StudentQuizDetailResponse, error)
 	GetStudentQuizAttemptResult(ctx context.Context, quizID, attemptID, studentID uuid.UUID) (*StudentAttemptResult, error)
+	GetStudentAttempt(ctx context.Context, attemptID, studentID uuid.UUID) (*StudentAttemptResult, error)
 	StartAttempt(ctx context.Context, cmd StartAttemptCommand) (*QuizAttemptResponse, error)
+	SaveAttemptAnswers(ctx context.Context, cmd SaveAttemptAnswersCommand) (*QuizAttemptResponse, error)
 	SubmitAttempt(ctx context.Context, cmd SubmitAttemptCommand) (*SubmitAttemptResponse, error)
 	AutoSubmitAttempt(ctx context.Context, attemptID uuid.UUID) (*SubmitAttemptResponse, error)
 
@@ -732,6 +735,25 @@ func (s *service) GetStudentQuizAttemptResult(ctx context.Context, quizID, attem
 	return toStudentAttemptResult(attempt), nil
 }
 
+// GetStudentAttempt returns a student's attempt by ID and includes its quiz ID.
+func (s *service) GetStudentAttempt(ctx context.Context, attemptID, studentID uuid.UUID) (*StudentAttemptResult, error) {
+	attempt, err := s.attemptRepo.FindByID(ctx, attemptID)
+	if err != nil {
+		return nil, apperrors.NewNotFoundError("ATTEMPT_NOT_FOUND", "quiz attempt not found")
+	}
+	if attempt.StudentID != studentID {
+		return nil, apperrors.NewForbiddenError("FORBIDDEN", "not authorized to access this attempt")
+	}
+	quiz, err := s.quizRepo.FindByID(ctx, attempt.QuizID)
+	if err != nil {
+		return nil, apperrors.NewNotFoundError("QUIZ_NOT_FOUND", "quiz not found")
+	}
+	if err := s.ensureStudentEnrolledInCourse(ctx, studentID, quiz.CourseID); err != nil {
+		return nil, err
+	}
+	return toStudentAttemptResult(attempt), nil
+}
+
 // StartAttempt creates a new quiz attempt for a student
 func (s *service) StartAttempt(ctx context.Context, cmd StartAttemptCommand) (*QuizAttemptResponse, error) {
 	// Get quiz
@@ -829,7 +851,44 @@ func (s *service) buildQuizAttemptResponse(ctx context.Context, quiz *assessment
 		StartedAt: attempt.StartedAt,
 		ExpiresAt: expiresAt,
 		Questions: questionResponses,
+		Answers:   decodeDraftAnswers(attempt.DraftAnswers),
 	}, nil
+}
+
+// SaveAttemptAnswers persists draft answers for an in-progress attempt.
+func (s *service) SaveAttemptAnswers(ctx context.Context, cmd SaveAttemptAnswersCommand) (*QuizAttemptResponse, error) {
+	attempt, err := s.attemptRepo.FindByID(ctx, cmd.AttemptID)
+	if err != nil {
+		return nil, apperrors.NewNotFoundError("ATTEMPT_NOT_FOUND", "quiz attempt not found")
+	}
+	if attempt.StudentID != cmd.StudentID {
+		return nil, apperrors.NewForbiddenError("FORBIDDEN", "not authorized to update this attempt")
+	}
+	if !attempt.IsInProgress() {
+		return nil, apperrors.NewValidationErrorWithDetails("ATTEMPT_ALREADY_SUBMITTED", "attempt has already been submitted", nil)
+	}
+	quiz, err := s.quizRepo.FindByID(ctx, attempt.QuizID)
+	if err != nil {
+		return nil, apperrors.NewNotFoundError("QUIZ_NOT_FOUND", "quiz not found")
+	}
+	if err := s.ensureStudentEnrolledInCourse(ctx, cmd.StudentID, quiz.CourseID); err != nil {
+		return nil, err
+	}
+	if quiz.HasTimeLimit() && attempt.HasExpired(quiz.TimeLimitSeconds) {
+		if _, err := s.AutoSubmitAttempt(ctx, attempt.ID); err != nil {
+			return nil, err
+		}
+		return nil, apperrors.NewValidationErrorWithDetails("ATTEMPT_EXPIRED", "quiz attempt has expired", nil)
+	}
+	raw, err := json.Marshal(cmd.Answers)
+	if err != nil {
+		return nil, apperrors.NewSimpleValidationError("INVALID_ANSWERS", "answers must be valid JSON")
+	}
+	if err := s.attemptRepo.SaveDraftAnswers(ctx, attempt.ID, raw); err != nil {
+		return nil, err
+	}
+	attempt.DraftAnswers = raw
+	return s.buildQuizAttemptResponse(ctx, quiz, attempt)
 }
 
 // SubmitAttempt scores and records a quiz submission
@@ -1683,6 +1742,7 @@ func toStudentAttemptResult(attempt *assessments.QuizAttempt) *StudentAttemptRes
 
 	return &StudentAttemptResult{
 		ID:               attempt.ID,
+		QuizID:           attempt.QuizID,
 		Status:           string(attempt.Status),
 		StartedAt:        attempt.StartedAt,
 		SubmittedAt:      attempt.SubmittedAt,
@@ -1691,6 +1751,17 @@ func toStudentAttemptResult(attempt *assessments.QuizAttempt) *StudentAttemptRes
 		TimeTakenSeconds: attempt.TimeTakenSeconds,
 		PointsAwarded:    attempt.PointsAwarded,
 	}
+}
+
+func decodeDraftAnswers(raw []byte) map[string]interface{} {
+	if len(raw) == 0 {
+		return nil
+	}
+	var answers map[string]interface{}
+	if err := json.Unmarshal(raw, &answers); err != nil {
+		return nil
+	}
+	return answers
 }
 
 func toAssignmentResponse(assignment *assessments.Assignment) *AssignmentResponse {

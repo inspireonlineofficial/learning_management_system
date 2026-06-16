@@ -58,9 +58,7 @@ export type Paginated<T> = {
 };
 
 export function listForumCategories() {
-  return Promise.resolve({
-    data: [{ id: "general", name: "General", slug: "general", description: "Community posts" }],
-  });
+  return Promise.resolve({ data: [] as ForumCategory[] });
 }
 
 export function listForumThreads(
@@ -81,6 +79,7 @@ export function listForumThreads(
       body_html?: string;
       author_id: string;
       author_name?: string;
+      course_id?: string | null;
       created_at: string;
       comment_count?: number;
       upvote_count?: number;
@@ -93,6 +92,7 @@ export function listForumThreads(
       body_html?: string;
       author_id: string;
       author_name?: string;
+      course_id?: string | null;
       created_at: string;
       comment_count?: number;
       upvote_count?: number;
@@ -108,8 +108,8 @@ export function listForumThreads(
         id: post.id,
         title: post.title,
         excerpt: post.body_markdown ?? post.body_html,
-        category_id: "general",
-        category_name: "General",
+        category_id: post.course_id ?? undefined,
+        category_name: post.course_id ? "Course discussion" : undefined,
         author: { id: post.author_id, full_name: post.author_name ?? "Member" },
         created_at: post.created_at,
         reply_count: post.comment_count ?? 0,
@@ -122,11 +122,32 @@ export function listForumThreads(
 }
 
 export function getForumThread(threadId: string) {
-  return listForumThreads().then((result) => {
-    const thread = result.data.find((item) => item.id === threadId);
-    if (!thread) throw new Error("Forum post not found");
-    return { ...thread, body: thread.excerpt, body_html: thread.excerpt };
-  });
+  return apiRequest<{
+    id: string;
+    title: string;
+    body_markdown?: string;
+    body_html?: string;
+    author_id: string;
+    author_name?: string;
+    course_id?: string | null;
+    created_at: string;
+    upvotes?: number;
+    status?: string;
+  }>(`/v1/forum/posts/${encodeURIComponent(threadId)}`).then((post) => ({
+    id: post.id,
+    title: post.title,
+    excerpt: post.body_markdown ?? post.body_html,
+    category_id: post.course_id ?? undefined,
+    category_name: post.course_id ? "Course discussion" : undefined,
+    course_id: post.course_id,
+    author: { id: post.author_id, full_name: post.author_name ?? "Member" },
+    created_at: post.created_at,
+    reply_count: 0,
+    view_count: post.upvotes ?? 0,
+    tags: post.status ? [post.status] : [],
+    body: post.body_markdown ?? post.body_html ?? "",
+    body_html: post.body_html,
+  }));
 }
 
 export function listForumPosts(threadId: string, params: { page?: number; limit?: number } = {}) {

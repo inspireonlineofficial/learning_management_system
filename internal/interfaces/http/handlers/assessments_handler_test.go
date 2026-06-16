@@ -28,6 +28,8 @@ type MockAssessmentService struct {
 	GetTeacherAssignmentFunc         func(ctx context.Context, assignmentID, teacherID uuid.UUID) (*assessments.AssignmentResponse, error)
 	UpdateAssignmentFunc             func(ctx context.Context, cmd assessments.UpdateAssignmentCommand) (*assessments.AssignmentResponse, error)
 	StartAttemptFunc                 func(ctx context.Context, cmd assessments.StartAttemptCommand) (*assessments.QuizAttemptResponse, error)
+	SaveAttemptAnswersFunc           func(ctx context.Context, cmd assessments.SaveAttemptAnswersCommand) (*assessments.QuizAttemptResponse, error)
+	GetStudentAttemptFunc            func(ctx context.Context, attemptID, studentID uuid.UUID) (*assessments.StudentAttemptResult, error)
 	SubmitAttemptFunc                func(ctx context.Context, cmd assessments.SubmitAttemptCommand) (*assessments.SubmitAttemptResponse, error)
 	SubmitAssignmentFunc             func(ctx context.Context, cmd assessments.SubmitAssignmentCommand) (*assessments.AssignmentSubmissionResponse, error)
 	GradeSubmissionFunc              func(ctx context.Context, cmd assessments.GradeSubmissionCommand) (*assessments.SubmissionGradeResponse, error)
@@ -125,6 +127,13 @@ func (m *MockAssessmentService) StartAttempt(ctx context.Context, cmd assessment
 	return nil, nil
 }
 
+func (m *MockAssessmentService) SaveAttemptAnswers(ctx context.Context, cmd assessments.SaveAttemptAnswersCommand) (*assessments.QuizAttemptResponse, error) {
+	if m.SaveAttemptAnswersFunc != nil {
+		return m.SaveAttemptAnswersFunc(ctx, cmd)
+	}
+	return nil, nil
+}
+
 func (m *MockAssessmentService) SubmitAttempt(ctx context.Context, cmd assessments.SubmitAttemptCommand) (*assessments.SubmitAttemptResponse, error) {
 	if m.SubmitAttemptFunc != nil {
 		return m.SubmitAttemptFunc(ctx, cmd)
@@ -162,6 +171,13 @@ func (m *MockAssessmentService) GetStudentQuizDetail(ctx context.Context, quizID
 }
 
 func (m *MockAssessmentService) GetStudentQuizAttemptResult(ctx context.Context, quizID, attemptID, studentID uuid.UUID) (*assessments.StudentAttemptResult, error) {
+	return nil, nil
+}
+
+func (m *MockAssessmentService) GetStudentAttempt(ctx context.Context, attemptID, studentID uuid.UUID) (*assessments.StudentAttemptResult, error) {
+	if m.GetStudentAttemptFunc != nil {
+		return m.GetStudentAttemptFunc(ctx, attemptID, studentID)
+	}
 	return nil, nil
 }
 

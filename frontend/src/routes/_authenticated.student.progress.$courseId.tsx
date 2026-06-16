@@ -22,7 +22,8 @@ function StudentCourseProgressPage() {
   });
 
   const modules = course.data?.modules ?? progress.data?.modules ?? [];
-  const totalLessons = modules.reduce((sum, module) => sum + module.lessons.length, 0);
+  const totalLessons =
+    progress.data?.total_lessons ?? modules.reduce((sum, module) => sum + module.lessons.length, 0);
   const completedLessons = progress.data?.completed_lessons.length ?? 0;
   const percent = Math.round(progress.data?.progress_percent ?? 0);
 
@@ -31,8 +32,14 @@ function StudentCourseProgressPage() {
       <div className="grid sm:grid-cols-4 gap-4">
         <StatCard label="Progress" value={`${percent}%`} />
         <StatCard label="Lessons" value={`${completedLessons}/${totalLessons || "—"}`} />
-        <StatCard label="Quizzes" value="Tracked" hint="Shown as backend data becomes available." />
-        <StatCard label="Assignments" value="Tracked" hint="Grades and revisions appear here." />
+        <StatCard
+          label="Quizzes"
+          value={`${progress.data?.quizzes_completed ?? 0}/${progress.data?.quizzes_total ?? 0}`}
+        />
+        <StatCard
+          label="Assignments"
+          value={`${progress.data?.assignments_completed ?? 0}/${progress.data?.assignments_total ?? 0}`}
+        />
       </div>
 
       <div className="mt-10 flex flex-wrap gap-3">
@@ -61,7 +68,7 @@ function StudentCourseProgressPage() {
           <h2 className="font-serif text-2xl mb-5">Requirements</h2>
           {modules.length === 0 ? (
             <p className="border border-dashed border-brand/15 p-8 text-sm text-brand/55 text-center">
-              Detailed module progress is not available yet.
+              This course does not have published modules yet.
             </p>
           ) : (
             <div className="space-y-5">

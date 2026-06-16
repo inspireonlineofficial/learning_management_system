@@ -73,6 +73,13 @@ type SubmitAttemptCommand struct {
 	Answers   []QuizAnswerCommand
 }
 
+// SaveAttemptAnswersCommand stores draft answers for an in-progress quiz attempt.
+type SaveAttemptAnswersCommand struct {
+	AttemptID uuid.UUID
+	StudentID uuid.UUID
+	Answers   map[string]interface{}
+}
+
 // QuizAnswerCommand represents a student's answer to a question
 type QuizAnswerCommand struct {
 	QuestionID      uuid.UUID

@@ -44,6 +44,7 @@ type QuizAttemptRepository interface {
 	CountAttempts(ctx context.Context, quizID, studentID uuid.UUID) (int, error)
 	GetHighestScore(ctx context.Context, quizID, studentID uuid.UUID) (*float64, error)
 	Update(ctx context.Context, attempt *QuizAttempt) error
+	SaveDraftAnswers(ctx context.Context, attemptID uuid.UUID, draftAnswers []byte) error
 	FindInProgressAttempts(ctx context.Context) ([]*QuizAttempt, error)
 }
 

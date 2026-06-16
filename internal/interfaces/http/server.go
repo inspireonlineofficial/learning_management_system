@@ -25,6 +25,8 @@ import (
 	"lms-backend/internal/interfaces/http/handlers"
 	"lms-backend/internal/interfaces/http/middleware"
 	"net/http"
+	"net/url"
+	"strings"
 
 	httpSwagger "github.com/swaggo/http-swagger"
 )
@@ -55,6 +57,7 @@ type Server struct {
 	jwtService           *jwt.JWTService
 	systemConfigService  appsysconfig.Service
 	idempotencyStore     middleware.IdempotencyStore
+	frontendBaseURL      string
 }
 
 // NewServer creates a new HTTP server
@@ -106,6 +109,7 @@ func NewServer(redisClient *redis.Client, authService auth.Service, usersService
 		jwtService:           jwtService,
 		systemConfigService:  systemConfigService,
 		idempotencyStore:     idempotencyStore,
+		frontendBaseURL:      frontendBaseURL,
 	}
 }
 
@@ -116,14 +120,14 @@ func (s *Server) Handler() http.Handler {
 
 	// Middleware chain
 	handler = s.rateLimiter.Limit(handler)
-	handler = middleware.CORS([]string{
+	handler = middleware.CORS(corsAllowedOrigins(s.frontendBaseURL, []string{
 		"https://app.example.com",
 		"https://admin.example.com",
 		"http://localhost:3000",
 		"http://127.0.0.1:3000",
 		"http://localhost:5173",
 		"http://127.0.0.1:5173",
-	})(handler)
+	}))(handler)
 	handler = middleware.SecurityHeaders(handler)
 	// Maintenance mode: returns 503 for all non-admin endpoints when enabled (Requirement 25.5)
 	handler = middleware.MaintenanceMode(func() bool {
@@ -133,6 +137,22 @@ func (s *Server) Handler() http.Handler {
 	handler = middleware.RequestID(handler)
 
 	return handler
+}
+
+func corsAllowedOrigins(frontendBaseURL string, defaults []string) []string {
+	seen := map[string]bool{}
+	var origins []string
+	for _, origin := range append(defaults, frontendBaseURL) {
+		origin = strings.TrimRight(strings.TrimSpace(origin), "/")
+		if origin == "" || seen[origin] {
+			continue
+		}
+		if parsed, err := url.Parse(origin); err == nil && parsed.Scheme != "" && parsed.Host != "" {
+			origins = append(origins, origin)
+			seen[origin] = true
+		}
+	}
+	return origins
 }
 
 // RegisterRoutes registers all application routes
@@ -180,6 +200,13 @@ func (s *Server) RegisterRoutes() {
 		}
 		s.authHandler.UpdateProfile(w, r)
 	}))
+	s.mux.HandleFunc("/v1/auth/me/settings", s.withAuth(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			s.authHandler.GetUserSettings(w, r)
+			return
+		}
+		s.authHandler.UpdateUserSettings(w, r)
+	}))
 	s.mux.HandleFunc("/v1/auth/me/change-password", s.withAuth(s.authHandler.ChangePassword))
 	s.mux.HandleFunc("/v1/auth/me/oauth/connect", s.withAuth(s.authHandler.ConnectProvider))
 	s.mux.HandleFunc("/v1/auth/me/oauth/providers", s.withAuth(s.authHandler.ListProviders))
@@ -205,6 +232,7 @@ func (s *Server) RegisterRoutes() {
 	s.mux.HandleFunc("GET /v1/teacher/courses", s.withAuthAndRole("teacher", nil, s.coursesHandler.ListTeacherCourses))
 	s.mux.HandleFunc("POST /v1/teacher/courses", s.withAuthAndRole("teacher", s.coursesHandler.CreateCourse, nil))
 	s.mux.HandleFunc("PATCH /v1/teacher/courses/{courseId}", s.withAuthAndRole("teacher", s.coursesHandler.UpdateCourse, nil))
+	s.mux.HandleFunc("DELETE /v1/teacher/courses/{courseId}", s.withAuthAndRole("teacher", s.coursesHandler.DeleteCourse, nil))
 	s.mux.HandleFunc("POST /v1/teacher/courses/{courseId}/submit", s.withAuthAndRole("teacher", s.coursesHandler.SubmitCourse, nil))
 	s.mux.HandleFunc("GET /v1/teacher/courses/{courseId}/preview", s.withAuthAndRole("teacher", nil, s.coursesHandler.GetTeacherCoursePreview))
 	s.mux.HandleFunc("POST /v1/teacher/courses/{courseId}/modules", s.withAuthAndRole("teacher", s.coursesHandler.CreateModule, nil))
@@ -265,9 +293,11 @@ func (s *Server) RegisterRoutes() {
 
 	// Student quiz endpoints (require JWT + student role)
 	s.mux.HandleFunc("GET /v1/student/assessments", s.withAuthAndRole("student", nil, s.assessmentsHandler.ListStudentQuizzes))
+	s.mux.HandleFunc("GET /v1/student/assessments/attempts/{attemptId}", s.withAuthAndRole("student", nil, s.assessmentsHandler.GetStudentAttempt))
 	s.mux.HandleFunc("GET /v1/student/assessments/{quizId}", s.withAuthAndRole("student", nil, s.assessmentsHandler.GetStudentQuizDetail))
 	s.mux.HandleFunc("GET /v1/student/assessments/{quizId}/attempts/{attemptId}", s.withAuthAndRole("student", nil, s.assessmentsHandler.GetStudentQuizAttemptResult))
 	s.mux.HandleFunc("POST /v1/quizzes/{quizId}/attempts", s.withAuthAndRole("student", s.assessmentsHandler.StartQuizAttempt, nil))
+	s.mux.HandleFunc("PATCH /v1/quizzes/{quizId}/attempts/{attemptId}", s.withAuthAndRole("student", s.assessmentsHandler.SaveQuizAttemptAnswers, nil))
 	s.mux.HandleFunc("POST /v1/quizzes/{quizId}/attempts/{attemptId}/submit", s.withAuthAndRole("student", s.assessmentsHandler.SubmitQuizAttempt, nil))
 
 	// Student assignment endpoints (require JWT + student role)
@@ -285,6 +315,7 @@ func (s *Server) RegisterRoutes() {
 	s.mux.HandleFunc("GET /v1/leaderboard", s.withAuth(s.pointsHandler.GetLeaderboard))
 
 	// Admin: PATCH /v1/admin/points/config
+	s.mux.HandleFunc("GET /v1/admin/points/config", s.withAuthAndRole("admin", nil, s.pointsHandler.GetPointsConfig))
 	s.mux.HandleFunc("PATCH /v1/admin/points/config", s.withAuthAndRole("admin", s.pointsHandler.UpdatePointsConfig, nil))
 
 	// Certificate endpoints
@@ -309,6 +340,7 @@ func (s *Server) RegisterRoutes() {
 	s.mux.HandleFunc("POST /v1/bookshop/checkout", s.withAuthAndRole("student", s.bookshopHandler.Checkout, nil))
 	s.mux.HandleFunc("GET /v1/student/bookshop/reader/{bookId}/access", s.withAuthAndRole("student", nil, s.bookshopHandler.GetDigitalBookAccess))
 	s.mux.HandleFunc("POST /v1/student/bookshop/reader/{bookId}/bookmark", s.withAuthAndRole("student", s.bookshopHandler.UpsertBookmark, nil))
+	s.mux.HandleFunc("GET /v1/student/bookshop/library", s.withAuthAndRole("student", nil, s.bookshopHandler.ListStudentLibrary))
 	s.mux.HandleFunc("GET /v1/student/bookshop/orders", s.withAuthAndRole("student", nil, s.bookshopHandler.ListStudentOrders))
 	s.mux.HandleFunc("GET /v1/student/bookshop/orders/{orderId}", s.withAuthAndRole("student", nil, s.bookshopHandler.GetStudentOrder))
 
@@ -327,6 +359,7 @@ func (s *Server) RegisterRoutes() {
 	// ─── Forum routes ─────────────────────────────────────────────────────────
 	// Public: GET /v1/forum/posts, GET /v1/forum/posts/:postId/comments
 	s.mux.HandleFunc("GET /v1/forum/posts", s.forumHandler.ListPosts)
+	s.mux.HandleFunc("GET /v1/forum/posts/{postId}", s.forumHandler.GetPost)
 	s.mux.HandleFunc("GET /v1/forum/posts/{postId}/comments", s.forumHandler.ListComments)
 
 	// Authenticated: post CRUD, comment CRUD, upvote, flag
@@ -356,6 +389,7 @@ func (s *Server) RegisterRoutes() {
 	s.mux.HandleFunc("GET /v1/admin/notifications/templates", s.withAuthAndRole("admin", nil, s.notificationsHandler.ListTemplates))
 	s.mux.HandleFunc("PATCH /v1/admin/notifications/templates/{templateId}", s.withAuthAndRole("admin", s.notificationsHandler.UpdateTemplate, nil))
 	s.mux.HandleFunc("POST /v1/admin/notifications/broadcast", s.withAuthAndRole("admin", s.notificationsHandler.SendBroadcast, nil))
+	s.mux.HandleFunc("GET /v1/admin/notifications/broadcasts", s.withAuthAndRole("admin", nil, s.notificationsHandler.ListBroadcasts))
 
 	// ─── Analytics routes ─────────────────────────────────────────────────────
 	// Admin: platform-wide and per-course analytics (Requirement 23.1–23.4)
@@ -370,6 +404,7 @@ func (s *Server) RegisterRoutes() {
 
 	// Teacher: scoped exclusively to own courses (Requirement 23.5)
 	s.mux.HandleFunc("GET /v1/teacher/analytics", s.withAuthAndRole("teacher", nil, s.analyticsHandler.GetTeacherAnalytics))
+	s.mux.HandleFunc("GET /v1/teacher/courses/{courseId}/students", s.withAuthAndRole("teacher", nil, s.analyticsHandler.GetTeacherCourseStudents))
 	s.mux.HandleFunc("GET /v1/teacher/analytics/students/{studentId}", s.withAuthAndRole("teacher", nil, s.analyticsHandler.GetTeacherStudentAnalytics))
 
 	// ─── Purchase approval routes ─────────────────────────────────────────────
