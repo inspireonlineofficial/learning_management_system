@@ -425,6 +425,31 @@ func (h *CoursesHandler) SubmitCourse(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// DeleteCourse handles DELETE /v1/teacher/courses/{courseId}
+func (h *CoursesHandler) DeleteCourse(w http.ResponseWriter, r *http.Request) {
+	courseID, err := uuid.Parse(r.PathValue("courseId"))
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_ID", "invalid course ID"))
+		return
+	}
+
+	userID, err := getUserIDFromContext(r)
+	if err != nil {
+		writeErrorResponse(w, apperrors.ErrUnauthorized)
+		return
+	}
+
+	if err := h.service.DeleteCourse(r.Context(), courses.DeleteCourseCommand{
+		CourseID:  courseID,
+		TeacherID: userID,
+	}); err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // GetTeacherCoursePreview handles GET /v1/teacher/courses/{courseId}/preview
 //
 // @Summary      Get teacher course preview

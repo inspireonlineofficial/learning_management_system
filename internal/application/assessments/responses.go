@@ -54,6 +54,7 @@ type QuizAttemptResponse struct {
 	StartedAt time.Time                 `json:"started_at"`
 	ExpiresAt *time.Time                `json:"expires_at,omitempty"`
 	Questions []QuestionStudentResponse `json:"questions"`
+	Answers   map[string]interface{}    `json:"answers,omitempty"`
 }
 
 // QuestionStudentResponse represents a question for student view (no answer keys)
@@ -157,6 +158,7 @@ type StudentQuizSummaryResponse struct {
 // StudentAttemptResult represents a completed quiz attempt snapshot.
 type StudentAttemptResult struct {
 	ID               uuid.UUID  `json:"id"`
+	QuizID           uuid.UUID  `json:"quiz_id"`
 	Status           string     `json:"status"`
 	StartedAt        time.Time  `json:"started_at"`
 	SubmittedAt      *time.Time `json:"submitted_at,omitempty"`

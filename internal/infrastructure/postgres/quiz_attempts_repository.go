@@ -23,8 +23,8 @@ func (r *quizAttemptRepository) Create(ctx context.Context, attempt *assessments
 	query := `
 		INSERT INTO quiz_attempts (
 			id, quiz_id, student_id, started_at, submitted_at,
-			score_percent, passed, time_taken_seconds, points_awarded, status
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+			score_percent, passed, time_taken_seconds, points_awarded, status, draft_answers
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, COALESCE($11::jsonb, '{}'::jsonb))
 	`
 
 	_, err := r.db.ExecContext(ctx, query,
@@ -38,6 +38,7 @@ func (r *quizAttemptRepository) Create(ctx context.Context, attempt *assessments
 		attempt.TimeTakenSeconds,
 		attempt.PointsAwarded,
 		attempt.Status,
+		nullJSON(attempt.DraftAnswers),
 	)
 
 	if err != nil {
@@ -50,7 +51,7 @@ func (r *quizAttemptRepository) Create(ctx context.Context, attempt *assessments
 func (r *quizAttemptRepository) FindByID(ctx context.Context, id uuid.UUID) (*assessments.QuizAttempt, error) {
 	query := `
 		SELECT id, quiz_id, student_id, started_at, submitted_at,
-			   score_percent, passed, time_taken_seconds, points_awarded, status
+			   score_percent, passed, time_taken_seconds, points_awarded, status, COALESCE(draft_answers, '{}'::jsonb)
 		FROM quiz_attempts
 		WHERE id = $1
 	`
@@ -67,6 +68,7 @@ func (r *quizAttemptRepository) FindByID(ctx context.Context, id uuid.UUID) (*as
 		&attempt.TimeTakenSeconds,
 		&attempt.PointsAwarded,
 		&attempt.Status,
+		&attempt.DraftAnswers,
 	)
 
 	if err == sql.ErrNoRows {
@@ -82,7 +84,7 @@ func (r *quizAttemptRepository) FindByID(ctx context.Context, id uuid.UUID) (*as
 func (r *quizAttemptRepository) FindByQuizAndStudent(ctx context.Context, quizID, studentID uuid.UUID) ([]*assessments.QuizAttempt, error) {
 	query := `
 		SELECT id, quiz_id, student_id, started_at, submitted_at,
-			   score_percent, passed, time_taken_seconds, points_awarded, status
+			   score_percent, passed, time_taken_seconds, points_awarded, status, COALESCE(draft_answers, '{}'::jsonb)
 		FROM quiz_attempts
 		WHERE quiz_id = $1 AND student_id = $2
 		ORDER BY started_at DESC
@@ -108,6 +110,7 @@ func (r *quizAttemptRepository) FindByQuizAndStudent(ctx context.Context, quizID
 			&attempt.TimeTakenSeconds,
 			&attempt.PointsAwarded,
 			&attempt.Status,
+			&attempt.DraftAnswers,
 		)
 		if err != nil {
 			return nil, apperrors.NewInternalError("DB_ERROR", "failed to scan quiz attempt")
@@ -154,8 +157,9 @@ func (r *quizAttemptRepository) Update(ctx context.Context, attempt *assessments
 	query := `
 		UPDATE quiz_attempts
 		SET submitted_at = $1, score_percent = $2, passed = $3,
-			time_taken_seconds = $4, points_awarded = $5, status = $6
-		WHERE id = $7
+			time_taken_seconds = $4, points_awarded = $5, status = $6,
+			draft_answers = COALESCE($7::jsonb, draft_answers, '{}'::jsonb)
+		WHERE id = $8
 	`
 
 	result, err := r.db.ExecContext(ctx, query,
@@ -165,6 +169,7 @@ func (r *quizAttemptRepository) Update(ctx context.Context, attempt *assessments
 		attempt.TimeTakenSeconds,
 		attempt.PointsAwarded,
 		attempt.Status,
+		nullJSON(attempt.DraftAnswers),
 		attempt.ID,
 	)
 
@@ -184,10 +189,30 @@ func (r *quizAttemptRepository) Update(ctx context.Context, attempt *assessments
 	return nil
 }
 
+func (r *quizAttemptRepository) SaveDraftAnswers(ctx context.Context, attemptID uuid.UUID, draftAnswers []byte) error {
+	result, err := r.db.ExecContext(ctx, `
+		UPDATE quiz_attempts
+		SET draft_answers = COALESCE($1::jsonb, '{}'::jsonb)
+		WHERE id = $2`,
+		nullJSON(draftAnswers), attemptID,
+	)
+	if err != nil {
+		return apperrors.NewInternalError("DB_ERROR", "failed to save quiz draft answers")
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return apperrors.NewInternalError("DB_ERROR", "failed to check rows affected")
+	}
+	if rows == 0 {
+		return apperrors.NewNotFoundError("ATTEMPT_NOT_FOUND", "quiz attempt not found")
+	}
+	return nil
+}
+
 func (r *quizAttemptRepository) FindInProgressAttempts(ctx context.Context) ([]*assessments.QuizAttempt, error) {
 	query := `
 		SELECT id, quiz_id, student_id, started_at, submitted_at,
-			   score_percent, passed, time_taken_seconds, points_awarded, status
+			   score_percent, passed, time_taken_seconds, points_awarded, status, COALESCE(draft_answers, '{}'::jsonb)
 		FROM quiz_attempts
 		WHERE status = 'in_progress'
 		ORDER BY started_at ASC
@@ -213,6 +238,7 @@ func (r *quizAttemptRepository) FindInProgressAttempts(ctx context.Context) ([]*
 			&attempt.TimeTakenSeconds,
 			&attempt.PointsAwarded,
 			&attempt.Status,
+			&attempt.DraftAnswers,
 		)
 		if err != nil {
 			return nil, apperrors.NewInternalError("DB_ERROR", "failed to scan quiz attempt")
@@ -221,4 +247,11 @@ func (r *quizAttemptRepository) FindInProgressAttempts(ctx context.Context) ([]*
 	}
 
 	return attempts, nil
+}
+
+func nullJSON(raw []byte) interface{} {
+	if len(raw) == 0 {
+		return nil
+	}
+	return raw
 }

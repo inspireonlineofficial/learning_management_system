@@ -72,14 +72,11 @@ export function publishCourse(courseId: string) {
   );
 }
 
-export function archiveCourse(courseId: string) {
-  void courseId;
-  return Promise.reject(new Error("Course archiving is not available on this backend."));
-}
-
 export function deleteCourse(courseId: string) {
-  void courseId;
-  return Promise.reject(new Error("Course deletion is not available on this backend."));
+  return apiRequest<{ ok: true }>(`/v1/teacher/courses/${encodeURIComponent(courseId)}`, {
+    method: "DELETE",
+    auth: true,
+  });
 }
 
 // Modules
@@ -238,9 +235,45 @@ export function listCourseStudents(
   courseId: string,
   params: { page?: number; limit?: number } = {},
 ) {
-  void courseId;
-  return Promise.resolve<Paginated<CourseStudent>>({
-    data: [],
-    meta: { page: params.page ?? 1, limit: params.limit ?? 20, total: 0, total_pages: 1 },
+  return apiRequest<{
+    students?: Array<{
+      student_id: string;
+      student_name: string;
+      student_email?: string;
+      overall_progress_percent: number;
+      enrolled_at: string;
+      last_active_at?: string | null;
+    }>;
+    data?: Array<{
+      student_id: string;
+      student_name: string;
+      student_email?: string;
+      overall_progress_percent: number;
+      enrolled_at: string;
+      last_active_at?: string | null;
+    }>;
+    meta?: Paginated<CourseStudent>["meta"];
+  }>(`/v1/teacher/courses/${encodeURIComponent(courseId)}/students`, {
+    auth: true,
+    query: params,
+  }).then((result) => {
+    const rows = result.students ?? result.data ?? [];
+    return {
+      data: rows.map((student) => ({
+        id: student.student_id,
+        user_id: student.student_id,
+        full_name: student.student_name,
+        email: student.student_email ?? "",
+        enrolled_at: student.enrolled_at,
+        progress_percent: Math.round(student.overall_progress_percent),
+        last_active_at: student.last_active_at ?? null,
+      })),
+      meta: result.meta ?? {
+        page: params.page ?? 1,
+        limit: params.limit ?? 20,
+        total: rows.length,
+        total_pages: 1,
+      },
+    };
   });
 }

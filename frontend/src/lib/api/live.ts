@@ -33,7 +33,7 @@ export type LiveSessionDetail = LiveSessionSummary & {
 
 export function listLiveSessions(
   params: {
-    scope?: "upcoming" | "past" | "live" | "registered";
+    scope?: "upcoming" | "past" | "live";
     page?: number;
     limit?: number;
     from?: string;
@@ -68,15 +68,6 @@ export function getLiveSession(sessionId: string) {
     `/v1/student/live-sessions/${encodeURIComponent(sessionId)}`,
     { auth: true },
   ).then(normalizeLiveSession);
-}
-
-export function registerForSession(sessionId: string) {
-  return getLiveSession(sessionId);
-}
-
-export function cancelRegistration(sessionId: string) {
-  void sessionId;
-  return Promise.resolve({ ok: true });
 }
 
 export function joinSession(sessionId: string) {

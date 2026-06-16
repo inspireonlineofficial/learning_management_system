@@ -307,6 +307,27 @@ func (h *BookshopHandler) ListStudentOrders(w http.ResponseWriter, r *http.Reque
 	writeJSONResponse(w, http.StatusOK, result)
 }
 
+// ListStudentLibrary handles GET /v1/student/bookshop/library.
+func (h *BookshopHandler) ListStudentLibrary(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserIDFromContext(r)
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+
+	page, limit := parseBookshopPagination(r)
+	result, err := h.service.ListStudentLibrary(r.Context(), appbookshop.ListStudentOrdersCommand{
+		StudentID: userID,
+		Page:      page,
+		Limit:     limit,
+	})
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	writeJSONResponse(w, http.StatusOK, result)
+}
+
 // GetStudentOrder handles GET /v1/student/bookshop/orders/:orderId
 func (h *BookshopHandler) GetStudentOrder(w http.ResponseWriter, r *http.Request) {
 	userID, err := getUserIDFromContext(r)

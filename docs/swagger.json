@@ -2099,6 +2099,102 @@
                 }
             }
         },
+        "/v1/auth/me/settings": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the authenticated user's notification and localization preferences",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Get user settings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/auth.UserSettingsResult"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates the authenticated user's notification and localization preferences",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Update user settings",
+                "parameters": [
+                    {
+                        "description": "Update settings request",
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "email_notifications": {
+                                    "type": "boolean"
+                                },
+                                "language": {
+                                    "type": "string"
+                                },
+                                "newsletter_opt_in": {
+                                    "type": "boolean"
+                                },
+                                "push_notifications": {
+                                    "type": "boolean"
+                                },
+                                "timezone": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/auth.UserSettingsResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ValidationErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/auth/me/change-password": {
             "post": {
                 "security": [
@@ -8838,6 +8934,26 @@
                     "type": "string"
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "auth.UserSettingsResult": {
+            "type": "object",
+            "properties": {
+                "email_notifications": {
+                    "type": "boolean"
+                },
+                "language": {
+                    "type": "string"
+                },
+                "newsletter_opt_in": {
+                    "type": "boolean"
+                },
+                "push_notifications": {
+                    "type": "boolean"
+                },
+                "timezone": {
                     "type": "string"
                 }
             }

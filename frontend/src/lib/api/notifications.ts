@@ -23,15 +23,11 @@ export const markRead = (ids: string[]) =>
 export const markAllRead = () =>
   apiRequest<{ ok: true }>("/v1/notifications/read-all", { method: "PATCH", auth: true });
 
-export type BroadcastAudience = "all" | "students" | "teachers" | "course" | "user";
+export type BroadcastAudience = "all" | "students" | "teachers";
 export type BroadcastInput = {
   audience: BroadcastAudience;
-  course_id?: string;
-  user_ids?: string[];
   title: string;
   body: string;
-  action_url?: string;
-  scheduled_for?: string; // ISO
 };
 export const broadcastNotification = (input: BroadcastInput) =>
   apiRequest<{ id?: string; sent_count?: number; recipient_count?: number; scheduled?: boolean }>(
@@ -95,4 +91,7 @@ export type BroadcastHistoryItem = {
   status: "sent" | "scheduled" | "failed";
 };
 export const listBroadcasts = () =>
-  Promise.resolve<{ items: BroadcastHistoryItem[] }>({ items: [] });
+  apiRequest<{ items?: BroadcastHistoryItem[]; data?: BroadcastHistoryItem[] }>(
+    "/v1/admin/notifications/broadcasts",
+    { auth: true },
+  ).then((response) => ({ items: response.items ?? response.data ?? [] }));

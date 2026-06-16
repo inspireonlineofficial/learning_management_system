@@ -86,6 +86,8 @@ var knownRoutes = []routeEntry{
 	{"/v1/auth/oauth/{provider}/callback", "get"},
 	// Authenticated user
 	{"/v1/auth/me", "patch"},
+	{"/v1/auth/me/settings", "get"},
+	{"/v1/auth/me/settings", "patch"},
 	{"/v1/auth/me/change-password", "post"},
 	{"/v1/auth/me/oauth/connect", "post"},
 	{"/v1/auth/me/oauth/{provider}", "delete"},

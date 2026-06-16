@@ -1,5 +1,13 @@
 import { apiRequest } from "./client";
-import type { CourseDetail, CourseSummary, Lesson, Module } from "./courses";
+import {
+  getCourse,
+  type CourseDetail,
+  type CourseSummary,
+  type Lesson,
+  type Module,
+} from "./courses";
+import { listMyAssignments } from "./assignments";
+import { listCourseQuizzes } from "./quizzes";
 
 export type Enrollment = {
   id: string;
@@ -39,19 +47,57 @@ export type CourseProgress = {
   completed_lessons: string[];
   current_lesson_id?: string | null;
   modules: Module[];
+  total_lessons: number;
+  quizzes_total: number;
+  quizzes_completed: number;
+  assignments_total: number;
+  assignments_completed: number;
 };
 
-export function getCourseProgress(courseId: string) {
-  return listMyEnrollments().then((enrollments) => {
-    const enrollment = enrollments.data.find((item) => item.course.id === courseId);
-    return {
-      course_id: courseId,
-      progress_percent: enrollment?.progress_percent ?? 0,
-      completed_lessons: [],
-      current_lesson_id: enrollment?.next_lesson?.id ?? null,
-      modules: [],
-    };
-  });
+export async function getCourseProgress(courseId: string) {
+  const [enrollments, course, quizzes, assignments] = await Promise.all([
+    listMyEnrollments({ limit: 100 }),
+    getCourse(courseId),
+    listCourseQuizzes(courseId),
+    listMyAssignments({ limit: 100 }),
+  ]);
+  const enrollment = enrollments.data.find((item) => item.course.id === courseId);
+  const modules = course.modules ?? [];
+  const lessons = modules.flatMap((module) => module.lessons);
+  const progress = await Promise.all(
+    lessons.map((lesson) =>
+      apiRequest<{ lesson_id: string; completed: boolean }>(
+        `/v1/enrollments/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(lesson.id)}/progress`,
+        { auth: true },
+      )
+        .then((result) => result)
+        .catch(() => null),
+    ),
+  );
+  const completedLessons = progress
+    .filter((item): item is { lesson_id: string; completed: boolean } => Boolean(item?.completed))
+    .map((item) => item.lesson_id);
+  const courseAssignments = assignments.data.filter(
+    (assignment) => assignment.course_id === courseId,
+  );
+  const completedAssignments = courseAssignments.filter((assignment) =>
+    ["submitted", "graded", "revision_requested"].includes(assignment.status),
+  );
+
+  return {
+    course_id: courseId,
+    progress_percent: enrollment?.progress_percent ?? 0,
+    completed_lessons: completedLessons,
+    current_lesson_id: enrollment?.next_lesson?.id ?? null,
+    modules,
+    total_lessons: lessons.length,
+    quizzes_total: quizzes.data.length,
+    quizzes_completed: quizzes.data.filter((quiz) =>
+      ["completed", "passed", "failed"].includes(quiz.status ?? ""),
+    ).length,
+    assignments_total: courseAssignments.length,
+    assignments_completed: completedAssignments.length,
+  };
 }
 
 export type LessonContent = Lesson & {

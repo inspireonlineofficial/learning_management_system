@@ -64,7 +64,9 @@ function Page() {
               </div>
               <div>
                 <p className="eyebrow text-brand/45">ID</p>
-                <p className="text-sm mt-1 font-mono break-all">{data.id.slice(0, 12)}…</p>
+                <p className="text-sm mt-1 font-mono break-all">
+                  {(data.id ?? data.verification_code ?? data.course_id).slice(0, 12)}…
+                </p>
               </div>
             </div>
           </div>

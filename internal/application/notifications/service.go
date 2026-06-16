@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	domainaudit "lms-backend/internal/domain/audit"
 	domainnotif "lms-backend/internal/domain/notifications"
 	"lms-backend/pkg/apperrors"
 	"lms-backend/pkg/logger"
@@ -20,6 +21,7 @@ type Service interface {
 	// Delivery (Requirements: 22.1, 22.7)
 	SendNotification(ctx context.Context, cmd SendNotificationCommand) error
 	SendBroadcast(ctx context.Context, cmd SendBroadcastCommand) (*BroadcastResponse, error)
+	ListBroadcasts(ctx context.Context, cmd ListBroadcastsCommand) (*BroadcastHistoryResponse, error)
 
 	// Management (Requirements: 22.2–22.5)
 	ListNotifications(ctx context.Context, cmd ListNotificationsCommand) (*NotificationListResponse, error)
@@ -39,6 +41,7 @@ type service struct {
 	templateRepo domainnotif.NotificationTemplateRepository
 	jobQueue     domainnotif.JobQueue
 	audit        AuditLogger
+	auditRepo    domainaudit.AuditLogRepository
 }
 
 // NewService creates a new notifications service.
@@ -47,12 +50,14 @@ func NewService(
 	templateRepo domainnotif.NotificationTemplateRepository,
 	jobQueue domainnotif.JobQueue,
 	audit AuditLogger,
+	auditRepo domainaudit.AuditLogRepository,
 ) Service {
 	return &service{
 		notifRepo:    notifRepo,
 		templateRepo: templateRepo,
 		jobQueue:     jobQueue,
 		audit:        audit,
+		auditRepo:    auditRepo,
 	}
 }
 
@@ -141,6 +146,7 @@ func (s *service) SendBroadcast(ctx context.Context, cmd SendBroadcastCommand) (
 	if s.audit != nil {
 		meta := map[string]interface{}{
 			"title":           cmd.Title,
+			"body":            cmd.Body,
 			"recipient_count": recipientCount,
 		}
 		if cmd.TargetRole != nil {
@@ -151,6 +157,73 @@ func (s *service) SendBroadcast(ctx context.Context, cmd SendBroadcastCommand) (
 	}
 
 	return &BroadcastResponse{RecipientCount: recipientCount}, nil
+}
+
+// ListBroadcasts returns persisted admin broadcast history from audit logs.
+// Requirements: 22.6
+func (s *service) ListBroadcasts(ctx context.Context, cmd ListBroadcastsCommand) (*BroadcastHistoryResponse, error) {
+	if s.auditRepo == nil {
+		return &BroadcastHistoryResponse{Items: []BroadcastHistoryItemResponse{}, Meta: map[string]any{"page": 1, "limit": 20, "total": 0, "total_pages": 0}}, nil
+	}
+	if cmd.Page < 1 {
+		cmd.Page = 1
+	}
+	if cmd.Limit < 1 || cmd.Limit > 100 {
+		cmd.Limit = 20
+	}
+
+	action := "broadcast_sent"
+	targetType := "notification"
+	logs, total, err := s.auditRepo.List(ctx, domainaudit.AuditLogFilter{
+		Action:     &action,
+		TargetType: &targetType,
+	}, cmd.Page, cmd.Limit)
+	if err != nil {
+		return nil, apperrors.NewInternalError("LIST_BROADCASTS_FAILED", "failed to list broadcast history")
+	}
+
+	items := make([]BroadcastHistoryItemResponse, 0, len(logs))
+	for _, log := range logs {
+		meta := map[string]any{}
+		if len(log.Metadata) > 0 {
+			_ = json.Unmarshal(log.Metadata, &meta)
+		}
+		audience := "all"
+		if role, ok := meta["target_role"].(string); ok && role != "" {
+			switch role {
+			case "student":
+				audience = "students"
+			case "teacher":
+				audience = "teachers"
+			default:
+				audience = role
+			}
+		}
+		title, _ := meta["title"].(string)
+		body, _ := meta["body"].(string)
+		sentCount := intFromMetadata(meta["recipient_count"])
+
+		items = append(items, BroadcastHistoryItemResponse{
+			ID:        log.ID,
+			Audience:  audience,
+			Title:     title,
+			Body:      body,
+			SentCount: sentCount,
+			CreatedAt: log.CreatedAt,
+			Status:    "sent",
+		})
+	}
+
+	meta := pagination.NewMeta(total, cmd.Page, cmd.Limit)
+	return &BroadcastHistoryResponse{
+		Items: items,
+		Meta: map[string]any{
+			"page":        meta.Page,
+			"limit":       meta.Limit,
+			"total":       meta.Total,
+			"total_pages": meta.TotalPages,
+		},
+	}, nil
 }
 
 // ─── Management use cases ─────────────────────────────────────────────────────
@@ -325,4 +398,21 @@ func validateTemplateVariables(template string, allowed []string) error {
 		remaining = remaining[start+end+2:]
 	}
 	return nil
+}
+
+func intFromMetadata(value any) int {
+	switch v := value.(type) {
+	case int:
+		return v
+	case int64:
+		return int(v)
+	case float64:
+		return int(v)
+	case string:
+		var parsed int
+		if _, err := fmt.Sscanf(v, "%d", &parsed); err == nil {
+			return parsed
+		}
+	}
+	return 0
 }

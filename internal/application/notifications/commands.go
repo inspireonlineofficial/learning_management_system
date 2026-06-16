@@ -25,6 +25,13 @@ type SendBroadcastCommand struct {
 	IPAddress  string
 }
 
+// ListBroadcastsCommand holds pagination for broadcast history.
+// Requirements: 22.6
+type ListBroadcastsCommand struct {
+	Page  int
+	Limit int
+}
+
 // ListNotificationsCommand holds pagination for listing notifications.
 // Requirements: 22.2
 type ListNotificationsCommand struct {

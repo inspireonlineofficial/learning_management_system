@@ -18,6 +18,7 @@ type Service interface {
 	GetAdminOverview(ctx context.Context, cmd GetAdminOverviewCommand) (*AdminOverviewResponse, error)
 	GetCourseAnalytics(ctx context.Context, cmd GetCourseAnalyticsCommand) (*CourseAnalyticsResponse, error)
 	GetCourseStudents(ctx context.Context, cmd GetCourseStudentsCommand) (*CourseStudentsResponse, error)
+	GetTeacherCourseStudents(ctx context.Context, cmd GetTeacherCourseStudentsCommand) (*CourseStudentsResponse, error)
 	GetStudentAnalytics(ctx context.Context, cmd GetStudentAnalyticsCommand) (*StudentAnalyticsResponse, error)
 	GetTeacherAnalytics(ctx context.Context, cmd GetTeacherAnalyticsCommand) (*TeacherAnalyticsResponse, error)
 	GetTeacherStudentAnalytics(ctx context.Context, cmd GetTeacherStudentAnalyticsCommand) (*StudentAnalyticsResponse, error)
@@ -271,6 +272,31 @@ func (s *service) GetCourseStudents(ctx context.Context, cmd GetCourseStudentsCo
 
 	s.cacheResponse(ctx, cacheKey, resp)
 	return resp, nil
+}
+
+// GetTeacherCourseStudents returns per-student progress for a course owned by the teacher.
+func (s *service) GetTeacherCourseStudents(ctx context.Context, cmd GetTeacherCourseStudentsCommand) (*CourseStudentsResponse, error) {
+	courseIDs, err := s.liveRepo.GetTeacherCourseIDs(ctx, cmd.TeacherID)
+	if err != nil {
+		return nil, apperrors.NewInternalError("ANALYTICS_QUERY_FAILED", "failed to load teacher courses")
+	}
+
+	ownsCourse := false
+	for _, courseID := range courseIDs {
+		if courseID == cmd.CourseID {
+			ownsCourse = true
+			break
+		}
+	}
+	if !ownsCourse {
+		return nil, apperrors.NewForbiddenError("FORBIDDEN", "course does not belong to this teacher")
+	}
+
+	return s.GetCourseStudents(ctx, GetCourseStudentsCommand{
+		CourseID: cmd.CourseID,
+		Page:     cmd.Page,
+		Limit:    cmd.Limit,
+	})
 }
 
 // GetStudentAnalytics returns a student's points history, course progress, and rank. Requirement 23.4

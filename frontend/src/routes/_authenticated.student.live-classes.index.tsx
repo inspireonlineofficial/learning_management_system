@@ -6,7 +6,7 @@ import { useState } from "react";
 import { AppShell, EmptyState, SectionHeading } from "@/components/layout/app-shell";
 import { listLiveSessions, type LiveSessionSummary } from "@/lib/api/live";
 
-type Scope = "upcoming" | "live" | "registered" | "past";
+type Scope = "upcoming" | "live" | "past";
 
 export const Route = createFileRoute("/_authenticated/student/live-classes/")({
   component: LiveHub,
@@ -23,7 +23,7 @@ function LiveHub() {
   return (
     <AppShell eyebrow="Live classes" title="Join the lecture hall.">
       <div className="flex flex-wrap gap-2 mb-8">
-        {(["upcoming", "live", "registered", "past"] as Scope[]).map((s) => (
+        {(["upcoming", "live", "past"] as Scope[]).map((s) => (
           <button
             key={s}
             onClick={() => setScope(s)}

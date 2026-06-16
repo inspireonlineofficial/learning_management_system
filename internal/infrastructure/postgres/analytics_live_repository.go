@@ -88,6 +88,7 @@ func (r *AnalyticsLiveRepository) GetStudentProgressInCourse(ctx context.Context
 		SELECT
 			e.student_id,
 			u.full_name,
+			u.email,
 			e.progress_percent,
 			(
 				SELECT COUNT(DISTINCT m.id)
@@ -117,12 +118,13 @@ func (r *AnalyticsLiveRepository) GetStudentProgressInCourse(ctx context.Context
 					  )
 				  )
 			) AS modules_in_progress,
+			e.enrolled_at,
 			MAX(lp.last_watched_at) AS last_active_at
 		FROM enrollments e
 		JOIN users u ON u.id = e.student_id
 		LEFT JOIN lesson_progress lp ON lp.enrollment_id = e.id
 		WHERE e.course_id = $1 AND e.status = 'active'
-		GROUP BY e.student_id, u.full_name, e.progress_percent, e.id
+		GROUP BY e.student_id, u.full_name, u.email, e.progress_percent, e.enrolled_at, e.id
 		ORDER BY e.progress_percent DESC
 		LIMIT $2 OFFSET $3`, courseID, limit, offset)
 	if err != nil {
@@ -136,8 +138,10 @@ func (r *AnalyticsLiveRepository) GetStudentProgressInCourse(ctx context.Context
 		var lastActive sql.NullTime
 		if err := rows.Scan(
 			&entry.StudentID, &entry.StudentName,
+			&entry.StudentEmail,
 			&entry.OverallProgressPercent,
 			&entry.ModulesCompleted, &entry.ModulesInProgress,
+			&entry.EnrolledAt,
 			&lastActive,
 		); err != nil {
 			return nil, 0, err

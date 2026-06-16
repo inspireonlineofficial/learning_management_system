@@ -8,23 +8,14 @@ export type UserSettings = {
   timezone: string;
 };
 export const getMySettings = () =>
-  apiRequest<Partial<UserSettings> & { full_name?: string; email?: string }>("/v1/auth/me", {
+  apiRequest<UserSettings>("/v1/auth/me/settings", {
     auth: true,
-  }).then((profile) => ({
-    email_notifications: true,
-    push_notifications: true,
-    newsletter_opt_in: false,
-    language: "en",
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    ...profile,
-  }));
+  });
 export const updateMySettings = (input: Partial<UserSettings>) =>
-  Promise.resolve({
-    email_notifications: input.email_notifications ?? true,
-    push_notifications: input.push_notifications ?? true,
-    newsletter_opt_in: input.newsletter_opt_in ?? false,
-    language: input.language ?? "en",
-    timezone: input.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+  apiRequest<UserSettings>("/v1/auth/me/settings", {
+    method: "PATCH",
+    auth: true,
+    body: input,
   });
 export const changePassword = (input: { current_password: string; new_password: string }) =>
   apiRequest<{ ok: true }>("/v1/auth/me/change-password", {
@@ -102,18 +93,16 @@ export type PointsConfig = {
 };
 
 export const getPointsConfig = () =>
-  Promise.resolve({
-    lesson_completed: 10,
-    quiz_passed: 25,
-    quiz_perfect_bonus: 10,
-    assignment_submitted: 10,
-    assignment_graded_bonus: 5,
-    live_class_attended: 10,
-    daily_streak_bonus: 5,
-    forum_post_created: 2,
-    forum_helpful_vote: 1,
-    level_thresholds: [0, 100, 300, 700, 1500],
-  });
+  apiRequest<{
+    points_per_video: number;
+    points_per_quiz_pass: number;
+    bonus_points_perfect_score: number;
+  }>("/v1/admin/points/config", { auth: true }).then((result) => ({
+    ...defaultPointsConfig,
+    lesson_completed: result.points_per_video,
+    quiz_passed: result.points_per_quiz_pass,
+    quiz_perfect_bonus: result.bonus_points_perfect_score,
+  }));
 
 export const updatePointsConfig = (input: Partial<PointsConfig>) =>
   apiRequest<{

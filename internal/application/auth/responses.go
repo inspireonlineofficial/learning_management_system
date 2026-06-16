@@ -47,6 +47,15 @@ type ProfileResult struct {
 	UpdatedAt       time.Time `json:"updated_at"`
 }
 
+// UserSettingsResult represents account preference settings.
+type UserSettingsResult struct {
+	EmailNotifications bool   `json:"email_notifications"`
+	PushNotifications  bool   `json:"push_notifications"`
+	NewsletterOptIn    bool   `json:"newsletter_opt_in"`
+	Language           string `json:"language"`
+	Timezone           string `json:"timezone"`
+}
+
 // OAuthProviderResult represents a linked OAuth provider
 type OAuthProviderResult struct {
 	Provider  string    `json:"provider"`

@@ -22,6 +22,18 @@ type User struct {
 	DeletedAt       *time.Time `json:"deleted_at,omitempty"`
 }
 
+// UserSettings stores per-account preferences for notifications and localization.
+type UserSettings struct {
+	UserID             uuid.UUID `json:"user_id"`
+	EmailNotifications bool      `json:"email_notifications"`
+	PushNotifications  bool      `json:"push_notifications"`
+	NewsletterOptIn    bool      `json:"newsletter_opt_in"`
+	Language           string    `json:"language"`
+	Timezone           string    `json:"timezone"`
+	CreatedAt          time.Time `json:"created_at"`
+	UpdatedAt          time.Time `json:"updated_at"`
+}
+
 // OTPRecord represents a one-time password for verification
 type OTPRecord struct {
 	ID            uuid.UUID  `json:"id"`
@@ -64,6 +76,12 @@ type UserRepository interface {
 	FindByID(ctx context.Context, id uuid.UUID) (*User, error)
 	Update(ctx context.Context, u *User) error
 	SoftDelete(ctx context.Context, id uuid.UUID) error
+}
+
+// UserSettingsRepository defines persistence for user preference settings.
+type UserSettingsRepository interface {
+	GetByUserID(ctx context.Context, userID uuid.UUID) (*UserSettings, error)
+	Upsert(ctx context.Context, settings *UserSettings) error
 }
 
 // OTPRepository defines the interface for OTP persistence

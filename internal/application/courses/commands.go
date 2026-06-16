@@ -45,6 +45,12 @@ type SubmitCourseCommand struct {
 	TeacherID uuid.UUID
 }
 
+// DeleteCourseCommand represents the command to delete a teacher-owned course.
+type DeleteCourseCommand struct {
+	CourseID  uuid.UUID
+	TeacherID uuid.UUID
+}
+
 // ApproveCourseCommand represents the command to approve a course
 type ApproveCourseCommand struct {
 	CourseID uuid.UUID

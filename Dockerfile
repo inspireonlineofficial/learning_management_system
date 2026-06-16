@@ -1,5 +1,5 @@
 # Stage 1: Builder
-FROM golang:1.25.1-alpine AS builder
+FROM golang:1.25.11-alpine AS builder
 
 # Install CA certificates for TLS (Requirement 5.1)
 RUN apk --no-cache add ca-certificates

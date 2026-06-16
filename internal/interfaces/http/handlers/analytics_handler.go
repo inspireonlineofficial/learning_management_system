@@ -212,6 +212,47 @@ func (h *AnalyticsHandler) GetTeacherAnalytics(w http.ResponseWriter, r *http.Re
 	writeJSONResponse(w, http.StatusOK, result)
 }
 
+// GetTeacherCourseStudents handles GET /v1/teacher/courses/:courseId/students.
+func (h *AnalyticsHandler) GetTeacherCourseStudents(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserIDFromContext(r)
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+
+	courseID, err := parseUUIDParam(r, "courseId")
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+
+	page := 1
+	limit := 20
+	if p := r.URL.Query().Get("page"); p != "" {
+		if parsed, err := strconv.Atoi(p); err == nil && parsed > 0 {
+			page = parsed
+		}
+	}
+	if l := r.URL.Query().Get("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 100 {
+			limit = parsed
+		}
+	}
+
+	result, err := h.service.GetTeacherCourseStudents(r.Context(), analytics.GetTeacherCourseStudentsCommand{
+		TeacherID: userID,
+		CourseID:  courseID,
+		Page:      page,
+		Limit:     limit,
+	})
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+
+	writeJSONResponse(w, http.StatusOK, result)
+}
+
 // GetTeacherStudentAnalytics handles GET /v1/teacher/analytics/students/:studentId.
 func (h *AnalyticsHandler) GetTeacherStudentAnalytics(w http.ResponseWriter, r *http.Request) {
 	userID, err := getUserIDFromContext(r)

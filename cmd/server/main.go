@@ -141,6 +141,7 @@ func main() {
 
 	// Initialize repositories
 	userRepo := postgres.NewUserRepository(db)
+	userSettingsRepo := postgres.NewUserSettingsRepository(db)
 	otpRepo := postgres.NewOTPRepository(db)
 	passwordResetRepo := postgres.NewPasswordResetRepository(db)
 	oauthProviderRepo := postgres.NewOAuthProviderRepository(db)
@@ -151,6 +152,7 @@ func main() {
 	// Initialize infrastructure services
 	emailService := email.NewService(cfg.SMTPHost, cfg.SMTPPort, cfg.SMTPUsername, cfg.SMTPPassword, cfg.SMTPFrom)
 	auditLogger := infraaudit.NewLogger(db)
+	auditLogRepo := postgres.NewAuditLogRepository(db)
 	logger.Info(ctx, "Infrastructure services initialized")
 
 	// Initialize OAuth providers
@@ -173,6 +175,7 @@ func main() {
 	// Initialize auth service
 	authService := auth.NewService(auth.ServiceDeps{
 		UserRepo:          userRepo,
+		UserSettingsRepo:  userSettingsRepo,
 		OTPRepo:           otpRepo,
 		PasswordResetRepo: passwordResetRepo,
 		OAuthProviderRepo: oauthProviderRepo,
@@ -349,7 +352,7 @@ func main() {
 	// Initialize notifications repositories and service
 	notifRepo := postgres.NewNotificationRepository(db)
 	notifTemplateRepo := postgres.NewNotificationTemplateRepository(db)
-	notificationsService := notifications.NewService(notifRepo, notifTemplateRepo, jobQueue, auditLogger)
+	notificationsService := notifications.NewService(notifRepo, notifTemplateRepo, jobQueue, auditLogger, auditLogRepo)
 	logger.Info(ctx, "Notifications service initialized")
 
 	// Initialize analytics repositories, cache, and service
@@ -423,7 +426,6 @@ func main() {
 	logger.Info(ctx, "RBAC service initialized")
 
 	// Initialize Audit Log repository and service
-	auditLogRepo := postgres.NewAuditLogRepository(db)
 	auditService := appaudit.NewService(auditLogRepo)
 	logger.Info(ctx, "Audit service initialized")
 

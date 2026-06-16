@@ -43,6 +43,7 @@ type Service interface {
 	PlaceOrder(ctx context.Context, cmd PlaceOrderCommand) (*OrderResponse, error)
 	ListStudentOrders(ctx context.Context, cmd ListStudentOrdersCommand) (*OrderListResponse, error)
 	GetStudentOrder(ctx context.Context, studentID, orderID uuid.UUID) (*OrderResponse, error)
+	ListStudentLibrary(ctx context.Context, cmd ListStudentOrdersCommand) (*LibraryBookListResponse, error)
 }
 
 // StorageClient defines the interface for object storage operations.
@@ -675,6 +676,56 @@ func (s *service) ListStudentOrders(ctx context.Context, cmd ListStudentOrdersCo
 			"page":        meta.Page,
 			"limit":       meta.Limit,
 			"total":       meta.Total,
+			"total_pages": meta.TotalPages,
+		},
+	}, nil
+}
+
+// ListStudentLibrary returns purchased, non-refunded digital books for a student.
+func (s *service) ListStudentLibrary(ctx context.Context, cmd ListStudentOrdersCommand) (*LibraryBookListResponse, error) {
+	if cmd.Page < 1 {
+		cmd.Page = 1
+	}
+	if cmd.Limit < 1 || cmd.Limit > 100 {
+		cmd.Limit = 20
+	}
+
+	orders, total, err := s.orderRepo.FindByStudentID(ctx, cmd.StudentID, cmd.Page, cmd.Limit)
+	if err != nil {
+		return nil, apperrors.NewInternalError("LIST_LIBRARY_FAILED", "failed to list library")
+	}
+
+	data := make([]*LibraryBookResponse, 0, len(orders))
+	for _, order := range orders {
+		if order.Status == bookshop.OrderStatusRefunded || order.Status == bookshop.OrderStatusCancelled {
+			continue
+		}
+		if order.Format != bookshop.OrderFormatDigital {
+			continue
+		}
+		book, err := s.bookRepo.FindByID(ctx, order.BookID)
+		if err != nil || book == nil || !book.IsActive {
+			continue
+		}
+		response := &LibraryBookResponse{
+			BookResponse:   s.toBookResponse(ctx, book),
+			OrderID:        order.ID,
+			PurchasedAt:    order.CreatedAt,
+			ReadingEnabled: true,
+		}
+		if bookmark, _ := s.bookmarkRepo.FindByStudentAndBook(ctx, cmd.StudentID, order.BookID); bookmark != nil {
+			response.LastPageRead = bookmark.LastPageRead
+		}
+		data = append(data, response)
+	}
+
+	meta := pagination.NewMeta(total, cmd.Page, cmd.Limit)
+	return &LibraryBookListResponse{
+		Data: data,
+		Meta: map[string]interface{}{
+			"page":        meta.Page,
+			"limit":       meta.Limit,
+			"total":       len(data),
 			"total_pages": meta.TotalPages,
 		},
 	}, nil

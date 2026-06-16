@@ -15,6 +15,15 @@ export type CourseAnalytics = {
   avg_progress: number;
   revenue: number;
   rating: number;
+  module_completions?: Array<{
+    module_id: string;
+    module_title: string;
+    total_students: number;
+    completed_students: number;
+    completion_rate: number;
+  }>;
+  quiz_stats?: { average_score: number; pass_rate: number; total_attempts: number };
+  enrollment_over_time?: Array<{ date: string; total_enrolled: number }>;
 };
 export type StudentAnalytics = {
   student_id: string;
@@ -75,11 +84,39 @@ export const getPlatformAnalytics = () =>
     }),
   );
 export const listCourseAnalytics = () =>
-  apiRequest<{ items: CourseAnalytics[] }>("/v1/admin/analytics/courses", { auth: true });
+  apiRequest<{ items?: CourseAnalytics[]; data?: CourseAnalytics[] }>(
+    "/v1/admin/analytics/courses",
+    { auth: true },
+  ).then((result) => ({ items: result.items ?? result.data ?? [] }));
 export const getCourseAnalytics = (courseId: string) =>
-  apiRequest<CourseAnalytics>(`/v1/admin/analytics/courses/${courseId}`, { auth: true });
+  apiRequest<CourseAnalytics & { module_completions?: CourseAnalytics["module_completions"] }>(
+    `/v1/admin/analytics/courses/${courseId}`,
+    { auth: true },
+  ).then((result) => ({
+    ...result,
+    enrolled:
+      result.enrolled ??
+      result.enrollment_over_time?.at(-1)?.total_enrolled ??
+      result.module_completions?.[0]?.total_students ??
+      0,
+    completed:
+      result.completed ??
+      result.module_completions?.reduce((sum, module) => sum + module.completed_students, 0) ??
+      0,
+    avg_progress:
+      result.avg_progress ??
+      (result.module_completions?.length
+        ? result.module_completions.reduce((sum, module) => sum + module.completion_rate, 0) /
+          result.module_completions.length
+        : 0),
+    revenue: result.revenue ?? 0,
+    rating: result.rating ?? 0,
+  }));
 export const listStudentAnalytics = () =>
-  apiRequest<{ items: StudentAnalytics[] }>("/v1/admin/analytics/students", { auth: true });
+  apiRequest<{ items?: StudentAnalytics[]; data?: StudentAnalytics[] }>(
+    "/v1/admin/analytics/students",
+    { auth: true },
+  ).then((result) => ({ items: result.items ?? result.data ?? [] }));
 export const getStudentAnalytics = (studentId: string) =>
   apiRequest<StudentAnalyticsDetail>(`/v1/admin/analytics/students/${studentId}`, { auth: true });
 export const getTeacherAnalytics = () =>

@@ -36,6 +36,8 @@ type Service interface {
 	ChangePassword(ctx context.Context, userID uuid.UUID, cmd ChangePasswordCommand) error
 	UpdateProfile(ctx context.Context, userID uuid.UUID, cmd UpdateProfileCommand) (*ProfileResult, error)
 	GetProfile(ctx context.Context, userID uuid.UUID) (*ProfileResult, error)
+	GetUserSettings(ctx context.Context, userID uuid.UUID) (*UserSettingsResult, error)
+	UpdateUserSettings(ctx context.Context, userID uuid.UUID, cmd UpdateUserSettingsCommand) (*UserSettingsResult, error)
 
 	// Admin 2FA
 	AdminLogin(ctx context.Context, cmd AdminLoginCommand) (*OTPSessionResult, error)
@@ -54,6 +56,7 @@ type Service interface {
 // Dependencies for the auth service
 type ServiceDeps struct {
 	UserRepo          auth.UserRepository
+	UserSettingsRepo  auth.UserSettingsRepository
 	OTPRepo           auth.OTPRepository
 	PasswordResetRepo auth.PasswordResetRepository
 	OAuthProviderRepo auth.OAuthProviderRepository

@@ -21,7 +21,7 @@ function Page() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {data.items.map((c: Certificate) => (
             <Link
-              key={c.id}
+              key={c.id ?? c.course_id}
               to="/student/certificates/$courseId"
               params={{ courseId: c.course_id }}
               className="block border border-brand/10 bg-white/50 hover:bg-white p-6 transition-colors"

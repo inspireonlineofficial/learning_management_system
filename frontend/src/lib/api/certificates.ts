@@ -2,7 +2,7 @@ import { apiRequest } from "./client";
 import { listMyEnrollments } from "./student";
 
 export type Certificate = {
-  id: string;
+  id?: string;
   course_id: string;
   course_title: string;
   issued_at: string;
@@ -28,7 +28,12 @@ export const listCertificates = () =>
     return { items: items.filter((item): item is Certificate => Boolean(item)) };
   });
 export const getCertificate = (courseId: string) =>
-  apiRequest<Certificate>(`/v1/student/certificates/${courseId}`, { auth: true });
+  apiRequest<Certificate>(`/v1/student/certificates/${courseId}`, { auth: true }).then(
+    (certificate) => ({
+      ...certificate,
+      course_id: certificate.course_id ?? courseId,
+    }),
+  );
 export const downloadCertificatePdf = (courseId: string) =>
   getCertificate(courseId).then((certificate) => ({
     url: certificate.certificate_url ?? `/v1/student/certificates/${courseId}`,
