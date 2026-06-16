@@ -7,6 +7,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -66,6 +67,9 @@ type JWK struct {
 
 // NewJWTService creates a new JWT service
 func NewJWTService(privateKeyPath, publicKeyPath, issuer string) (*JWTService, error) {
+	privateKeyPath = strings.ReplaceAll(privateKeyPath, "\\n", "\n")
+	publicKeyPath = strings.ReplaceAll(publicKeyPath, "\\n", "\n")
+
 	// Load private key
 	var privateKeyData []byte
 	if len(privateKeyPath) > 0 && (privateKeyPath[0] == '-' || len(privateKeyPath) > 100) {
