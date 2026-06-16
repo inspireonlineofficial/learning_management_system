@@ -1,0 +1,114 @@
+# =============================================================================
+# Secrets & environment
+# =============================================================================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+secrets.json
+keys/
+
+# =============================================================================
+# Go
+# =============================================================================
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+*.test.exe
+/bin/
+/build/
+/dist/
+/vendor/
+.gocache/
+go.work
+go.work.sum
+coverage.out
+coverage.html
+*.prof
+*.coverprofile
+
+# =============================================================================
+# Node / frontend
+# =============================================================================
+node_modules/
+frontend/node_modules/
+dist/
+dist-ssr/
+frontend/dist/
+*.local
+.npm
+.eslintcache
+.stylelintcache
+.parcel-cache
+.turbo
+.vite
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# =============================================================================
+# Docker & local runtime
+# =============================================================================
+docker-build*.out.txt
+*.out.txt
+
+# =============================================================================
+# Databases & uploads (local dev)
+# =============================================================================
+*.db
+*.sqlite
+*.sqlite3
+uploads/
+storage/
+data/
+
+# =============================================================================
+# IDE & OS
+# =============================================================================
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# =============================================================================
+# Misc build & temp
+# =============================================================================
+/tmp/
+/temp/
+*.tmp
+*.temp
+.cache/
+*.bak
+
+# =============================================================================
+# Screenshots & Markdown exclusion rules (Option 2)
+# =============================================================================
+screenshots/
+*.md
+**/*.md
+!requirements.md
