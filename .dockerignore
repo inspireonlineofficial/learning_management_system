@@ -1,0 +1,21 @@
+# Git
+.git/
+
+# Test files
+**/*_test.go
+**/testdata/
+
+# Environment and secrets
+.env
+*.env
+
+# Compiled binaries
+*.exe
+*.test.exe
+
+# Editor and IDE directories
+.vscode/
+.idea/
+
+# Documentation
+*.md

@@ -1,0 +1,11 @@
+# 2026/03/29 21:55:46.154083 [TestProperty17_CallbackIdempotency] [rapid] draw price: 10
+# 2026/03/29 21:55:46.154095 [TestProperty17_CallbackIdempotency] second ExecutePayment (idempotent) failed: this payment intent has already been processed
+# 
+v0.4.8#9676077960135737184
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0
+0x0

@@ -1,0 +1,546 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Inspire LMS - Route Dashboard</title>
+<style>
+  body { font-family: "Inter", sans-serif; background: #0f172a; color: #f8fafc; padding: 2rem; }
+  a { color: #38bdf8; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+  th, td { border: 1px solid #334155; padding: 0.75rem; text-align: left; }
+  th { background: #1e293b; }
+  .access-Public { color: #a3e635; }
+  .access-admin { color: #f43f5e; }
+  .access-teacher { color: #fbbf24; }
+  .access-student { color: #60a5fa; }
+  .btn { display: inline-block; padding: 0.5rem 1rem; background: #3b82f6; color: white; border-radius: 4px; margin-right: 1rem; cursor: pointer; }
+  .btn:hover { background: #2563eb; color: white; text-decoration: none; }
+  .flex { display: flex; gap: 40px; margin-bottom: 20px; align-items: start; }
+  .instructions { background: #1e293b; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #3b82f6; }
+</style>
+</head>
+<body>
+<h1>Inspire LMS - Route Testing Dashboard</h1>
+
+<div class="flex">
+  <div class="instructions">
+    <h2>1. Login Accounts</h2>
+    <p>Please log in to http://localhost:3000 using one of these accounts:</p>
+    <ul>
+      <li><strong>Admin:</strong> admin@example.com / Password123!</li>
+      <li><strong>Teacher:</strong> teacher@example.com / Password123!</li>
+      <li><strong>Student:</strong> student@example.com / Password123!</li>
+    </ul>
+    <p><em>(These active accounts were created successfully in the Postgres database.)</em></p>
+  </div>
+  <div class="instructions">
+    <h2>2. Open All Routes</h2>
+    <p>Using the button below will attempt to open all 69 routes locally!<br>
+    Please ensure your browser POPUPS ARE ALLOWED.</p>
+    <button onclick="openAll()" style="padding:10px 20px;background:#10b981;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;font-size:16px;">
+      🚀 Auto-Open All Routes in Background Tabs
+    </button>
+  </div>
+</div>
+
+<table>
+  <tr>
+    <th>Route</th>
+    <th>Component</th>
+    <th>Access Gate</th>
+    <th>Testing Action</th>
+  </tr>
+  <tr>
+      <td><code>/</code></td>
+      <td>LandingPage</td>
+      <td class="access-Public"><strong>Public</strong></td>
+      <td>
+        <a href="http://localhost:3000/" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/courses</code></td>
+      <td>CourseCatalogPage</td>
+      <td class="access-Public"><strong>Public</strong></td>
+      <td>
+        <a href="http://localhost:3000/courses" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/courses/:courseId</code></td>
+      <td>CourseDetailPage</td>
+      <td class="access-Public"><strong>Public</strong></td>
+      <td>
+        <a href="http://localhost:3000/courses/demo-course-123" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/register</code></td>
+      <td>RegistrationPage</td>
+      <td class="access-Public"><strong>Public</strong></td>
+      <td>
+        <a href="http://localhost:3000/register" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/login</code></td>
+      <td>LoginPage</td>
+      <td class="access-Public"><strong>Public</strong></td>
+      <td>
+        <a href="http://localhost:3000/login" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/admin/login</code></td>
+      <td>AdminLoginPage</td>
+      <td class="access-Public"><strong>Public</strong></td>
+      <td>
+        <a href="http://localhost:3000/admin/login" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/verify-otp</code></td>
+      <td>VerifyOtpPage</td>
+      <td class="access-Public"><strong>Public</strong></td>
+      <td>
+        <a href="http://localhost:3000/verify-otp" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/forgot-password</code></td>
+      <td>ForgotPasswordPage</td>
+      <td class="access-Public"><strong>Public</strong></td>
+      <td>
+        <a href="http://localhost:3000/forgot-password" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/reset-password</code></td>
+      <td>ResetPasswordPage</td>
+      <td class="access-Public"><strong>Public</strong></td>
+      <td>
+        <a href="http://localhost:3000/reset-password" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/auth/callback</code></td>
+      <td>OAuthCallbackPage</td>
+      <td class="access-Public"><strong>Public</strong></td>
+      <td>
+        <a href="http://localhost:3000/auth/callback" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/403</code></td>
+      <td>AccessDeniedPage</td>
+      <td class="access-Public"><strong>Public</strong></td>
+      <td>
+        <a href="http://localhost:3000/403" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/404</code></td>
+      <td>NotFoundPage</td>
+      <td class="access-Public"><strong>Public</strong></td>
+      <td>
+        <a href="http://localhost:3000/404" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/profile</code></td>
+      <td>UserProfileManagementPage</td>
+      <td class="access-student"><strong>student|teacher|admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/profile" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/teacher</code></td>
+      <td>TeacherDashboardPage</td>
+      <td class="access-teacher"><strong>teacher|admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/teacher" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/teacher/settings</code></td>
+      <td>TeacherSettingsPage</td>
+      <td class="access-teacher"><strong>teacher|admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/teacher/settings" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/teacher/courses/:courseId/content</code></td>
+      <td>CourseContentBuilderPage</td>
+      <td class="access-teacher"><strong>teacher|admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/teacher/courses/demo-course-123/content" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/teacher/courses/:courseId/quizzes</code></td>
+      <td>QuizEditorPage</td>
+      <td class="access-teacher"><strong>teacher|admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/teacher/courses/demo-course-123/quizzes" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/teacher/live</code></td>
+      <td>LiveClassesPage</td>
+      <td class="access-teacher"><strong>teacher|admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/teacher/live" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student</code></td>
+      <td>StudentDashboardPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/onboarding/student-profile</code></td>
+      <td>StudentOnboardingPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/onboarding/student-profile" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/settings</code></td>
+      <td>UserProfileManagementPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/settings" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/points</code></td>
+      <td>StudentPointsDashboardPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/points" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/progress</code></td>
+      <td>PointsProgressPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/progress" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/leaderboard</code></td>
+      <td>LeaderboardPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/leaderboard" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/calendar</code></td>
+      <td>CalendarPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/calendar" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/my-courses</code></td>
+      <td>MyCoursesPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/my-courses" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/assignments/:assignmentId</code></td>
+      <td>AssignmentDetailPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/assignments/asn-123" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/assignments/:assignmentId/submit</code></td>
+      <td>SubmitAssignmentPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/assignments/asn-123/submit" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/assignments</code></td>
+      <td>AssignmentsListPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/assignments" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/assessments/:quizId</code></td>
+      <td>AssessmentDetailPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/assessments/quiz-123" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/assessments/:quizId/attempt</code></td>
+      <td>QuizAttemptPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/assessments/quiz-123/attempt" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/assessments/:quizId/result/:attemptId</code></td>
+      <td>AssessmentResultPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/assessments/quiz-123/result/att-123" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/forum</code></td>
+      <td>CommunityForumPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/forum" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/certificates</code></td>
+      <td>MyCertificatesPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/certificates" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/certificates/:courseId</code></td>
+      <td>CertificatePreviewPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/certificates/demo-course-123" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/player/:courseId</code></td>
+      <td>CoursePlayerPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/player/demo-course-123" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/bookshop</code></td>
+      <td>StudentBookshopPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/bookshop" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/bookshop/reader/:bookId</code></td>
+      <td>DigitalBookReaderPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/bookshop/reader/book-123" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/bookshop/:bookId</code></td>
+      <td>BookDetailPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/bookshop/book-123" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/bookshop/orders</code></td>
+      <td>StudentBookshopPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/bookshop/orders" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/bookshop/orders/:orderId</code></td>
+      <td>BookOrderDetailPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/bookshop/orders/ord-123" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/notifications</code></td>
+      <td>NotificationsPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/notifications" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/live-classes</code></td>
+      <td>StudentLiveClassesPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/live-classes" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/live-classes/:sessionId</code></td>
+      <td>StudentLiveSessionDetailPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/live-classes/sess-123" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/live-classes/:sessionId/room</code></td>
+      <td>LiveClassRoomPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/live-classes/sess-123/room" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/checkout/:itemType/:itemId</code></td>
+      <td>CheckoutPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/checkout/course/item-123" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/checkout/:courseId</code></td>
+      <td>CheckoutPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/checkout/demo-course-123" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/student/bookshop/checkout/:itemId</code></td>
+      <td>CheckoutPage</td>
+      <td class="access-student"><strong>student</strong></td>
+      <td>
+        <a href="http://localhost:3000/student/bookshop/checkout/item-123" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/teacher/courses</code></td>
+      <td>TeacherCourseListPage</td>
+      <td class="access-teacher"><strong>teacher|admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/teacher/courses" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/teacher/live/:sessionId</code></td>
+      <td>LiveSessionDetailPage</td>
+      <td class="access-teacher"><strong>teacher|admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/teacher/live/sess-123" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/teacher/live/:sessionId/room</code></td>
+      <td>TeacherLiveSessionRoomPage</td>
+      <td class="access-teacher"><strong>teacher|admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/teacher/live/sess-123/room" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/teacher/assignments/:assignmentId/submissions/:submissionId</code></td>
+      <td>AssignmentGradingPage</td>
+      <td class="access-teacher"><strong>teacher|admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/teacher/assignments/asn-123/submissions/sub-123" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/teacher/analytics</code></td>
+      <td>TeacherAnalyticsPage</td>
+      <td class="access-teacher"><strong>teacher|admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/teacher/analytics" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/admin</code></td>
+      <td>AdminDashboardPage</td>
+      <td class="access-admin"><strong>admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/admin" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/admin/system</code></td>
+      <td>SystemSettingsPage</td>
+      <td class="access-admin"><strong>admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/admin/system" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/admin/users</code></td>
+      <td>UserManagementPage</td>
+      <td class="access-admin"><strong>admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/admin/users" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/admin/rbac</code></td>
+      <td>RolePermissionConfigPage</td>
+      <td class="access-admin"><strong>admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/admin/rbac" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/admin/audit-logs</code></td>
+      <td>AuditLogsPage</td>
+      <td class="access-admin"><strong>admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/admin/audit-logs" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/admin/notifications</code></td>
+      <td>NotificationTemplatesPage</td>
+      <td class="access-admin"><strong>admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/admin/notifications" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/admin/refunds</code></td>
+      <td>RefundManagementPage</td>
+      <td class="access-admin"><strong>admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/admin/refunds" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/admin/bookshop</code></td>
+      <td>BookshopManagementPage</td>
+      <td class="access-admin"><strong>admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/admin/bookshop" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/admin/courses</code></td>
+      <td>CourseApprovalQueuePage</td>
+      <td class="access-admin"><strong>admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/admin/courses" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/admin/courses/:courseId/review</code></td>
+      <td>CourseApprovalQueuePage</td>
+      <td class="access-admin"><strong>admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/admin/courses/demo-course-123/review" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/admin/analytics/students/:studentId</code></td>
+      <td>AdminStudentAnalyticsPage</td>
+      <td class="access-admin"><strong>admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/admin/analytics/students/stu-123" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/admin/analytics/courses/:courseId</code></td>
+      <td>AdminCourseAnalyticsPage</td>
+      <td class="access-admin"><strong>admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/admin/analytics/courses/demo-course-123" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/admin/moderation</code></td>
+      <td>ModerationQueuePage</td>
+      <td class="access-admin"><strong>admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/admin/moderation" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>/admin/payments</code></td>
+      <td>TransactionHistoryPage</td>
+      <td class="access-admin"><strong>admin</strong></td>
+      <td>
+        <a href="http://localhost:3000/admin/payments" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr><tr>
+      <td><code>*</code></td>
+      <td>Redirect to /404</td>
+      <td class="access-Catch-all"><strong>Catch-all</strong></td>
+      <td>
+        <a href="http://localhost:3000does-not-exist" target="_blank" class="btn test-btn">Open Page</a>
+      </td>
+    </tr>
+</table>
+
+<script>
+function openAll() {
+  const links = document.querySelectorAll('.test-btn');
+  if(!confirm('Are you sure? This will open ' + links.length + ' tabs.')) return;
+  links.forEach((l, i) => {
+    setTimeout(() => {
+      window.open(l.href, '_blank');
+    }, i * 300); // Stagger by 300ms
+  });
+}
+</script>
+</body>
+</html>

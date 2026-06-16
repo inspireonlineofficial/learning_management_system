@@ -1,0 +1,6 @@
+# 2026/03/30 00:37:16.133244 [TestProperty2_EveryEndpointOperationIsFullyDocumented] [rapid] draw operation: handlers_test.opEntry{Path:"/v1/auth/oauth/{provider}", Method:"get", Op:map[string]interface {}{"description":"Redirects the user to the OAuth provider's authorization page. Supports google, github, and microsoft.", "parameters":[]interface {}{map[string]interface {}{"description":"OAuth provider (google, github, microsoft)", "in":"path", "name":"provider", "required":true, "type":"string"}}, "produces":[]interface {}{"application/json"}, "responses":map[string]interface {}{"302":map[string]interface {}{"description":"Redirect to provider authorization URL", "schema":map[string]interface {}{"type":"string"}}, "400":map[string]interface {}{"description":"Bad Request", "schema":map[string]interface {}{"$ref":"#/definitions/handlers.ValidationErrorResponse"}}}, "summary":"OAuth redirect", "tags":[]interface {}{"auth"}}}
+# 2026/03/30 00:37:16.133292 [TestProperty2_EveryEndpointOperationIsFullyDocumented] GET /v1/auth/oauth/{provider}: no 2xx response defined
+# 
+v0.4.8#8775188088276447124
+0x0
+0x1

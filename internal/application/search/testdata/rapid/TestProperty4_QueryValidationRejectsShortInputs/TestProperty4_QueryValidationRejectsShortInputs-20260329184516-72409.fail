@@ -1,0 +1,9 @@
+# 2026/03/29 18:45:16.355709 [TestProperty4_QueryValidationRejectsShortInputs] [rapid] draw query: "À"
+# 2026/03/29 18:45:16.355771 [TestProperty4_QueryValidationRejectsShortInputs] expected VALIDATION_ERROR for query "À" (len=2), got nil
+# 
+v0.4.8#18159709740341881265
+0x15555555555555
+0x14
+0xb908c4741e25e
+0x1a
+0x0

@@ -112,3 +112,4 @@ screenshots/
 *.md
 **/*.md
 !requirements.md
+server

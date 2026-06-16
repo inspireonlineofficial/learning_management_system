@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS books;
+DROP TYPE IF EXISTS book_format;

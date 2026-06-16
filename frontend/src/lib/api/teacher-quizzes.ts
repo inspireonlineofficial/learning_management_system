@@ -1,0 +1,251 @@
+import { apiRequest } from "./client";
+import { listMyTaughtCourses } from "./teacher";
+import type { QuestionType, Quiz, QuizQuestion } from "./quizzes";
+
+export type TeacherQuizInput = {
+  course_id?: string;
+  lesson_id?: string;
+  title: string;
+  description?: string;
+  instructions?: string;
+  time_limit_minutes?: number | null;
+  passing_score?: number;
+  attempts_allowed?: number | null;
+};
+
+export type TeacherQuestionInput = {
+  type: QuestionType;
+  prompt: string;
+  points?: number;
+  options?: { id?: string; text: string; is_correct?: boolean }[];
+  correct_text?: string;
+  explanation?: string;
+};
+
+type BackendTeacherQuiz = {
+  id: string;
+  course_id: string;
+  lesson_id?: string | null;
+  title: string;
+  time_limit_seconds: number;
+  max_attempts: number;
+  passing_score_percent: number;
+  shuffle_questions?: boolean;
+  show_answers_after_submission?: boolean;
+  questions?: BackendTeacherQuestion[];
+};
+
+type BackendTeacherQuestion = {
+  id: string;
+  body: string;
+  type: "single" | "multiple" | "true_false";
+  position: number;
+  explanation?: string;
+  correct_option_ids?: string[];
+  options?: Array<{ id: string; body: string; is_correct?: boolean; position: number }>;
+};
+
+export function listTeacherQuizzes(
+  params: { course_id?: string; page?: number; limit?: number } = {},
+) {
+  const loadForCourse = (courseId: string) =>
+    apiRequest<BackendTeacherQuiz[]>(
+      `/v1/teacher/courses/${encodeURIComponent(courseId)}/quizzes`,
+      { auth: true },
+    );
+
+  const source = params.course_id
+    ? loadForCourse(params.course_id)
+    : listMyTaughtCourses({ limit: 100 }).then((courses) =>
+        Promise.all(courses.data.map((course) => loadForCourse(course.id))).then((groups) =>
+          groups.flat(),
+        ),
+      );
+
+  return source.then((items) => ({
+    data: items.map(toQuiz),
+    meta: { total: items.length },
+  }));
+}
+
+export function getTeacherQuiz(quizId: string) {
+  return apiRequest<BackendTeacherQuiz>(`/v1/teacher/quizzes/${encodeURIComponent(quizId)}`, {
+    auth: true,
+  }).then(toQuiz);
+}
+
+export function createQuiz(input: TeacherQuizInput) {
+  if (!input.course_id) return Promise.reject(new Error("Select a course before creating a quiz."));
+  return apiRequest<Quiz>(`/v1/teacher/courses/${encodeURIComponent(input.course_id)}/quizzes`, {
+    method: "POST",
+    auth: true,
+    body: {
+      lesson_id: input.lesson_id,
+      title: input.title,
+      time_limit_seconds: (input.time_limit_minutes ?? 30) * 60,
+      max_attempts: input.attempts_allowed ?? 1,
+      passing_score_percent: input.passing_score ?? 60,
+      shuffle_questions: false,
+      show_answers_after_submission: true,
+      questions: toQuizPayload(input).questions,
+    },
+  });
+}
+
+export function updateQuiz(quizId: string, input: Partial<TeacherQuizInput>) {
+  return getTeacherQuiz(quizId).then((current) =>
+    apiRequest<BackendTeacherQuiz>(`/v1/teacher/quizzes/${encodeURIComponent(quizId)}`, {
+      method: "PATCH",
+      auth: true,
+      body: toQuizPayload({
+        course_id: input.course_id ?? current.course_id,
+        lesson_id: input.lesson_id ?? undefined,
+        title: input.title ?? current.title,
+        time_limit_minutes: input.time_limit_minutes ?? current.time_limit_minutes,
+        passing_score: input.passing_score ?? current.passing_score,
+        attempts_allowed: input.attempts_allowed ?? current.attempts_allowed,
+        questions: current.questions ?? [],
+      }),
+    }).then(toQuiz),
+  );
+}
+
+export function deleteQuiz(quizId: string) {
+  return apiRequest<{ ok: true }>(`/v1/teacher/quizzes/${encodeURIComponent(quizId)}`, {
+    method: "DELETE",
+    auth: true,
+  });
+}
+
+export function createQuestion(quizId: string, input: TeacherQuestionInput) {
+  return apiRequest<BackendTeacherQuestion>(
+    `/v1/teacher/quizzes/${encodeURIComponent(quizId)}/questions`,
+    {
+      method: "POST",
+      auth: true,
+      body: toQuestionPayload(input),
+    },
+  ).then(toQuestion);
+}
+
+export function updateQuestion(questionId: string, input: Partial<TeacherQuestionInput>) {
+  return apiRequest<BackendTeacherQuestion>(
+    `/v1/teacher/questions/${encodeURIComponent(questionId)}`,
+    {
+      method: "PATCH",
+      auth: true,
+      body: toQuestionPayload(input),
+    },
+  ).then(toQuestion);
+}
+
+export function deleteQuestion(questionId: string) {
+  return apiRequest<{ ok: true }>(`/v1/teacher/questions/${encodeURIComponent(questionId)}`, {
+    method: "DELETE",
+    auth: true,
+  });
+}
+
+function toQuiz(quiz: BackendTeacherQuiz): Quiz {
+  const questions = quiz.questions?.map(toQuestion) ?? [];
+  return {
+    id: quiz.id,
+    course_id: quiz.course_id,
+    title: quiz.title,
+    time_limit_minutes: quiz.time_limit_seconds ? Math.ceil(quiz.time_limit_seconds / 60) : null,
+    total_questions: questions.length,
+    total_points: questions.length,
+    passing_score: quiz.passing_score_percent,
+    attempts_allowed: quiz.max_attempts || null,
+    questions,
+  } as Quiz & { questions: QuizQuestion[] };
+}
+
+function toQuestion(question: BackendTeacherQuestion): QuizQuestion {
+  return {
+    id: question.id,
+    type:
+      question.type === "multiple"
+        ? "multi_select"
+        : question.type === "single"
+          ? "single_choice"
+          : "true_false",
+    prompt: question.body,
+    points: 1,
+    options: question.options?.map((option) => ({ id: option.id, text: option.body })),
+    correct_option_ids: question.correct_option_ids,
+    explanation: question.explanation,
+  };
+}
+
+function toQuizPayload(input: TeacherQuizInput & { questions?: QuizQuestion[] }) {
+  return {
+    lesson_id: input.lesson_id,
+    title: input.title,
+    time_limit_seconds: Math.max(1, input.time_limit_minutes ?? 30) * 60,
+    max_attempts: input.attempts_allowed ?? 1,
+    passing_score_percent: input.passing_score ?? 60,
+    shuffle_questions: false,
+    show_answers_after_submission: true,
+    questions:
+      input.questions && input.questions.length > 0
+        ? input.questions.map((question, index) => ({
+            body: question.prompt,
+            type:
+              question.type === "multi_select"
+                ? "multiple"
+                : question.type === "single_choice"
+                  ? "single"
+                  : "true_false",
+            position: index + 1,
+            explanation: question.explanation ?? "",
+            options:
+              question.options && question.options.length > 0
+                ? question.options.map((option, optionIndex) => ({
+                    body: option.text,
+                    is_correct:
+                      question.correct_option_ids && question.correct_option_ids.length > 0
+                        ? question.correct_option_ids.includes(option.id)
+                        : optionIndex === 0,
+                    position: optionIndex + 1,
+                  }))
+                : [
+                    { body: "True", is_correct: true, position: 1 },
+                    { body: "False", is_correct: false, position: 2 },
+                  ],
+          }))
+        : [
+            {
+              body: "Draft question",
+              type: "true_false",
+              position: 1,
+              explanation: "",
+              options: [
+                { body: "True", is_correct: true, position: 1 },
+                { body: "False", is_correct: false, position: 2 },
+              ],
+            },
+          ],
+  };
+}
+
+function toQuestionPayload(input: Partial<TeacherQuestionInput>) {
+  const options =
+    input.options && input.options.length > 0
+      ? input.options.map((option, index) => ({
+          text: option.text,
+          is_correct: option.is_correct ?? index === 0,
+          position: index + 1,
+        }))
+      : [
+          { text: "True", is_correct: true, position: 1 },
+          { text: "False", is_correct: false, position: 2 },
+        ];
+  return {
+    type: input.type ?? "true_false",
+    prompt: input.prompt ?? "Draft question",
+    position: 1,
+    explanation: input.explanation ?? "",
+    options,
+  };
+}
