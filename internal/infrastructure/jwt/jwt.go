@@ -89,7 +89,17 @@ func NewJWTService(privateKeyPath, publicKeyPath, issuer string) (*JWTService, e
 
 	privateKeyBlock, _ := pem.Decode(privateKeyData)
 	if privateKeyBlock == nil {
-		return nil, fmt.Errorf("failed to decode private key PEM")
+		prefix := ""
+		if len(privateKeyData) > 30 {
+			prefix = string(privateKeyData[:30])
+		} else {
+			prefix = string(privateKeyData)
+		}
+		suffix := ""
+		if len(privateKeyData) > 30 {
+			suffix = string(privateKeyData[len(privateKeyData)-30:])
+		}
+		return nil, fmt.Errorf("failed to decode private key PEM (len: %d, prefix: %q, suffix: %q)", len(privateKeyData), prefix, suffix)
 	}
 
 	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBlock.Bytes)
@@ -120,7 +130,17 @@ func NewJWTService(privateKeyPath, publicKeyPath, issuer string) (*JWTService, e
 
 	publicKeyBlock, _ := pem.Decode(publicKeyData)
 	if publicKeyBlock == nil {
-		return nil, fmt.Errorf("failed to decode public key PEM")
+		prefix := ""
+		if len(publicKeyData) > 30 {
+			prefix = string(publicKeyData[:30])
+		} else {
+			prefix = string(publicKeyData)
+		}
+		suffix := ""
+		if len(publicKeyData) > 30 {
+			suffix = string(publicKeyData[len(publicKeyData)-30:])
+		}
+		return nil, fmt.Errorf("failed to decode public key PEM (len: %d, prefix: %q, suffix: %q)", len(publicKeyData), prefix, suffix)
 	}
 
 	publicKeyInterface, err := x509.ParsePKIXPublicKey(publicKeyBlock.Bytes)
