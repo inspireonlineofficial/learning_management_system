@@ -67,7 +67,12 @@ type JWK struct {
 
 // NewJWTService creates a new JWT service
 func NewJWTService(privateKeyPath, publicKeyPath, issuer string) (*JWTService, error) {
+	privateKeyPath = strings.TrimSpace(privateKeyPath)
+	privateKeyPath = strings.Trim(privateKeyPath, "\"'")
 	privateKeyPath = strings.ReplaceAll(privateKeyPath, "\\n", "\n")
+
+	publicKeyPath = strings.TrimSpace(publicKeyPath)
+	publicKeyPath = strings.Trim(publicKeyPath, "\"'")
 	publicKeyPath = strings.ReplaceAll(publicKeyPath, "\\n", "\n")
 
 	// Load private key
