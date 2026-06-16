@@ -67,9 +67,15 @@ type JWK struct {
 // NewJWTService creates a new JWT service
 func NewJWTService(privateKeyPath, publicKeyPath, issuer string) (*JWTService, error) {
 	// Load private key
-	privateKeyData, err := os.ReadFile(privateKeyPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read private key: %w", err)
+	var privateKeyData []byte
+	if len(privateKeyPath) > 0 && (privateKeyPath[0] == '-' || len(privateKeyPath) > 100) {
+		privateKeyData = []byte(privateKeyPath)
+	} else {
+		var err error
+		privateKeyData, err = os.ReadFile(privateKeyPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read private key: %w", err)
+		}
 	}
 
 	privateKeyBlock, _ := pem.Decode(privateKeyData)
@@ -92,9 +98,15 @@ func NewJWTService(privateKeyPath, publicKeyPath, issuer string) (*JWTService, e
 	}
 
 	// Load public key
-	publicKeyData, err := os.ReadFile(publicKeyPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read public key: %w", err)
+	var publicKeyData []byte
+	if len(publicKeyPath) > 0 && (publicKeyPath[0] == '-' || len(publicKeyPath) > 100) {
+		publicKeyData = []byte(publicKeyPath)
+	} else {
+		var err error
+		publicKeyData, err = os.ReadFile(publicKeyPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read public key: %w", err)
+		}
 	}
 
 	publicKeyBlock, _ := pem.Decode(publicKeyData)

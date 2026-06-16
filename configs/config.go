@@ -93,11 +93,11 @@ func Load() (*Config, error) {
 		JWTPublicKeyPath:  mustGetEnv("JWT_PUBLIC_KEY_PATH"),
 		JWTIssuer:         getEnvOrDefault("JWT_ISSUER", "lms-backend"),
 
-		SMTPHost:       mustGetEnv("SMTP_HOST"),
+		SMTPHost:       os.Getenv("SMTP_HOST"),
 		SMTPPort:       getEnvOrDefault("SMTP_PORT", "587"),
-		SMTPUsername:   mustGetEnv("SMTP_USERNAME"),
-		SMTPPassword:   mustGetEnv("SMTP_PASSWORD"),
-		SMTPFrom:       mustGetEnv("SMTP_FROM"),
+		SMTPUsername:   os.Getenv("SMTP_USERNAME"),
+		SMTPPassword:   os.Getenv("SMTP_PASSWORD"),
+		SMTPFrom:       getEnvOrDefault("SMTP_FROM", "no-reply@example.com"),
 		AdminDevBypass: getEnvOrDefault("ADMIN_DEV_BYPASS", "false") == "true",
 		AdminDevOTP:    getEnvOrDefault("ADMIN_DEV_OTP", "000000"),
 
@@ -118,12 +118,12 @@ func Load() (*Config, error) {
 		TypesensePort:   getEnvOrDefault("TYPESENSE_PORT", "8108"),
 		TypesenseAPIKey: mustGetEnv("TYPESENSE_API_KEY"),
 
-		BkashBaseURL:     mustGetEnv("BKASH_BASE_URL"),
-		BkashAppKey:      mustGetEnv("BKASH_APP_KEY"),
-		BkashAppSecret:   mustGetEnv("BKASH_APP_SECRET"),
-		BkashUsername:    mustGetEnv("BKASH_USERNAME"),
-		BkashPassword:    mustGetEnv("BKASH_PASSWORD"),
-		BkashCallbackURL: mustGetEnv("BKASH_CALLBACK_URL"),
+		BkashBaseURL:     os.Getenv("BKASH_BASE_URL"),
+		BkashAppKey:      os.Getenv("BKASH_APP_KEY"),
+		BkashAppSecret:   os.Getenv("BKASH_APP_SECRET"),
+		BkashUsername:    os.Getenv("BKASH_USERNAME"),
+		BkashPassword:    os.Getenv("BKASH_PASSWORD"),
+		BkashCallbackURL: os.Getenv("BKASH_CALLBACK_URL"),
 	}
 
 	return cfg, nil

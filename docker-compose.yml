@@ -49,32 +49,6 @@ services:
     user: "999:1000"
     restart: unless-stopped
 
-  rustfs:
-    image: rustfs/rustfs:latest
-    environment:
-      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY}
-      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY}
-      RUSTFS_ADDRESS: :9000
-      RUSTFS_CONSOLE_ENABLE: "true"
-      RUSTFS_CONSOLE_ADDRESS: :9001
-      RUSTFS_VOLUMES: /data/rustfs0
-    ports:
-      - "127.0.0.1:9000:9000"
-      - "127.0.0.1:9001:9001"
-    volumes:
-      - rustfs_data:/data
-    networks:
-      - backend
-      - storage
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9000/health/ready || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    security_opt:
-      - no-new-privileges:true
-    restart: unless-stopped
 
   typesense:
     image: typesense/typesense:27.0
@@ -112,13 +86,10 @@ services:
     networks:
       - backend
       - frontend
-      - storage
     depends_on:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_healthy
-      rustfs:
         condition: service_healthy
       typesense:
         condition: service_started
@@ -150,8 +121,6 @@ volumes:
     driver: local
   redis_data:
     driver: local
-  rustfs_data:
-    driver: local
   typesense_data:
     driver: local
 
@@ -161,6 +130,3 @@ networks:
     internal: true
   frontend:
     driver: bridge
-  storage:
-    driver: bridge
-    internal: true
