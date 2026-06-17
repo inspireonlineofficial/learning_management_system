@@ -149,16 +149,8 @@ jobs:
           install -m 700 -d ~/.ssh
           printf '%s\n' "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          for attempt in 1 2 3 4 5; do
-            if ssh-keyscan -T 20 -p "$SERVER_PORT" -H "$SERVER_HOST" > ~/.ssh/known_hosts.new; then
-              cat ~/.ssh/known_hosts.new >> ~/.ssh/known_hosts
-              rm ~/.ssh/known_hosts.new
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "Unable to retrieve SSH host key for deployment target" >&2
-          exit 1
+          printf '%s\n' "${{ secrets.SERVER_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
       - name: Prepare production configuration
         env:
