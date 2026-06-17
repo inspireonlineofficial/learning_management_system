@@ -323,49 +323,42 @@ func TestProperty13_OTPStoredAsBcryptHash(t *testing.T) {
 		EmailService: &mockEmailService{},
 	})
 
-	rapid.Check(t, func(t *rapid.T) {
-		email := rapid.StringMatching("[a-z]+@[a-z]+\\.[a-z]+").Draw(t, "email")
+	cmd := RegisterCommand{
+		FullName:        "Test User",
+		Email:           "otp-hash@example.com",
+		Password:        "password123",
+		ConfirmPassword: "password123",
+		Role:            "student",
+	}
 
-		cmd := RegisterCommand{
-			FullName:        "Test User",
-			Email:           email,
-			Password:        "password123",
-			ConfirmPassword: "password123",
-			Role:            "student",
-		}
+	_, err := service.Register(context.Background(), cmd)
+	if err != nil {
+		t.Fatalf("registration failed: %v", err)
+	}
 
-		_, err := service.Register(context.Background(), cmd)
-		if err != nil {
-			t.Skip("registration failed")
+	var storedOTP *auth.OTPRecord
+	for _, otp := range mockOTPRepo.otps {
+		if otp.Purpose == "registration" {
+			storedOTP = otp
+			break
 		}
+	}
 
-		// Find the stored OTP
-		var storedOTP *auth.OTPRecord
-		for _, otp := range mockOTPRepo.otps {
-			if otp.Purpose == "registration" {
-				storedOTP = otp
-				break
-			}
-		}
+	if storedOTP == nil {
+		t.Fatal("OTP not stored")
+	}
 
-		if storedOTP == nil {
-			t.Fatal("OTP not stored")
-		}
+	if !strings.HasPrefix(storedOTP.OTPHash, "$2") {
+		t.Fatalf("OTP hash does not appear to be bcrypt: %s", storedOTP.OTPHash)
+	}
 
-		// Verify it's a bcrypt hash (starts with $2a$, $2b$, or $2y$)
-		if !strings.HasPrefix(storedOTP.OTPHash, "$2") {
-			t.Fatalf("OTP hash does not appear to be bcrypt: %s", storedOTP.OTPHash)
-		}
-
-		// Verify the hash has the correct cost factor (>= 12)
-		cost, err := bcrypt.Cost([]byte(storedOTP.OTPHash))
-		if err != nil {
-			t.Fatalf("failed to get bcrypt cost: %v", err)
-		}
-		if cost < 12 {
-			t.Fatalf("bcrypt cost %d is less than 12", cost)
-		}
-	})
+	cost, err := bcrypt.Cost([]byte(storedOTP.OTPHash))
+	if err != nil {
+		t.Fatalf("failed to get bcrypt cost: %v", err)
+	}
+	if cost < 12 {
+		t.Fatalf("bcrypt cost %d is less than 12", cost)
+	}
 }
 
 // **Property 14: OTP invalidated after 5 incorrect attempts**
@@ -517,47 +510,40 @@ func TestProperty65_PasswordHashesBcryptCost12(t *testing.T) {
 		EmailService: &mockEmailService{},
 	})
 
-	rapid.Check(t, func(t *rapid.T) {
-		email := rapid.StringMatching("[a-z]+@[a-z]+\\.[a-z]+").Draw(t, "email")
-		password := rapid.StringMatching("[a-zA-Z0-9]{8,20}").Draw(t, "password")
+	password := "password123"
+	cmd := RegisterCommand{
+		FullName:        "Test User",
+		Email:           "password-hash@example.com",
+		Password:        password,
+		ConfirmPassword: password,
+		Role:            "student",
+	}
 
-		cmd := RegisterCommand{
-			FullName:        "Test User",
-			Email:           email,
-			Password:        password,
-			ConfirmPassword: password,
-			Role:            "student",
-		}
+	_, err := service.Register(context.Background(), cmd)
+	if err != nil {
+		t.Fatalf("registration failed: %v", err)
+	}
 
-		_, err := service.Register(context.Background(), cmd)
-		if err != nil {
-			t.Skip("registration failed")
-		}
+	user, err := mockUserRepo.FindByEmail(context.Background(), cmd.Email)
+	if err != nil {
+		t.Fatal("user not found after registration")
+	}
 
-		// Find the stored user
-		user, err := mockUserRepo.FindByEmail(context.Background(), email)
-		if err != nil {
-			t.Fatal("user not found after registration")
-		}
+	if user.PasswordHash == nil {
+		t.Fatal("password hash is nil")
+	}
 
-		if user.PasswordHash == nil {
-			t.Fatal("password hash is nil")
-		}
+	if !strings.HasPrefix(*user.PasswordHash, "$2") {
+		t.Fatalf("password hash does not appear to be bcrypt: %s", *user.PasswordHash)
+	}
 
-		// Verify it's a bcrypt hash
-		if !strings.HasPrefix(*user.PasswordHash, "$2") {
-			t.Fatalf("password hash does not appear to be bcrypt: %s", *user.PasswordHash)
-		}
-
-		// Verify the hash has cost factor >= 12
-		cost, err := bcrypt.Cost([]byte(*user.PasswordHash))
-		if err != nil {
-			t.Fatalf("failed to get bcrypt cost: %v", err)
-		}
-		if cost < 12 {
-			t.Fatalf("bcrypt cost %d is less than 12", cost)
-		}
-	})
+	cost, err := bcrypt.Cost([]byte(*user.PasswordHash))
+	if err != nil {
+		t.Fatalf("failed to get bcrypt cost: %v", err)
+	}
+	if cost < 12 {
+		t.Fatalf("bcrypt cost %d is less than 12", cost)
+	}
 }
 
 // **Property 19: Refresh token rotation — old token invalidated after use**
