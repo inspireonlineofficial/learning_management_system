@@ -252,51 +252,119 @@ jobs:
             DEBIAN_FRONTEND=noninteractive apt-get install -y nginx
           fi
 
-          cat >/etc/nginx/sites-available/inspire-lms.conf <<'NGINX'
-          server {
-              listen 80 default_server;
-              listen [::]:80 default_server;
-              server_name inspire-online.com www.inspire-online.com 193.203.160.212 _;
+          if [ -f /etc/letsencrypt/live/inspire-online.com/fullchain.pem ]; then
+            echo "SSL certificate found. Writing HTTPS Nginx configuration..."
+            cat >/etc/nginx/sites-available/inspire-lms.conf <<'NGINX'
+            server {
+                listen 80 default_server;
+                listen [::]:80 default_server;
+                server_name inspire-online.com www.inspire-online.com 193.203.160.212 _;
+                return 301 https://$host$request_uri;
+            }
 
-              client_max_body_size 100m;
+            server {
+                listen 443 ssl default_server;
+                listen [::]:443 ssl default_server;
+                server_name inspire-online.com www.inspire-online.com 193.203.160.212 _;
 
-              location / {
-                  proxy_pass http://127.0.0.1:3000;
-                  proxy_http_version 1.1;
-                  proxy_set_header Host $host;
-                  proxy_set_header X-Real-IP $remote_addr;
-                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto $scheme;
-                  proxy_set_header Upgrade $http_upgrade;
-                  proxy_set_header Connection "upgrade";
-                  proxy_read_timeout 60s;
-              }
+                ssl_certificate /etc/letsencrypt/live/inspire-online.com/fullchain.pem;
+                ssl_certificate_key /etc/letsencrypt/live/inspire-online.com/privkey.pem;
+                include /etc/letsencrypt/options-ssl-nginx.conf;
+                ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
 
-              location /v1/ {
-                  proxy_pass http://127.0.0.1:8080;
-                  proxy_http_version 1.1;
-                  proxy_set_header Host $host;
-                  proxy_set_header X-Real-IP $remote_addr;
-                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto $scheme;
-                  proxy_read_timeout 60s;
-              }
+                client_max_body_size 100m;
 
-              location = /health {
-                  proxy_pass http://127.0.0.1:8080/health;
-                  proxy_http_version 1.1;
-                  proxy_set_header Host $host;
-                  proxy_set_header X-Real-IP $remote_addr;
-                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto $scheme;
-              }
-          }
-          NGINX
+                location / {
+                    proxy_pass http://127.0.0.1:3000;
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_read_timeout 60s;
+                }
+
+                location /v1/ {
+                    proxy_pass http://127.0.0.1:8080;
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                    proxy_read_timeout 60s;
+                }
+
+                location = /health {
+                    proxy_pass http://127.0.0.1:8080/health;
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                }
+            }
+            NGINX
+          else
+            echo "SSL certificate not found. Writing fallback HTTP Nginx configuration..."
+            cat >/etc/nginx/sites-available/inspire-lms.conf <<'NGINX'
+            server {
+                listen 80 default_server;
+                listen [::]:80 default_server;
+                server_name inspire-online.com www.inspire-online.com 193.203.160.212 _;
+
+                client_max_body_size 100m;
+
+                location / {
+                    proxy_pass http://127.0.0.1:3000;
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                    proxy_read_timeout 60s;
+                }
+
+                location /v1/ {
+                    proxy_pass http://127.0.0.1:8080;
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                    proxy_read_timeout 60s;
+                }
+
+                location = /health {
+                    proxy_pass http://127.0.0.1:8080/health;
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $host;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                }
+            }
+            NGINX
+          fi
 
           rm -f /etc/nginx/sites-enabled/default
           ln -sfn /etc/nginx/sites-available/inspire-lms.conf /etc/nginx/sites-enabled/inspire-lms.conf
           nginx -t
           systemctl enable nginx
           systemctl reload nginx || systemctl restart nginx
+
+          if [ ! -f /etc/letsencrypt/live/inspire-online.com/fullchain.pem ]; then
+            echo "Obtaining SSL certificate via Certbot..."
+            if ! command -v certbot >/dev/null 2>&1; then
+              apt-get update
+              DEBIAN_FRONTEND=noninteractive apt-get install -y certbot python3-certbot-nginx
+            fi
+            certbot --nginx -d inspire-online.com -d www.inspire-online.com --non-interactive --agree-tos -m contact@inspire-online.com --redirect
+            systemctl reload nginx
+          fi
+
           curl -fsS -I http://127.0.0.1/ | head -n 1
           EOF
