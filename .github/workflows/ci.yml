@@ -168,14 +168,11 @@ jobs:
 
                 sub write_pem {
                   my ($env_ref, $name, $path) = @_;
-                  return unless $$env_ref =~ /^$name=(.*?)(?=^[A-Za-z_][A-Za-z0-9_]*=|\z)/ms;
+                  return unless $$env_ref =~ /^$name=/m;
+                  die "$name must be a PEM block" unless $$env_ref =~ s/^$name=(["\x27]?)(-----BEGIN [^-]+-----\n.*?\n-----END [^-]+-----)\1[ \t]*\n?//ms;
 
-                  my $pem = $1;
+                  my $pem = $2;
                   $pem =~ s/^\s+|\s+\z//g;
-                  $pem =~ s/^"//;
-                  $pem =~ s/"\z//;
-                  $pem =~ s/^\x27//;
-                  $pem =~ s/\x27\z//;
                   $pem =~ s/\\r\\n/\n/g;
                   $pem =~ s/\\n/\n/g;
                   $pem =~ s/\r\n/\n/g;
@@ -185,8 +182,6 @@ jobs:
                   print {$fh} "\n" unless $pem =~ /\n\z/;
                   close $fh;
                   chmod 0600, $path;
-
-                  $$env_ref =~ s/^$name=.*?(?=^[A-Za-z_][A-Za-z0-9_]*=|\z)//ms;
                 }
 
                 write_pem(\$env, "JWT_PRIVATE_KEY", ".deploy/keys/private.pem");
