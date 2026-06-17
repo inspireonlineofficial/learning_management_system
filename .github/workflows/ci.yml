@@ -176,9 +176,16 @@ jobs:
                 $env =~ s/\\n/\n/g;
 
                 sub write_pem {
-                  my ($env_ref, $name, $path) = @_;
-                  return unless $$env_ref =~ /^$name=/m;
-                  die "$name must be a PEM block" unless $$env_ref =~ s/^$name=(["\x27]?)(-----BEGIN [^-]+-----\n.*?\n-----END [^-]+-----)\1[ \t]*\n?//ms;
+                  my ($env_ref, $path, @names) = @_;
+                  my $found_name;
+                  for my $name (@names) {
+                    if ($$env_ref =~ /^$name=/m) {
+                      $found_name = $name;
+                      last;
+                    }
+                  }
+                  return unless $found_name;
+                  die "$found_name must be a PEM block" unless $$env_ref =~ s/^$found_name=(["\x27]?)(-----BEGIN [^-]+-----\n.*?\n-----END [^-]+-----)\1[ \t]*\n?//ms;
 
                   my $pem = $2;
                   $pem =~ s/^\s+|\s+\z//g;
@@ -193,9 +200,10 @@ jobs:
                   chmod 0600, $path;
                 }
 
-                write_pem(\$env, "JWT_PRIVATE_KEY", ".deploy/keys/private.pem");
-                write_pem(\$env, "JWT_PUBLIC_KEY", ".deploy/keys/public.pem");
+                write_pem(\$env, ".deploy/keys/private.pem", "JWT_PRIVATE_KEY", "JWT_PRIVATE_KEY_PATH");
+                write_pem(\$env, ".deploy/keys/public.pem", "JWT_PUBLIC_KEY", "JWT_PUBLIC_KEY_PATH");
 
+                die "raw PEM data remains in production .env" if $env =~ /-----BEGIN |-----END /;
                 $env =~ s/^JWT_PRIVATE_KEY_PATH=.*\n?//mg;
                 $env =~ s/^JWT_PUBLIC_KEY_PATH=.*\n?//mg;
                 $env =~ s/\n+\z/\n/s;
