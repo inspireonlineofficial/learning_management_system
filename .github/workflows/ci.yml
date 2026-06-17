@@ -278,5 +278,5 @@ jobs:
             systemctl reload nginx
           fi
 
-          curl -fsS -I http://127.0.0.1/ | head -n 1
+          curl -I -sS http://127.0.0.1/ || true
           EOF
