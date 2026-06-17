@@ -256,7 +256,7 @@ jobs:
           server {
               listen 80 default_server;
               listen [::]:80 default_server;
-              server_name 193.203.160.212 _;
+              server_name inspire-online.com www.inspire-online.com 193.203.160.212 _;
 
               client_max_body_size 100m;
 
