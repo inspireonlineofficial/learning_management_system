@@ -151,12 +151,66 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p "$SERVER_PORT" -H "$SERVER_HOST" >> ~/.ssh/known_hosts
 
+      - name: Prepare production configuration
+        env:
+          PROD_ENV: ${{ secrets.PROD_ENV }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d .deploy/keys
+          printf '%s\n' "$PROD_ENV" \
+            | perl -0 -e '
+                use strict;
+                use warnings;
+
+                my $env = <STDIN>;
+                $env =~ s/\\r\\n/\n/g;
+                $env =~ s/\\n/\n/g;
+
+                sub write_pem {
+                  my ($env_ref, $name, $path) = @_;
+                  return unless $$env_ref =~ /^$name=(.*?)(?=^[A-Za-z_][A-Za-z0-9_]*=|\z)/ms;
+
+                  my $pem = $1;
+                  $pem =~ s/^\s+|\s+\z//g;
+                  $pem =~ s/^"//;
+                  $pem =~ s/"\z//;
+                  $pem =~ s/^\x27//;
+                  $pem =~ s/\x27\z//;
+                  $pem =~ s/\\r\\n/\n/g;
+                  $pem =~ s/\\n/\n/g;
+                  $pem =~ s/\r\n/\n/g;
+
+                  open my $fh, ">", $path or die "cannot write $path: $!";
+                  print {$fh} $pem;
+                  print {$fh} "\n" unless $pem =~ /\n\z/;
+                  close $fh;
+                  chmod 0600, $path;
+
+                  $$env_ref =~ s/^$name=.*?(?=^[A-Za-z_][A-Za-z0-9_]*=|\z)//ms;
+                }
+
+                write_pem(\$env, "JWT_PRIVATE_KEY", ".deploy/keys/private.pem");
+                write_pem(\$env, "JWT_PUBLIC_KEY", ".deploy/keys/public.pem");
+
+                $env =~ s/^JWT_PRIVATE_KEY_PATH=.*\n?//mg;
+                $env =~ s/^JWT_PUBLIC_KEY_PATH=.*\n?//mg;
+                $env =~ s/\n+\z/\n/s;
+                $env .= "JWT_PRIVATE_KEY_PATH=keys/private.pem\n";
+                $env .= "JWT_PUBLIC_KEY_PATH=keys/public.pem\n";
+
+                open my $out, ">", ".deploy/.env" or die "cannot write .deploy/.env: $!";
+                print {$out} $env;
+                close $out;
+                chmod 0600, ".deploy/.env";
+              '
+
       - name: Upload release files
         run: |
           set -euo pipefail
           tar \
             --exclude='.git' \
             --exclude='coverage.out' \
+            --exclude='.deploy' \
             --exclude='frontend/.output' \
             --exclude='frontend/node_modules' \
             --exclude='node_modules' \
@@ -164,12 +218,12 @@ jobs:
             | ssh -i ~/.ssh/deploy_key -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" \
                 "mkdir -p '$DEPLOY_PATH' && tar -xzf - -C '$DEPLOY_PATH'"
 
-      - name: Write production environment
+      - name: Upload production configuration
         run: |
           set -euo pipefail
-          printf '%s\n' "${{ secrets.PROD_ENV }}" \
+          tar -C .deploy -czf - .env keys \
             | ssh -i ~/.ssh/deploy_key -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" \
-                "umask 077 && cat > '$DEPLOY_PATH/.env'"
+                "umask 077 && tar -xzf - -C '$DEPLOY_PATH'"
 
       - name: Rebuild and restart services
         run: |
