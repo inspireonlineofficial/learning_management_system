@@ -305,7 +305,7 @@ jobs:
                     proxy_set_header X-Forwarded-Proto $scheme;
                 }
             }
-            NGINX
+NGINX
           else
             echo "SSL certificate not found. Writing fallback HTTP Nginx configuration..."
             cat >/etc/nginx/sites-available/inspire-lms.conf <<'NGINX'
@@ -347,7 +347,7 @@ jobs:
                     proxy_set_header X-Forwarded-Proto $scheme;
                 }
             }
-            NGINX
+NGINX
           fi
 
           rm -f /etc/nginx/sites-enabled/default
