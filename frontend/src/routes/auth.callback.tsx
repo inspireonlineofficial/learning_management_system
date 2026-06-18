@@ -11,6 +11,7 @@ const searchSchema = z.object({
   access_token: z.string().optional(),
   refresh_token: z.string().optional(),
   return: z.string().optional(),
+  return_to: z.string().optional(),
   error: z.string().optional(),
 });
 
@@ -43,14 +44,16 @@ function CallbackPage() {
 
       let access = search.access_token;
       let refresh = search.refresh_token;
+      let returnTo = search.return || search.return_to;
 
       // Fallback: parse tokens from the URL hash fragment if not present in query parameters
-      if ((!access || !refresh) && typeof window !== "undefined") {
+      if ((!access || !refresh || !returnTo) && typeof window !== "undefined") {
         const hash = window.location.hash.substring(1);
         if (hash) {
           const params = new URLSearchParams(hash);
           access = params.get("access_token") || undefined;
           refresh = params.get("refresh_token") || undefined;
+          returnTo = params.get("return_to") || params.get("return") || returnTo;
         }
       }
 
@@ -74,7 +77,7 @@ function CallbackPage() {
         const session = { accessToken: access, refreshToken: refresh, user };
         setSession(session);
         toast.success(`Welcome, ${user.full_name.split(" ")[0]}.`);
-        const dest = search.return || defaultDestination(user);
+        const dest = returnTo || defaultDestination(user);
         navigate({ to: dest as string });
       } catch (err) {
         if (cancelled) return;
