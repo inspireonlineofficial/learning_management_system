@@ -112,8 +112,17 @@ func main() {
 		logger.Error(ctx, "Failed to initialize Typesense client", "error", err)
 		os.Exit(1)
 	}
-	if err := tsClient.EnsureCollections(ctx); err != nil {
-		logger.Error(ctx, "Failed to ensure Typesense collections", "error", err)
+	var tsErr error
+	for attempt := 1; attempt <= 10; attempt++ {
+		tsErr = tsClient.EnsureCollections(ctx)
+		if tsErr == nil {
+			break
+		}
+		logger.Warn(ctx, "Typesense not ready, retrying...", "attempt", attempt, "error", tsErr)
+		time.Sleep(2 * time.Second)
+	}
+	if tsErr != nil {
+		logger.Error(ctx, "Failed to ensure Typesense collections after retries", "error", tsErr)
 		os.Exit(1)
 	}
 	logger.Info(ctx, "Typesense client initialized")
