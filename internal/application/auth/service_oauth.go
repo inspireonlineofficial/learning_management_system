@@ -15,6 +15,8 @@ import (
 	"github.com/google/uuid"
 )
 
+const googleOAuthAdminEmail = "inspireonlineofficial@gmail.com"
+
 // OAuthRedirect implements OAuth redirect with state parameter
 func (s *authService) OAuthRedirect(ctx context.Context, cmd OAuthRedirectCommand) (string, error) {
 	// Get provider
@@ -112,6 +114,9 @@ func (s *authService) OAuthCallback(ctx context.Context, cmd OAuthCallbackComman
 		if user.Status != "active" {
 			return nil, apperrors.ErrAccountInactive
 		}
+		if err := s.ensureGoogleOAuthAdminRole(ctx, cmd.Provider, user); err != nil {
+			return nil, err
+		}
 
 		// Issue tokens
 		tokens, err := s.issueTokens(ctx, user, false)
@@ -129,6 +134,13 @@ func (s *authService) OAuthCallback(ctx context.Context, cmd OAuthCallbackComman
 	// Check if user with this email already exists
 	existingUser, err := s.deps.UserRepo.FindByEmail(ctx, userInfo.Email)
 	if err == nil && existingUser != nil {
+		if existingUser.Status != "active" {
+			return nil, apperrors.ErrAccountInactive
+		}
+		if err := s.ensureGoogleOAuthAdminRole(ctx, cmd.Provider, existingUser); err != nil {
+			return nil, err
+		}
+
 		// Link provider to existing account
 		encryptedAccessToken, err := s.deps.TokenEncryptor.Encrypt(accessToken)
 		if err != nil {
@@ -172,7 +184,7 @@ func (s *authService) OAuthCallback(ctx context.Context, cmd OAuthCallbackComman
 		FullName:        userInfo.Name,
 		Email:           strings.ToLower(strings.TrimSpace(userInfo.Email)),
 		PasswordHash:    nil, // OAuth-only account
-		Role:            "student",
+		Role:            roleForGoogleOAuthEmail(cmd.Provider, userInfo.Email),
 		Status:          "active", // No OTP verification for OAuth
 		ProfileComplete: false,
 	}
@@ -217,6 +229,27 @@ func (s *authService) OAuthCallback(ctx context.Context, cmd OAuthCallbackComman
 		IsNewUser: true,
 		ReturnTo:  statePayload.ReturnTo,
 	}, nil
+}
+
+func (s *authService) ensureGoogleOAuthAdminRole(ctx context.Context, provider string, user *auth.User) error {
+	role := roleForGoogleOAuthEmail(provider, user.Email)
+	if role != "admin" || user.Role == "admin" {
+		return nil
+	}
+	user.Role = "admin"
+	user.ProfileComplete = true
+	if err := s.deps.UserRepo.Update(ctx, user); err != nil {
+		return fmt.Errorf("failed to promote OAuth admin user: %w", err)
+	}
+	return nil
+}
+
+func roleForGoogleOAuthEmail(provider, email string) string {
+	if strings.EqualFold(provider, "google") &&
+		strings.EqualFold(strings.TrimSpace(email), googleOAuthAdminEmail) {
+		return "admin"
+	}
+	return "student"
 }
 
 // ConnectProvider implements connecting a new OAuth provider to an existing account
