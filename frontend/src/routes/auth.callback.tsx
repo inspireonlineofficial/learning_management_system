@@ -41,8 +41,19 @@ function CallbackPage() {
         return;
       }
 
-      const access = search.access_token;
-      const refresh = search.refresh_token;
+      let access = search.access_token;
+      let refresh = search.refresh_token;
+
+      // Fallback: parse tokens from the URL hash fragment if not present in query parameters
+      if ((!access || !refresh) && typeof window !== "undefined") {
+        const hash = window.location.hash.substring(1);
+        if (hash) {
+          const params = new URLSearchParams(hash);
+          access = params.get("access_token") || undefined;
+          refresh = params.get("refresh_token") || undefined;
+        }
+      }
+
       if (!access || !refresh) {
         toast.error("Missing tokens from sign-in provider.");
         navigate({ to: "/login" });

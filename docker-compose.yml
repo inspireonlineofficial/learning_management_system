@@ -76,8 +76,6 @@ services:
     ports:
       - "8080:8080"
     env_file: .env
-    environment:
-      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:3000}
     volumes:
       - ./keys/:/app/keys/:ro
     networks:
