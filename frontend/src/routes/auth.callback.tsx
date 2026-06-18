@@ -22,6 +22,16 @@ function defaultDestination(user: { role: "student" | "teacher" | "admin"; onboa
   return "/student";
 }
 
+function destinationForSession(
+  user: { role: "student" | "teacher" | "admin"; onboarded?: boolean },
+  returnTo?: string,
+) {
+  if (user.role === "admin") {
+    return returnTo?.startsWith("/admin") ? returnTo : "/admin";
+  }
+  return returnTo || defaultDestination(user);
+}
+
 export const Route = createFileRoute("/auth/callback")({
   head: () => ({ meta: [{ title: "Signing you in — Inspire LMS" }] }),
   validateSearch: searchSchema,
@@ -77,7 +87,7 @@ function CallbackPage() {
         const session = { accessToken: access, refreshToken: refresh, user };
         setSession(session);
         toast.success(`Welcome, ${user.full_name.split(" ")[0]}.`);
-        const dest = returnTo || defaultDestination(user);
+        const dest = destinationForSession(user, returnTo);
         navigate({ to: dest as string });
       } catch (err) {
         if (cancelled) return;
