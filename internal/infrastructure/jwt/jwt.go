@@ -78,13 +78,14 @@ func NewJWTService(privateKeyPath, publicKeyPath, issuer string) (*JWTService, e
 	// Load private key
 	var privateKeyData []byte
 	if len(privateKeyPath) > 0 && (privateKeyPath[0] == '-' || len(privateKeyPath) > 100) {
-		privateKeyData = []byte(privateKeyPath)
+		privateKeyData = cleanPEM([]byte(privateKeyPath))
 	} else {
 		var err error
 		privateKeyData, err = os.ReadFile(privateKeyPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read private key: %w", err)
 		}
+		privateKeyData = cleanPEM(privateKeyData)
 	}
 
 	privateKeyBlock, _ := pem.Decode(privateKeyData)
@@ -99,7 +100,7 @@ func NewJWTService(privateKeyPath, publicKeyPath, issuer string) (*JWTService, e
 		if len(privateKeyData) > 30 {
 			suffix = string(privateKeyData[len(privateKeyData)-30:])
 		}
-		return nil, fmt.Errorf("failed to decode private key PEM (len: %d, prefix: %q, suffix: %q)", len(privateKeyData), prefix, suffix)
+		return nil, fmt.Errorf("failed to decode private key PEM (len: %d, hex: %x, prefix: %q, suffix: %q)", len(privateKeyData), privateKeyData, prefix, suffix)
 	}
 
 	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBlock.Bytes)
@@ -119,13 +120,14 @@ func NewJWTService(privateKeyPath, publicKeyPath, issuer string) (*JWTService, e
 	// Load public key
 	var publicKeyData []byte
 	if len(publicKeyPath) > 0 && (publicKeyPath[0] == '-' || len(publicKeyPath) > 100) {
-		publicKeyData = []byte(publicKeyPath)
+		publicKeyData = cleanPEM([]byte(publicKeyPath))
 	} else {
 		var err error
 		publicKeyData, err = os.ReadFile(publicKeyPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read public key: %w", err)
 		}
+		publicKeyData = cleanPEM(publicKeyData)
 	}
 
 	publicKeyBlock, _ := pem.Decode(publicKeyData)
@@ -140,7 +142,7 @@ func NewJWTService(privateKeyPath, publicKeyPath, issuer string) (*JWTService, e
 		if len(publicKeyData) > 30 {
 			suffix = string(publicKeyData[len(publicKeyData)-30:])
 		}
-		return nil, fmt.Errorf("failed to decode public key PEM (len: %d, prefix: %q, suffix: %q)", len(publicKeyData), prefix, suffix)
+		return nil, fmt.Errorf("failed to decode public key PEM (len: %d, hex: %x, prefix: %q, suffix: %q)", len(publicKeyData), publicKeyData, prefix, suffix)
 	}
 
 	publicKeyInterface, err := x509.ParsePKIXPublicKey(publicKeyBlock.Bytes)
@@ -342,4 +344,41 @@ func (s *JWTService) ServeJWKS() ([]byte, error) {
 	}
 
 	return data, nil
+}
+
+// cleanPEM sanitizes and normalizes PEM blocks (handling newlines, escaping, quotes, and outer text)
+func cleanPEM(data []byte) []byte {
+	s := string(data)
+	s = strings.TrimSpace(s)
+
+	// Remove outer escaped quotes first, then regular quotes
+	s = strings.TrimPrefix(s, "\\\"")
+	s = strings.TrimSuffix(s, "\\\"")
+	s = strings.TrimPrefix(s, "\\'")
+	s = strings.TrimSuffix(s, "\\'")
+	s = strings.Trim(s, "\"'")
+	s = strings.TrimSpace(s)
+
+	s = strings.ReplaceAll(s, "\\n", "\n")
+	s = strings.ReplaceAll(s, "\\r", "\r")
+	s = strings.ReplaceAll(s, "\\t", "\t")
+	s = strings.ReplaceAll(s, "\\", "")
+
+	// Locate -----BEGIN
+	beginIdx := strings.Index(s, "-----BEGIN")
+	if beginIdx != -1 {
+		s = s[beginIdx:]
+	}
+
+	// Locate -----END and trim everything after its closing dashes
+	endIdx := strings.Index(s, "-----END")
+	if endIdx != -1 {
+		afterEnd := s[endIdx+8:]
+		closingDashes := strings.Index(afterEnd, "-----")
+		if closingDashes != -1 {
+			s = s[:endIdx+8+closingDashes+5]
+		}
+	}
+
+	return []byte(strings.TrimSpace(s) + "\n")
 }
