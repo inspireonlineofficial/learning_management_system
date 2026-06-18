@@ -18,6 +18,9 @@ function DashboardPage() {
   });
 
   const firstName = user?.full_name?.split(" ")[0] ?? "Scholar";
+  const continueLearning = data?.continue_learning ?? [];
+  const upcomingLive = data?.upcoming_live ?? [];
+  const recentAchievements = data?.recent_achievements ?? [];
 
   return (
     <AppShell eyebrow={`Welcome back, ${firstName}`} title="Your study hall.">
@@ -74,9 +77,9 @@ function DashboardPage() {
               <div key={i} className="h-40 border border-brand/10 bg-white/30 animate-pulse" />
             ))}
           </div>
-        ) : data && data.continue_learning.length > 0 ? (
+        ) : continueLearning.length > 0 ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {data.continue_learning.map((e) => (
+            {continueLearning.map((e) => (
               <Link
                 key={e.id}
                 to="/student/player/$courseId"
@@ -123,14 +126,14 @@ function DashboardPage() {
       <div className="mt-14 grid lg:grid-cols-2 gap-10">
         <section>
           <SectionHeading title="Upcoming live sessions" />
-          {!isLoading && (!data?.upcoming_live || data.upcoming_live.length === 0) ? (
+          {!isLoading && upcomingLive.length === 0 ? (
             <div className="border border-dashed border-brand/15 p-8 text-sm text-brand/55">
               <Calendar className="h-5 w-5 text-brand/30 mb-3" />
               No live sessions scheduled.
             </div>
           ) : (
             <ul className="space-y-3">
-              {data?.upcoming_live?.map((s) => (
+              {upcomingLive.map((s) => (
                 <li key={s.id} className="border border-brand/10 bg-white/50 p-4 flex gap-4">
                   <Calendar className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
                   <div className="min-w-0">
@@ -148,14 +151,14 @@ function DashboardPage() {
 
         <section>
           <SectionHeading title="Recent achievements" />
-          {!isLoading && (!data?.recent_achievements || data.recent_achievements.length === 0) ? (
+          {!isLoading && recentAchievements.length === 0 ? (
             <div className="border border-dashed border-brand/15 p-8 text-sm text-brand/55">
               <Award className="h-5 w-5 text-brand/30 mb-3" />
               Earn your first badge by completing a lesson.
             </div>
           ) : (
             <ul className="space-y-3">
-              {data?.recent_achievements?.map((a) => (
+              {recentAchievements.map((a) => (
                 <li key={a.id} className="border border-brand/10 bg-white/50 p-4 flex gap-4">
                   <Flame className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
                   <div>

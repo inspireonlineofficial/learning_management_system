@@ -546,10 +546,16 @@ func (s *service) GetStudentDashboard(ctx context.Context, studentID uuid.UUID) 
 	if err != nil {
 		return nil, err
 	}
+	if continueLearning == nil {
+		continueLearning = make([]StudentDashboardEnrollment, 0)
+	}
 
 	upcomingLive, err := s.liveRepo.GetStudentDashboardUpcomingSessions(ctx, studentID)
 	if err != nil {
 		return nil, err
+	}
+	if upcomingLive == nil {
+		upcomingLive = make([]UpcomingLiveSession, 0)
 	}
 
 	recentAchievements := make([]RecentAchievement, 0)
