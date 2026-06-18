@@ -95,7 +95,7 @@ services:
       redis:
         condition: service_healthy
       typesense:
-        condition: service_started
+        condition: service_healthy
     security_opt:
       - no-new-privileges:true
     read_only: true
