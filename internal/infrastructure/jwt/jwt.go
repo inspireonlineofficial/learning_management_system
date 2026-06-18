@@ -117,42 +117,48 @@ func NewJWTService(privateKeyPath, publicKeyPath, issuer string) (*JWTService, e
 		}
 	}
 
-	// Load public key
-	var publicKeyData []byte
-	if len(publicKeyPath) > 0 && (publicKeyPath[0] == '-' || len(publicKeyPath) > 100) {
-		publicKeyData = cleanPEM([]byte(publicKeyPath))
-	} else {
-		var err error
-		publicKeyData, err = os.ReadFile(publicKeyPath)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read public key: %w", err)
-		}
-		publicKeyData = cleanPEM(publicKeyData)
-	}
+	// Load public key. If loading or parsing fails, fallback to deriving it from the private key.
+	var publicKey *rsa.PublicKey
+	var pubErr error
 
-	publicKeyBlock, _ := pem.Decode(publicKeyData)
-	if publicKeyBlock == nil {
-		prefix := ""
-		if len(publicKeyData) > 30 {
-			prefix = string(publicKeyData[:30])
+	if len(publicKeyPath) > 0 {
+		var publicKeyData []byte
+		if publicKeyPath[0] == '-' || len(publicKeyPath) > 100 {
+			publicKeyData = cleanPEM([]byte(publicKeyPath))
 		} else {
-			prefix = string(publicKeyData)
+			var err error
+			publicKeyData, err = os.ReadFile(publicKeyPath)
+			if err != nil {
+				pubErr = fmt.Errorf("failed to read public key file: %w", err)
+			} else {
+				publicKeyData = cleanPEM(publicKeyData)
+			}
 		}
-		suffix := ""
-		if len(publicKeyData) > 30 {
-			suffix = string(publicKeyData[len(publicKeyData)-30:])
+
+		if pubErr == nil {
+			publicKeyBlock, _ := pem.Decode(publicKeyData)
+			if publicKeyBlock != nil {
+				publicKeyInterface, err := x509.ParsePKIXPublicKey(publicKeyBlock.Bytes)
+				if err == nil {
+					var ok bool
+					publicKey, ok = publicKeyInterface.(*rsa.PublicKey)
+					if !ok {
+						pubErr = fmt.Errorf("public key is not RSA")
+					}
+				} else {
+					pubErr = fmt.Errorf("failed to parse public key: %w", err)
+				}
+			} else {
+				pubErr = fmt.Errorf("failed to decode public key PEM")
+			}
 		}
-		return nil, fmt.Errorf("failed to decode public key PEM (len: %d, hex: %x, prefix: %q, suffix: %q)", len(publicKeyData), publicKeyData, prefix, suffix)
+	} else {
+		pubErr = fmt.Errorf("public key path is empty")
 	}
 
-	publicKeyInterface, err := x509.ParsePKIXPublicKey(publicKeyBlock.Bytes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse public key: %w", err)
-	}
-
-	publicKey, ok := publicKeyInterface.(*rsa.PublicKey)
-	if !ok {
-		return nil, fmt.Errorf("public key is not RSA")
+	// Fallback to deriving public key from private key
+	if pubErr != nil || publicKey == nil {
+		publicKey = &privateKey.PublicKey
 	}
 
 	// Generate a key ID for the active key
