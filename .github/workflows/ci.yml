@@ -241,7 +241,7 @@ jobs:
           docker compose --env-file .env up -d --build --remove-orphans
           sleep 5
           docker compose --env-file .env ps
-          docker compose --env-file .env logs backend --tail=50 || true
+          docker compose --env-file .env logs app --tail=50 || true
           EOF
 
       - name: Configure Nginx root endpoint
