@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"lms-backend/internal/application/auth"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -93,8 +94,8 @@ func (h *AuthHandler) OAuthCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if h.frontendBaseURL != "" {
-		redirectURL := strings.TrimRight(h.frontendBaseURL, "/") + "/auth/callback"
+	if redirectBaseURL := h.oauthFrontendRedirectBaseURL(r); redirectBaseURL != "" {
+		redirectURL := strings.TrimRight(redirectBaseURL, "/") + "/auth/callback"
 		fragment := url.Values{}
 		fragment.Set("access_token", result.AccessToken)
 		fragment.Set("refresh_token", result.RefreshToken)
@@ -110,6 +111,70 @@ func (h *AuthHandler) OAuthCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, result)
+}
+
+func (h *AuthHandler) oauthFrontendRedirectBaseURL(r *http.Request) string {
+	configured := strings.TrimRight(strings.TrimSpace(h.frontendBaseURL), "/")
+	if configured == "" || !isLoopbackBaseURL(configured) {
+		return configured
+	}
+
+	publicOrigin := forwardedOrigin(r)
+	if publicOrigin == "" {
+		return configured
+	}
+
+	return publicOrigin
+}
+
+func forwardedOrigin(r *http.Request) string {
+	host := strings.TrimSpace(r.Header.Get("X-Forwarded-Host"))
+	if host == "" {
+		host = strings.TrimSpace(r.Host)
+	}
+	host = firstForwardedValue(host)
+	if host == "" || isLoopbackHost(host) {
+		return ""
+	}
+
+	proto := firstForwardedValue(r.Header.Get("X-Forwarded-Proto"))
+	if proto == "" {
+		proto = "https"
+	}
+	proto = strings.ToLower(strings.TrimSpace(proto))
+	if proto != "http" && proto != "https" {
+		return ""
+	}
+
+	return proto + "://" + host
+}
+
+func firstForwardedValue(value string) string {
+	if idx := strings.Index(value, ","); idx >= 0 {
+		value = value[:idx]
+	}
+	return strings.TrimSpace(value)
+}
+
+func isLoopbackBaseURL(raw string) bool {
+	parsed, err := url.Parse(raw)
+	if err != nil {
+		return false
+	}
+	return isLoopbackHost(parsed.Host)
+}
+
+func isLoopbackHost(hostport string) bool {
+	host := hostport
+	if parsedHost, _, err := net.SplitHostPort(hostport); err == nil {
+		host = parsedHost
+	}
+	host = strings.Trim(strings.ToLower(host), "[]")
+	if host == "localhost" || host == "127.0.0.1" || host == "::1" {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
 
 // ConnectProvider handles POST /v1/auth/me/oauth/connect
