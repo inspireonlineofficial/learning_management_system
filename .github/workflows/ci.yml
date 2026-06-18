@@ -239,9 +239,10 @@ jobs:
           docker ps -aq --filter name='inspire-lms-frontend' | xargs -r docker rm -f
           docker ps -aq --filter publish=3000 | xargs -r docker rm -f
           docker compose --env-file .env up -d --build --remove-orphans
-          sleep 5
+          sleep 25
           docker compose --env-file .env ps
-          docker compose --env-file .env logs app --tail=50 || true
+          docker compose --env-file .env logs typesense --tail=50 || true
+          docker compose --env-file .env logs app --tail=100 || true
           EOF
 
       - name: Configure Nginx root endpoint
