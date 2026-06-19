@@ -22,14 +22,15 @@ type StudentProfileResult struct {
 
 // UserResult represents a user in list or detail responses
 type UserResult struct {
-	ID              uuid.UUID `json:"id"`
-	FullName        string    `json:"full_name"`
-	Email           string    `json:"email"`
-	Role            string    `json:"role"`
-	Status          string    `json:"status"`
-	ProfileComplete bool      `json:"profile_complete"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
+	ID              uuid.UUID  `json:"id"`
+	FullName        string     `json:"full_name"`
+	Email           string     `json:"email"`
+	Role            string     `json:"role"`
+	Status          string     `json:"status"`
+	ProfileComplete bool       `json:"profile_complete"`
+	LastSignInAt    *time.Time `json:"last_sign_in_at,omitempty"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
 }
 
 // UserDetailResult represents detailed user information including student profile
@@ -40,6 +41,7 @@ type UserDetailResult struct {
 	Role            string                `json:"role"`
 	Status          string                `json:"status"`
 	ProfileComplete bool                  `json:"profile_complete"`
+	LastSignInAt    *time.Time            `json:"last_sign_in_at,omitempty"`
 	CreatedAt       time.Time             `json:"created_at"`
 	UpdatedAt       time.Time             `json:"updated_at"`
 	StudentProfile  *StudentProfileResult `json:"student_profile,omitempty"`

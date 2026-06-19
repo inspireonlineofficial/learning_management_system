@@ -48,7 +48,7 @@ func (s *authService) Login(ctx context.Context, cmd LoginCommand) (*TokenPair, 
 	}
 
 	// Issue tokens
-	return s.issueTokens(ctx, user, cmd.RememberMe)
+	return s.issueTokens(ctx, user, cmd.RememberMe, true)
 }
 
 // RefreshToken implements token refresh with rotation
@@ -76,7 +76,7 @@ func (s *authService) RefreshToken(ctx context.Context, refreshToken string) (*T
 	}
 
 	// Issue new tokens
-	return s.issueTokens(ctx, user, true) // Assume remember_me for refresh
+	return s.issueTokens(ctx, user, true, false) // Assume remember_me for refresh
 }
 
 // Logout implements logout by invalidating the refresh token

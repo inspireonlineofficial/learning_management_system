@@ -242,6 +242,7 @@ func (s *serviceImpl) ListUsers(ctx context.Context, filters ListUsersFilters) (
 			Role:            user.Role,
 			Status:          user.Status,
 			ProfileComplete: user.ProfileComplete,
+			LastSignInAt:    user.LastSignInAt,
 			CreatedAt:       user.CreatedAt,
 			UpdatedAt:       user.UpdatedAt,
 		})
@@ -316,6 +317,7 @@ func (s *serviceImpl) CreateUser(ctx context.Context, cmd CreateUserCommand) (*U
 		Role:            user.Role,
 		Status:          user.Status,
 		ProfileComplete: user.ProfileComplete,
+		LastSignInAt:    user.LastSignInAt,
 		CreatedAt:       user.CreatedAt,
 		UpdatedAt:       user.UpdatedAt,
 	}, nil
@@ -337,6 +339,7 @@ func (s *serviceImpl) GetUser(ctx context.Context, userID uuid.UUID) (*UserDetai
 		Role:            user.Role,
 		Status:          user.Status,
 		ProfileComplete: user.ProfileComplete,
+		LastSignInAt:    user.LastSignInAt,
 		CreatedAt:       user.CreatedAt,
 		UpdatedAt:       user.UpdatedAt,
 	}
@@ -449,6 +452,7 @@ func (s *serviceImpl) UpdateUser(ctx context.Context, actorID, targetUserID uuid
 		Role:            user.Role,
 		Status:          user.Status,
 		ProfileComplete: user.ProfileComplete,
+		LastSignInAt:    user.LastSignInAt,
 		CreatedAt:       user.CreatedAt,
 		UpdatedAt:       user.UpdatedAt,
 	}, nil

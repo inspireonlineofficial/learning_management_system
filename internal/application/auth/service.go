@@ -127,6 +127,10 @@ type authService struct {
 	deps ServiceDeps
 }
 
+type lastSignInUpdater interface {
+	UpdateLastSignIn(ctx context.Context, id uuid.UUID, at time.Time) error
+}
+
 // NewService creates a new auth service
 func NewService(deps ServiceDeps) Service {
 	return &authService{deps: deps}
@@ -254,7 +258,7 @@ func (s *authService) VerifyOTP(ctx context.Context, cmd VerifyOTPCommand) (*Tok
 	_ = s.deps.OTPRepo.Invalidate(ctx, otpRecord.ID)
 
 	// Issue tokens
-	return s.issueTokens(ctx, user, false)
+	return s.issueTokens(ctx, user, false, true)
 }
 
 // ResendOTP implements OTP resend with rate limiting
@@ -382,7 +386,7 @@ func (s *authService) validateRegistration(cmd RegisterCommand) error {
 	return nil
 }
 
-func (s *authService) issueTokens(ctx context.Context, user *auth.User, rememberMe bool) (*TokenPair, error) {
+func (s *authService) issueTokens(ctx context.Context, user *auth.User, rememberMe, markSignIn bool) (*TokenPair, error) {
 	// Issue JWT access token
 	accessToken, err := s.deps.JWTService.IssueToken(user.ID, user.Role, user.Email)
 	if err != nil {
@@ -401,6 +405,17 @@ func (s *authService) issueTokens(ctx context.Context, user *auth.User, remember
 	// Store refresh token
 	if err := s.deps.TokenStore.StoreRefreshToken(ctx, user.ID, refreshToken, ttl); err != nil {
 		return nil, fmt.Errorf("failed to store refresh token: %w", err)
+	}
+
+	if markSignIn {
+		if updater, ok := s.deps.UserRepo.(lastSignInUpdater); ok {
+			now := time.Now().UTC()
+			if err := updater.UpdateLastSignIn(ctx, user.ID, now); err != nil {
+				logger.Error(ctx, "failed to update last sign in", "error", err, "user_id", user.ID)
+			} else {
+				user.LastSignInAt = &now
+			}
+		}
 	}
 
 	return &TokenPair{
@@ -431,7 +446,7 @@ func (s *authService) ImpersonateUser(ctx context.Context, cmd ImpersonateUserCo
 		return nil, apperrors.NewForbiddenError("USER_INACTIVE", "target user is not active")
 	}
 
-	tokens, err := s.issueTokens(ctx, target, false)
+	tokens, err := s.issueTokens(ctx, target, false, false)
 	if err != nil {
 		return nil, err
 	}

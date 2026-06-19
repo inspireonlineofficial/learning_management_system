@@ -208,7 +208,7 @@ func (s *authService) AdminVerifyOTP(ctx context.Context, cmd AdminVerifyOTPComm
 	}
 
 	// Issue tokens
-	return s.issueTokens(ctx, user, false)
+	return s.issueTokens(ctx, user, false, true)
 }
 
 // AdminResendOTP implements admin OTP resend

@@ -61,7 +61,7 @@ func (r *UserRepository) List(ctx context.Context, role, status, search *string,
 		return fmt.Sprintf("$%d", len(queryArgs))
 	}
 	query := `
-		SELECT id, full_name, email, username, password_hash, role, status, profile_complete, created_at, updated_at, deleted_at
+		SELECT id, full_name, email, username, password_hash, role, status, profile_complete, last_sign_in_at, created_at, updated_at, deleted_at
 		FROM users
 		WHERE ` + whereClause + `
 		ORDER BY created_at DESC
@@ -78,7 +78,7 @@ func (r *UserRepository) List(ctx context.Context, role, status, search *string,
 		u := &auth.User{}
 		if err := rows.Scan(
 			&u.ID, &u.FullName, &u.Email, &u.Username, &u.PasswordHash,
-			&u.Role, &u.Status, &u.ProfileComplete, &u.CreatedAt, &u.UpdatedAt, &u.DeletedAt,
+			&u.Role, &u.Status, &u.ProfileComplete, &u.LastSignInAt, &u.CreatedAt, &u.UpdatedAt, &u.DeletedAt,
 		); err != nil {
 			return nil, 0, fmt.Errorf("failed to scan user: %w", err)
 		}
@@ -115,14 +115,14 @@ func (r *UserRepository) Create(ctx context.Context, u *auth.User) error {
 // FindByEmail finds a user by email
 func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*auth.User, error) {
 	query := `
-		SELECT id, full_name, email, username, password_hash, role, status, profile_complete, created_at, updated_at, deleted_at
+		SELECT id, full_name, email, username, password_hash, role, status, profile_complete, last_sign_in_at, created_at, updated_at, deleted_at
 		FROM users
 		WHERE email = $1 AND deleted_at IS NULL
 	`
 	u := &auth.User{}
 	err := r.db.QueryRowContext(ctx, query, email).Scan(
 		&u.ID, &u.FullName, &u.Email, &u.Username, &u.PasswordHash,
-		&u.Role, &u.Status, &u.ProfileComplete, &u.CreatedAt, &u.UpdatedAt, &u.DeletedAt,
+		&u.Role, &u.Status, &u.ProfileComplete, &u.LastSignInAt, &u.CreatedAt, &u.UpdatedAt, &u.DeletedAt,
 	)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("user not found")
@@ -136,14 +136,14 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*auth.U
 // FindByUsername finds a user by username
 func (r *UserRepository) FindByUsername(ctx context.Context, username string) (*auth.User, error) {
 	query := `
-		SELECT id, full_name, email, username, password_hash, role, status, profile_complete, created_at, updated_at, deleted_at
+		SELECT id, full_name, email, username, password_hash, role, status, profile_complete, last_sign_in_at, created_at, updated_at, deleted_at
 		FROM users
 		WHERE username = $1 AND deleted_at IS NULL
 	`
 	u := &auth.User{}
 	err := r.db.QueryRowContext(ctx, query, username).Scan(
 		&u.ID, &u.FullName, &u.Email, &u.Username, &u.PasswordHash,
-		&u.Role, &u.Status, &u.ProfileComplete, &u.CreatedAt, &u.UpdatedAt, &u.DeletedAt,
+		&u.Role, &u.Status, &u.ProfileComplete, &u.LastSignInAt, &u.CreatedAt, &u.UpdatedAt, &u.DeletedAt,
 	)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("user not found")
@@ -157,14 +157,14 @@ func (r *UserRepository) FindByUsername(ctx context.Context, username string) (*
 // FindByID finds a user by ID
 func (r *UserRepository) FindByID(ctx context.Context, id uuid.UUID) (*auth.User, error) {
 	query := `
-		SELECT id, full_name, email, username, password_hash, role, status, profile_complete, created_at, updated_at, deleted_at
+		SELECT id, full_name, email, username, password_hash, role, status, profile_complete, last_sign_in_at, created_at, updated_at, deleted_at
 		FROM users
 		WHERE id = $1 AND deleted_at IS NULL
 	`
 	u := &auth.User{}
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&u.ID, &u.FullName, &u.Email, &u.Username, &u.PasswordHash,
-		&u.Role, &u.Status, &u.ProfileComplete, &u.CreatedAt, &u.UpdatedAt, &u.DeletedAt,
+		&u.Role, &u.Status, &u.ProfileComplete, &u.LastSignInAt, &u.CreatedAt, &u.UpdatedAt, &u.DeletedAt,
 	)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("user not found")
@@ -200,6 +200,27 @@ func (r *UserRepository) Update(ctx context.Context, u *auth.User) error {
 		return fmt.Errorf("user not found")
 	}
 
+	return nil
+}
+
+// UpdateLastSignIn records the latest successful interactive sign-in time.
+func (r *UserRepository) UpdateLastSignIn(ctx context.Context, id uuid.UUID, at time.Time) error {
+	query := `
+		UPDATE users
+		SET last_sign_in_at = $2, updated_at = $2
+		WHERE id = $1 AND deleted_at IS NULL
+	`
+	result, err := r.db.ExecContext(ctx, query, id, at.UTC())
+	if err != nil {
+		return fmt.Errorf("failed to update last sign in: %w", err)
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rows == 0 {
+		return fmt.Errorf("user not found")
+	}
 	return nil
 }
 
