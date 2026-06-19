@@ -5,6 +5,7 @@ import { Bell, Send } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/layout/app-shell";
+import { NotificationInbox } from "@/components/notifications/notification-inbox";
 import {
   broadcastNotification,
   listBroadcasts,
@@ -75,6 +76,15 @@ function Page() {
 
   return (
     <AppShell eyebrow="Notifications" title="Notification center">
+      <NotificationInbox />
+
+      <section className="mt-14">
+        <div className="border-b border-brand/10 pb-3">
+          <p className="eyebrow text-brand/45">Broadcasts</p>
+          <h2 className="font-serif text-2xl">Send a notification</h2>
+        </div>
+      </section>
+
       <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
         <div className="space-y-5 max-w-xl">
           <label className="block">
