@@ -59,6 +59,7 @@ const teacherNav: NavItem[] = [
   { to: "/teacher/assignments", label: "Assignments", icon: FileText },
   { to: "/teacher/live", label: "Live classes", icon: Radio },
   { to: "/teacher/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/teacher/notifications", label: "Notifications", icon: Bell },
   { to: "/teacher/settings", label: "Settings", icon: SettingsIcon },
 ];
 
@@ -72,6 +73,7 @@ const adminNav: NavItem[] = [
   { to: "/admin/bookshop", label: "Bookshop", icon: ShoppingBag },
   { to: "/admin/slides", label: "Slides", icon: Sparkles },
   { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+  { to: "/admin/notifications", label: "Notifications", icon: Bell },
   { to: "/admin/audit-logs", label: "Audit logs", icon: FileText },
   { to: "/admin/system", label: "System", icon: SettingsIcon },
   { to: "/admin/settings", label: "Settings", icon: User },

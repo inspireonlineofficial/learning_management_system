@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/app-shell";
 import { NotificationInbox } from "@/components/notifications/notification-inbox";
 
-export const Route = createFileRoute("/_authenticated/student/notifications")({
+export const Route = createFileRoute("/_authenticated/teacher/notifications")({
   component: Page,
 });
 

@@ -34,6 +34,7 @@ import { Route as AuthenticatedTeacherIndexRouteImport } from './routes/_authent
 import { Route as AuthenticatedStudentIndexRouteImport } from './routes/_authenticated.student.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated.admin.index'
 import { Route as AuthenticatedTeacherSettingsRouteImport } from './routes/_authenticated.teacher.settings'
+import { Route as AuthenticatedTeacherNotificationsRouteImport } from './routes/_authenticated.teacher.notifications'
 import { Route as AuthenticatedTeacherAnalyticsRouteImport } from './routes/_authenticated.teacher.analytics'
 import { Route as AuthenticatedStudentSettingsRouteImport } from './routes/_authenticated.student.settings'
 import { Route as AuthenticatedStudentSearchRouteImport } from './routes/_authenticated.student.search'
@@ -248,6 +249,12 @@ const AuthenticatedTeacherSettingsRoute =
   AuthenticatedTeacherSettingsRouteImport.update({
     id: '/settings',
     path: '/settings',
+    getParentRoute: () => AuthenticatedTeacherRoute,
+  } as any)
+const AuthenticatedTeacherNotificationsRoute =
+  AuthenticatedTeacherNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
     getParentRoute: () => AuthenticatedTeacherRoute,
   } as any)
 const AuthenticatedTeacherAnalyticsRoute =
@@ -822,6 +829,7 @@ export interface FileRoutesByFullPath {
   '/student/search': typeof AuthenticatedStudentSearchRoute
   '/student/settings': typeof AuthenticatedStudentSettingsRoute
   '/teacher/analytics': typeof AuthenticatedTeacherAnalyticsRouteWithChildren
+  '/teacher/notifications': typeof AuthenticatedTeacherNotificationsRoute
   '/teacher/settings': typeof AuthenticatedTeacherSettingsRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/student/': typeof AuthenticatedStudentIndexRoute
@@ -929,6 +937,7 @@ export interface FileRoutesByTo {
   '/student/search': typeof AuthenticatedStudentSearchRoute
   '/student/settings': typeof AuthenticatedStudentSettingsRoute
   '/teacher/analytics': typeof AuthenticatedTeacherAnalyticsRouteWithChildren
+  '/teacher/notifications': typeof AuthenticatedTeacherNotificationsRoute
   '/teacher/settings': typeof AuthenticatedTeacherSettingsRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/student': typeof AuthenticatedStudentIndexRoute
@@ -1042,6 +1051,7 @@ export interface FileRoutesById {
   '/_authenticated/student/search': typeof AuthenticatedStudentSearchRoute
   '/_authenticated/student/settings': typeof AuthenticatedStudentSettingsRoute
   '/_authenticated/teacher/analytics': typeof AuthenticatedTeacherAnalyticsRouteWithChildren
+  '/_authenticated/teacher/notifications': typeof AuthenticatedTeacherNotificationsRoute
   '/_authenticated/teacher/settings': typeof AuthenticatedTeacherSettingsRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/student/': typeof AuthenticatedStudentIndexRoute
@@ -1157,6 +1167,7 @@ export interface FileRouteTypes {
     | '/student/search'
     | '/student/settings'
     | '/teacher/analytics'
+    | '/teacher/notifications'
     | '/teacher/settings'
     | '/admin/'
     | '/student/'
@@ -1264,6 +1275,7 @@ export interface FileRouteTypes {
     | '/student/search'
     | '/student/settings'
     | '/teacher/analytics'
+    | '/teacher/notifications'
     | '/teacher/settings'
     | '/admin'
     | '/student'
@@ -1376,6 +1388,7 @@ export interface FileRouteTypes {
     | '/_authenticated/student/search'
     | '/_authenticated/student/settings'
     | '/_authenticated/teacher/analytics'
+    | '/_authenticated/teacher/notifications'
     | '/_authenticated/teacher/settings'
     | '/_authenticated/admin/'
     | '/_authenticated/student/'
@@ -1641,6 +1654,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/teacher/settings'
       preLoaderRoute: typeof AuthenticatedTeacherSettingsRouteImport
+      parentRoute: typeof AuthenticatedTeacherRoute
+    }
+    '/_authenticated/teacher/notifications': {
+      id: '/_authenticated/teacher/notifications'
+      path: '/notifications'
+      fullPath: '/teacher/notifications'
+      preLoaderRoute: typeof AuthenticatedTeacherNotificationsRouteImport
       parentRoute: typeof AuthenticatedTeacherRoute
     }
     '/_authenticated/teacher/analytics': {
@@ -2576,6 +2596,7 @@ const AuthenticatedTeacherAnalyticsRouteWithChildren =
 
 interface AuthenticatedTeacherRouteChildren {
   AuthenticatedTeacherAnalyticsRoute: typeof AuthenticatedTeacherAnalyticsRouteWithChildren
+  AuthenticatedTeacherNotificationsRoute: typeof AuthenticatedTeacherNotificationsRoute
   AuthenticatedTeacherSettingsRoute: typeof AuthenticatedTeacherSettingsRoute
   AuthenticatedTeacherIndexRoute: typeof AuthenticatedTeacherIndexRoute
   AuthenticatedTeacherCoursesNewRoute: typeof AuthenticatedTeacherCoursesNewRoute
@@ -2601,6 +2622,8 @@ interface AuthenticatedTeacherRouteChildren {
 const AuthenticatedTeacherRouteChildren: AuthenticatedTeacherRouteChildren = {
   AuthenticatedTeacherAnalyticsRoute:
     AuthenticatedTeacherAnalyticsRouteWithChildren,
+  AuthenticatedTeacherNotificationsRoute:
+    AuthenticatedTeacherNotificationsRoute,
   AuthenticatedTeacherSettingsRoute: AuthenticatedTeacherSettingsRoute,
   AuthenticatedTeacherIndexRoute: AuthenticatedTeacherIndexRoute,
   AuthenticatedTeacherCoursesNewRoute: AuthenticatedTeacherCoursesNewRoute,
