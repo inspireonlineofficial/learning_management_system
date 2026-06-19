@@ -9,6 +9,7 @@ import { listNotifications, markAllRead, type Notification } from "@/lib/api/not
 export function NotificationInbox({ className = "" }: { className?: string }) {
   const qc = useQueryClient();
   const query = useQuery({ queryKey: ["notifications"], queryFn: listNotifications });
+  const items = query.data?.items ?? [];
   const markAll = useMutation({
     mutationFn: () => markAllRead(),
     onSuccess: () => {
@@ -51,14 +52,14 @@ export function NotificationInbox({ className = "" }: { className?: string }) {
             Try again
           </button>
         </div>
-      ) : !query.data?.items.length ? (
+      ) : items.length === 0 ? (
         <div className="mt-6">
           <EmptyState title="All caught up" description="You have no notifications." />
         </div>
       ) : (
         <div className="mt-6">
           <ListTable<Notification>
-            rows={query.data.items}
+            rows={items}
             columns={[
               {
                 key: "title",
