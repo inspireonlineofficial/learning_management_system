@@ -6,11 +6,23 @@ export type Notification = {
   title: string;
   body?: string;
   created_at: string;
+  is_read?: boolean;
   read_at?: string | null;
   action_url?: string;
 };
+type NotificationListApiResponse = {
+  data?: Notification[];
+  items?: Notification[];
+  unread_count?: number;
+};
 export const listNotifications = () =>
-  apiRequest<{ items: Notification[]; unread_count: number }>("/v1/notifications", { auth: true });
+  apiRequest<NotificationListApiResponse>("/v1/notifications", { auth: true }).then((response) => ({
+    items: (response.items ?? response.data ?? []).map((notification) => ({
+      ...notification,
+      read_at: notification.read_at ?? (notification.is_read ? notification.created_at : null),
+    })),
+    unread_count: response.unread_count ?? 0,
+  }));
 export const markRead = (ids: string[]) =>
   Promise.all(
     ids.map((id) =>
