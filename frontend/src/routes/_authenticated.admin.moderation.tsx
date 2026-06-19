@@ -3,8 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { AppShell } from "@/components/layout/app-shell";
-import { DataPage } from "@/components/layout/data-page";
+import { AppShell, EmptyState } from "@/components/layout/app-shell";
 import { decideModeration, listModerationQueue, type ModerationItem } from "@/lib/api/moderation";
 import {
   listPendingPosts,
@@ -56,6 +55,12 @@ function Page() {
   });
 
   // Pending Posts queries
+  const moderationQuery = useQuery({
+    queryKey: ["moderation"],
+    queryFn: listModerationQueue,
+    enabled: activeTab === "flagged",
+  });
+
   const pendingPostsQuery = useQuery({
     queryKey: ["pending-posts"],
     queryFn: () => listPendingPosts(),
@@ -110,13 +115,13 @@ function Page() {
       </div>
 
       {activeTab === "flagged" ? (
-        <DataPage
-          eyebrow="Flagged content review"
-          title="Reports Queue"
-          queryKey={["moderation"]}
-          queryFn={listModerationQueue}
-          empty={{ title: "Nothing flagged" }}
-          toolbar={
+        <div className="space-y-8">
+          <div>
+            <p className="eyebrow text-accent mb-3">Flagged content review</p>
+            <h2 className="font-serif text-4xl lg:text-5xl text-balance">Reports Queue</h2>
+          </div>
+
+          <div>
             <div className="flex flex-wrap gap-2">
               {KINDS.map((k) => (
                 <button
@@ -132,66 +137,90 @@ function Page() {
                 </button>
               ))}
             </div>
-          }
-        >
-          {(data: { items: ModerationItem[] }) => {
-            const filtered = data.items.filter(
-              (it) => it.status === "pending" && (kind === "all" || it.kind === kind),
-            );
-            if (filtered.length === 0) {
-              return <p className="text-sm text-brand/55">Queue is clear.</p>;
-            }
-            return (
-              <ul className="space-y-3">
-                {filtered.map((it) => (
-                  <li key={it.id} className="border border-brand/10 bg-white/40 p-5">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
-                      <div className="min-w-0 flex-1">
-                        <p className="eyebrow text-brand/55">
-                          {it.kind} · {it.reason}
-                        </p>
-                        <p className="mt-2 text-sm whitespace-pre-line border-l-2 border-brand/15 pl-3 text-brand/80">
-                          {it.content}
-                        </p>
-                        <p className="mt-2 text-xs text-brand/45">
-                          Reported by {it.reported_by.full_name} ·{" "}
-                          {new Date(it.created_at).toLocaleString()}
-                          {it.target_url && (
-                            <>
-                              {" · "}
-                              <a
-                                href={it.target_url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-accent hover:underline underline-offset-4"
-                              >
-                                View context
-                              </a>
-                            </>
-                          )}
-                        </p>
+          </div>
+
+          {moderationQuery.isLoading && (
+            <div className="grid sm:grid-cols-2 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-24 border border-brand/10 bg-white/30 animate-pulse" />
+              ))}
+            </div>
+          )}
+
+          {moderationQuery.isError && (
+            <div className="border border-destructive/20 bg-destructive/5 p-6 text-sm">
+              <p className="font-medium text-destructive">Couldn't load data</p>
+              <p className="mt-1 text-brand/60">{(moderationQuery.error as Error)?.message}</p>
+              <button
+                onClick={() => moderationQuery.refetch()}
+                className="mt-3 px-4 py-2 bg-brand text-white text-xs"
+              >
+                Try again
+              </button>
+            </div>
+          )}
+
+          {moderationQuery.data &&
+            !moderationQuery.isLoading &&
+            !moderationQuery.isError &&
+            (() => {
+              const filtered = moderationQuery.data.items.filter(
+                (it) => it.status === "pending" && (kind === "all" || it.kind === kind),
+              );
+              if (filtered.length === 0) {
+                return <EmptyState title="Nothing flagged" />;
+              }
+              return (
+                <ul className="space-y-3">
+                  {filtered.map((it) => (
+                    <li key={it.id} className="border border-brand/10 bg-white/40 p-5">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+                        <div className="min-w-0 flex-1">
+                          <p className="eyebrow text-brand/55">
+                            {it.kind} · {it.reason}
+                          </p>
+                          <p className="mt-2 text-sm whitespace-pre-line border-l-2 border-brand/15 pl-3 text-brand/80">
+                            {it.content}
+                          </p>
+                          <p className="mt-2 text-xs text-brand/45">
+                            Reported by {it.reported_by.full_name} ·{" "}
+                            {new Date(it.created_at).toLocaleString()}
+                            {it.target_url && (
+                              <>
+                                {" · "}
+                                <a
+                                  href={it.target_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-accent hover:underline underline-offset-4"
+                                >
+                                  View context
+                                </a>
+                              </>
+                            )}
+                          </p>
+                        </div>
+                        <div className="flex gap-2 flex-shrink-0">
+                          <button
+                            onClick={() => setDecision({ item: it, action: "approve" })}
+                            className="text-xs border border-brand/15 px-3 py-1.5 hover:bg-brand/[0.03] transition-colors"
+                          >
+                            Keep
+                          </button>
+                          <button
+                            onClick={() => setDecision({ item: it, action: "remove" })}
+                            className="text-xs bg-destructive text-white px-3 py-1.5 hover:bg-destructive/90 transition-colors"
+                          >
+                            Remove
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex gap-2 flex-shrink-0">
-                        <button
-                          onClick={() => setDecision({ item: it, action: "approve" })}
-                          className="text-xs border border-brand/15 px-3 py-1.5 hover:bg-brand/[0.03] transition-colors"
-                        >
-                          Keep
-                        </button>
-                        <button
-                          onClick={() => setDecision({ item: it, action: "remove" })}
-                          className="text-xs bg-destructive text-white px-3 py-1.5 hover:bg-destructive/90 transition-colors"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            );
-          }}
-        </DataPage>
+                    </li>
+                  ))}
+                </ul>
+              );
+            })()}
+        </div>
       ) : (
         <div className="space-y-6">
           {pendingPostsQuery.isLoading && (

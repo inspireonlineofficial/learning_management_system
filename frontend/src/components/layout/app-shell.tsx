@@ -162,7 +162,8 @@ export function AppShell({
           </div>
           <nav className="px-3 lg:px-4 flex lg:flex-col gap-1 overflow-x-auto lg:overflow-y-auto lg:overflow-x-visible lg:flex-1 pb-2">
             {nav.map(({ to, label, icon: Icon }) => {
-              const active = pathname === to || pathname.startsWith(`${to}/`);
+              const sectionRoot = to === "/admin" || to === "/student" || to === "/teacher";
+              const active = pathname === to || (!sectionRoot && pathname.startsWith(`${to}/`));
               return (
                 <Link
                   key={to}

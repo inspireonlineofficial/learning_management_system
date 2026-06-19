@@ -119,7 +119,7 @@ func (s *authService) OAuthCallback(ctx context.Context, cmd OAuthCallbackComman
 		}
 
 		// Issue tokens
-		tokens, err := s.issueTokens(ctx, user, false)
+		tokens, err := s.issueTokens(ctx, user, false, true)
 		if err != nil {
 			return nil, err
 		}
@@ -167,7 +167,7 @@ func (s *authService) OAuthCallback(ctx context.Context, cmd OAuthCallbackComman
 		}
 
 		// Issue tokens
-		tokens, err := s.issueTokens(ctx, existingUser, false)
+		tokens, err := s.issueTokens(ctx, existingUser, false, true)
 		if err != nil {
 			return nil, err
 		}
@@ -219,7 +219,7 @@ func (s *authService) OAuthCallback(ctx context.Context, cmd OAuthCallbackComman
 	}
 
 	// Issue tokens
-	tokens, err := s.issueTokens(ctx, user, false)
+	tokens, err := s.issueTokens(ctx, user, false, true)
 	if err != nil {
 		return nil, err
 	}

@@ -17,6 +17,7 @@ type User struct {
 	Role            string     `json:"role"`               // student, teacher, admin
 	Status          string     `json:"status"`             // active, inactive
 	ProfileComplete bool       `json:"profile_complete"`
+	LastSignInAt    *time.Time `json:"last_sign_in_at,omitempty"`
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`
 	DeletedAt       *time.Time `json:"deleted_at,omitempty"`
