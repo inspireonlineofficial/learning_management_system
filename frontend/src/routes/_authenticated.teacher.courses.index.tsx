@@ -15,14 +15,14 @@ function Page() {
       queryKey={["teacher-courses"]}
       queryFn={() => listMyTaughtCourses()}
       toolbar={
-        <Link to="/teacher/courses/new" className="bg-brand text-white px-4 py-2 text-xs">
-          New course
+        <Link to="/teacher/courses/create" className="bg-brand text-white px-4 py-2 text-xs">
+          Create Course
         </Link>
       }
       empty={{
         title: "No courses yet",
         action: (
-          <Link to="/teacher/courses/new" className="bg-brand text-white px-4 py-2 text-xs">
+          <Link to="/teacher/courses/create" className="bg-brand text-white px-4 py-2 text-xs">
             Create one
           </Link>
         ),
@@ -37,7 +37,7 @@ function Page() {
               label: "Title",
               render: (r: any) => (
                 <Link
-                  to="/teacher/courses/$courseId/edit"
+                  to="/teacher/courses/$courseId/builder"
                   params={{ courseId: r.id }}
                   className="font-medium text-brand hover:text-accent"
                 >
