@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS course_comments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-    module_id UUID REFERENCES course_modules(id) ON DELETE CASCADE,
+    module_id UUID REFERENCES modules(id) ON DELETE CASCADE,
     lesson_id UUID REFERENCES lessons(id) ON DELETE CASCADE,
     quiz_id UUID REFERENCES quizzes(id) ON DELETE CASCADE,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
