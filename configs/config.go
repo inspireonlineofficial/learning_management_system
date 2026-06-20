@@ -48,7 +48,6 @@ type Config struct {
 	GoogleClientSecret string
 	GoogleRedirectURL  string
 
-
 	OAuthTokenEncryptionKey string
 
 	// Typesense
@@ -90,7 +89,6 @@ func Load() (*Config, error) {
 		GoogleClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
 		GoogleClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
 		GoogleRedirectURL:  os.Getenv("GOOGLE_REDIRECT_URL"),
-
 
 		OAuthTokenEncryptionKey: getEnvOrDefault("OAUTH_TOKEN_ENCRYPTION_KEY", getEnvOrDefault("JWT_ISSUER", "lms-backend")),
 
