@@ -12,7 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { DragEvent } from "react";
+import type { ChangeEvent, DragEvent } from "react";
 import { toast } from "sonner";
 
 import { AppShell, SectionHeading } from "@/components/layout/app-shell";
@@ -589,6 +589,7 @@ function ChapterCard({
   const [lessonDownloadable, setLessonDownloadable] = useState(false);
   const [lessonVideo, setLessonVideo] = useState<File | null>(null);
   const [lessonFileKey, setLessonFileKey] = useState(0);
+  const [isDetectingLessonDuration, setIsDetectingLessonDuration] = useState(false);
   const [draggedLessonId, setDraggedLessonId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -625,7 +626,7 @@ function ChapterCard({
         title: lessonTitle.trim(),
         type: lessonType,
         video_id: videoId,
-        duration_seconds: Math.max(0, Number(lessonDuration) || 0) * 60,
+        duration_seconds: durationMinutesToSeconds(lessonDuration),
         is_free_preview: lessonPreview,
         is_free: lessonFree,
         is_downloadable: lessonDownloadable,
@@ -674,6 +675,22 @@ function ChapterCard({
     next.splice(to, 0, moved);
     setDraggedLessonId(null);
     reorderLessons(next);
+  };
+
+  const handleLessonVideoChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    setLessonVideo(file);
+    if (!file) return;
+
+    setIsDetectingLessonDuration(true);
+    try {
+      const seconds = await getMediaDurationSeconds(file);
+      setLessonDuration(secondsToMinutesInput(seconds));
+    } catch {
+      toast.error("Could not read media duration. Enter it manually.");
+    } finally {
+      setIsDetectingLessonDuration(false);
+    }
   };
 
   return (
@@ -763,9 +780,12 @@ function ChapterCard({
               <Input
                 type="number"
                 min={0}
+                step="0.01"
                 value={lessonDuration}
                 onChange={(e) => setLessonDuration(e.target.value)}
-                placeholder="Duration minutes"
+                placeholder={
+                  isDetectingLessonDuration ? "Detecting duration..." : "Duration minutes"
+                }
               />
               <select
                 value={lessonStatus}
@@ -806,7 +826,7 @@ function ChapterCard({
                 type="file"
                 accept="video/mp4,video/webm,video/quicktime"
                 disabled={lessonType !== "video"}
-                onChange={(e) => setLessonVideo(e.target.files?.[0] ?? null)}
+                onChange={(e) => void handleLessonVideoChange(e)}
               />
             </div>
             {lessonVideo && (
@@ -817,6 +837,7 @@ function ChapterCard({
                   onClick={() => {
                     setLessonVideo(null);
                     setLessonFileKey((key) => key + 1);
+                    setIsDetectingLessonDuration(false);
                   }}
                   className="text-destructive hover:underline"
                 >
@@ -886,7 +907,7 @@ function LessonRow({
     title: lesson.title,
     type: (lesson.type as "video" | "text" | "attachment") ?? "video",
     description: lesson.description ?? "",
-    duration_minutes: lesson.duration_seconds ? Math.round(lesson.duration_seconds / 60) : 0,
+    duration_minutes: lesson.duration_seconds ? secondsToMinutesInput(lesson.duration_seconds) : "",
     is_free_preview: lesson.is_free_preview ?? false,
     is_free: lesson.is_free ?? true,
     is_downloadable: lesson.is_downloadable ?? false,
@@ -894,6 +915,7 @@ function LessonRow({
   });
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoFileKey, setVideoFileKey] = useState(0);
+  const [isDetectingVideoDuration, setIsDetectingVideoDuration] = useState(false);
   const [quickNote, setQuickNote] = useState({
     title: "",
     content: "",
@@ -906,7 +928,9 @@ function LessonRow({
       title: lesson.title,
       type: (lesson.type as "video" | "text" | "attachment") ?? "video",
       description: lesson.description ?? "",
-      duration_minutes: lesson.duration_seconds ? Math.round(lesson.duration_seconds / 60) : 0,
+      duration_minutes: lesson.duration_seconds
+        ? secondsToMinutesInput(lesson.duration_seconds)
+        : "",
       is_free_preview: lesson.is_free_preview ?? false,
       is_free: lesson.is_free ?? true,
       is_downloadable: lesson.is_downloadable ?? false,
@@ -926,7 +950,7 @@ function LessonRow({
         description: draft.description,
         type: draft.type,
         video_id: videoId,
-        duration_seconds: Math.max(0, Number(draft.duration_minutes) || 0) * 60,
+        duration_seconds: durationMinutesToSeconds(draft.duration_minutes),
         is_free_preview: draft.is_free_preview,
         is_free: draft.is_free,
         is_downloadable: draft.is_downloadable,
@@ -989,6 +1013,22 @@ function LessonRow({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const handleVideoFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    setVideoFile(file);
+    if (!file) return;
+
+    setIsDetectingVideoDuration(true);
+    try {
+      const seconds = await getMediaDurationSeconds(file);
+      setDraft((current) => ({ ...current, duration_minutes: secondsToMinutesInput(seconds) }));
+    } catch {
+      toast.error("Could not read media duration. Enter it manually.");
+    } finally {
+      setIsDetectingVideoDuration(false);
+    }
+  };
+
   return (
     <li
       draggable={draggable}
@@ -1033,14 +1073,15 @@ function LessonRow({
             <Input
               type="number"
               min={0}
+              step="0.01"
               value={draft.duration_minutes}
               onChange={(e) =>
                 setDraft((current) => ({
                   ...current,
-                  duration_minutes: Number(e.target.value) || 0,
+                  duration_minutes: e.target.value,
                 }))
               }
-              placeholder="Duration minutes"
+              placeholder={isDetectingVideoDuration ? "Detecting duration..." : "Duration minutes"}
             />
             <select
               value={draft.status}
@@ -1060,7 +1101,7 @@ function LessonRow({
               type="file"
               accept="video/mp4,video/webm,video/quicktime"
               disabled={draft.type !== "video"}
-              onChange={(e) => setVideoFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => void handleVideoFileChange(e)}
             />
           </div>
           {videoFile && (
@@ -1071,6 +1112,7 @@ function LessonRow({
                 onClick={() => {
                   setVideoFile(null);
                   setVideoFileKey((key) => key + 1);
+                  setIsDetectingVideoDuration(false);
                 }}
                 className="text-destructive hover:underline"
               >
@@ -1908,6 +1950,44 @@ function StudentsPanel({ courseId }: { courseId: string }) {
       ))}
     </ul>
   );
+}
+
+function getMediaDurationSeconds(file: File) {
+  return new Promise<number>((resolve, reject) => {
+    const media = document.createElement("video");
+    const objectUrl = URL.createObjectURL(file);
+    const cleanup = () => {
+      media.removeAttribute("src");
+      media.load();
+      URL.revokeObjectURL(objectUrl);
+    };
+
+    media.preload = "metadata";
+    media.onloadedmetadata = () => {
+      const duration = media.duration;
+      cleanup();
+      if (Number.isFinite(duration) && duration > 0) {
+        resolve(duration);
+      } else {
+        reject(new Error("Invalid media duration"));
+      }
+    };
+    media.onerror = () => {
+      cleanup();
+      reject(new Error("Could not load media metadata"));
+    };
+    media.src = objectUrl;
+  });
+}
+
+function secondsToMinutesInput(seconds: number) {
+  const minutes = seconds / 60;
+  if (Number.isInteger(minutes)) return String(minutes);
+  return minutes.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+}
+
+function durationMinutesToSeconds(minutes: string | number) {
+  return Math.max(0, Math.round((Number(minutes) || 0) * 60));
 }
 
 function VideoUploader({
