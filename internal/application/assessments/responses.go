@@ -103,6 +103,8 @@ type QuestionResultResponse struct {
 	IsCorrect       bool        `json:"is_correct"`
 	SelectedOptions []uuid.UUID `json:"selected_options"`
 	CorrectOptions  []uuid.UUID `json:"correct_options"`
+	TextAnswer      string      `json:"text_answer,omitempty"`
+	ImageURL        string      `json:"image_url,omitempty"`
 	Explanation     string      `json:"explanation,omitempty"`
 }
 

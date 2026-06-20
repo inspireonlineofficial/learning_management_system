@@ -8,6 +8,7 @@ import (
 	"lms-backend/pkg/apperrors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -1041,6 +1042,7 @@ func decodeTeacherQuestionRequest(r *http.Request) (assessments.CreateQuestionCo
 		Body        string  `json:"body"`
 		Prompt      string  `json:"prompt"`
 		Type        string  `json:"type"`
+		CorrectText string  `json:"correct_text"`
 		ContentType string  `json:"content_type"`
 		ImageURL    string  `json:"image_url"`
 		Marks       float64 `json:"marks"`
@@ -1070,6 +1072,8 @@ func decodeTeacherQuestionRequest(r *http.Request) (assessments.CreateQuestionCo
 		questionType = "single"
 	case "multi_select":
 		questionType = "multiple"
+	case "short_answer":
+		questionType = "short_answer"
 	}
 
 	options := make([]assessments.CreateQuestionOptionCommand, 0, len(req.Options))
@@ -1088,6 +1092,14 @@ func decodeTeacherQuestionRequest(r *http.Request) (assessments.CreateQuestionCo
 			ImageURL:    opt.ImageURL,
 			IsCorrect:   opt.IsCorrect,
 			Position:    position,
+		})
+	}
+	if questionType == "short_answer" && strings.TrimSpace(req.CorrectText) != "" {
+		options = append(options, assessments.CreateQuestionOptionCommand{
+			Body:        req.CorrectText,
+			ContentType: "text",
+			IsCorrect:   true,
+			Position:    1,
 		})
 	}
 

@@ -1,10 +1,11 @@
-import { useMutation } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useState } from "react";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { createTeacherAssignment } from "@/lib/api/assignments";
+import { getTeacherCourse } from "@/lib/api/teacher";
 
 export const Route = createFileRoute("/_authenticated/teacher/courses/$courseId/assignments/new")({
   component: CreateAssignmentPage,
@@ -13,6 +14,10 @@ export const Route = createFileRoute("/_authenticated/teacher/courses/$courseId/
 function CreateAssignmentPage() {
   const { courseId } = Route.useParams();
   const navigate = useNavigate();
+  const course = useQuery({
+    queryKey: ["teacher-course", courseId, "assignment-new"],
+    queryFn: () => getTeacherCourse(courseId),
+  });
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -37,8 +42,21 @@ function CreateAssignmentPage() {
   });
 
   return (
-    <AppShell eyebrow="Assignments" title="Create an assignment">
+    <AppShell
+      eyebrow="Assignments"
+      title={course.data ? `Create assignment for ${course.data.title}` : "Create an assignment"}
+    >
+      <Link
+        to="/teacher/courses/$courseId/builder"
+        params={{ courseId }}
+        className="mb-5 inline-flex text-xs text-brand/55 hover:text-brand"
+      >
+        Back to course builder
+      </Link>
       <div className="max-w-3xl border border-brand/10 bg-white/50 p-6 space-y-5">
+        <div className="border border-brand/10 bg-white px-3 py-2 text-sm text-brand/65">
+          Course: <span className="font-medium text-brand">{course.data?.title ?? courseId}</span>
+        </div>
         <label className="block">
           <span className="eyebrow text-brand/45">Title</span>
           <input
@@ -105,7 +123,9 @@ function CreateAssignmentPage() {
         <div>
           <button
             onClick={() => create.mutate()}
-            disabled={!form.title.trim() || !form.description.trim() || create.isPending}
+            disabled={
+              !form.title.trim() || !form.description.trim() || !form.due_at || create.isPending
+            }
             className="bg-brand text-white px-6 py-3 text-sm disabled:opacity-50"
           >
             {create.isPending ? "Creating..." : "Create assignment"}

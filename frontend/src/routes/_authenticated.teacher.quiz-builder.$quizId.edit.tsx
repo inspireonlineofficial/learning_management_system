@@ -13,6 +13,7 @@ import {
   updateQuiz,
   type TeacherQuestionInput,
 } from "@/lib/api/teacher-quizzes";
+import { uploadLessonFile } from "@/lib/api/teacher";
 import type { QuestionType } from "@/lib/api/quizzes";
 
 export const Route = createFileRoute("/_authenticated/teacher/quiz-builder/$quizId/edit")({
@@ -240,7 +241,7 @@ function AddQuestion({ quizId, onAdded }: { quizId: string; onAdded: () => void 
                   { text: "False", is_correct: false },
                 ]
               : undefined,
-        correct_text: type === "short_answer" ? "" : undefined,
+        correct_text: type === "short_answer" ? "Expected answer" : undefined,
       }),
     onSuccess: () => {
       toast.success("Question added");
@@ -350,6 +351,35 @@ function QuestionCard({
     setForm({ ...form, options: opts });
   };
 
+  const uploadQuestionImage = useMutation({
+    mutationFn: (file: File) => uploadLessonFile(file),
+    onSuccess: (result) => {
+      setForm((current) => ({
+        ...current,
+        image_url: result.presigned_url,
+        content_type: current.prompt.trim() ? "text_image" : "image",
+      }));
+      toast.success("Question image uploaded");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const uploadOptionImage = useMutation({
+    mutationFn: ({ index: _index, file }: { index: number; file: File }) => uploadLessonFile(file),
+    onSuccess: (result, variables) => {
+      const opts = [...(form.options ?? [])];
+      const option = opts[variables.index];
+      opts[variables.index] = {
+        ...option,
+        image_url: result.presigned_url,
+        content_type: option.text.trim() ? "text_image" : "image",
+      };
+      setForm({ ...form, options: opts });
+      toast.success("Option image uploaded");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   return (
     <li className="border border-brand/15 bg-white/50 p-4 space-y-3">
       <div className="flex items-start gap-3">
@@ -392,11 +422,12 @@ function QuestionCard({
       </div>
 
       <div className="grid md:grid-cols-[1fr_180px] gap-3 pl-0 md:pl-[96px]">
-        <input
-          value={form.image_url ?? ""}
-          onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-          placeholder="Question image URL"
-          className="px-3 py-2 text-sm border border-brand/15 bg-white"
+        <ImageUploadControl
+          label="Question image"
+          imageUrl={form.image_url ?? ""}
+          uploading={uploadQuestionImage.isPending}
+          onUpload={(file) => uploadQuestionImage.mutate(file)}
+          onRemove={() => setForm({ ...form, image_url: "", content_type: "text" })}
         />
         <select
           value={form.content_type ?? "text"}
@@ -436,8 +467,8 @@ function QuestionCard({
               />
               <input
                 value={opt.image_url ?? ""}
-                onChange={(e) => setOption(i, { image_url: e.target.value })}
-                placeholder="Option image URL"
+                readOnly
+                placeholder="No image uploaded"
                 disabled={form.type === "true_false"}
                 className="px-3 py-1.5 text-sm border border-brand/15 bg-white disabled:bg-brand/[0.03]"
               />
@@ -456,16 +487,41 @@ function QuestionCard({
                 <option value="text_image">Text + image</option>
               </select>
               {form.type !== "true_false" && (
-                <button
-                  onClick={() => {
-                    const opts = [...(form.options ?? [])];
-                    opts.splice(i, 1);
-                    setForm({ ...form, options: opts });
-                  }}
-                  className="p-1 text-brand/45 hover:text-destructive"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <label className="cursor-pointer px-2 py-1 text-[11px] border border-brand/15 hover:bg-brand/[0.03]">
+                    Upload
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="hidden"
+                      disabled={uploadOptionImage.isPending}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) uploadOptionImage.mutate({ index: i, file });
+                        event.currentTarget.value = "";
+                      }}
+                    />
+                  </label>
+                  {opt.image_url && (
+                    <button
+                      type="button"
+                      onClick={() => setOption(i, { image_url: "", content_type: "text" })}
+                      className="px-2 py-1 text-[11px] text-destructive hover:underline"
+                    >
+                      Remove
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      const opts = [...(form.options ?? [])];
+                      opts.splice(i, 1);
+                      setForm({ ...form, options: opts });
+                    }}
+                    className="p-1 text-brand/45 hover:text-destructive"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </button>
+                </div>
               )}
             </div>
           ))}
@@ -513,5 +569,55 @@ function QuestionCard({
         </button>
       </div>
     </li>
+  );
+}
+
+function ImageUploadControl({
+  label,
+  imageUrl,
+  uploading,
+  onUpload,
+  onRemove,
+}: {
+  label: string;
+  imageUrl: string;
+  uploading: boolean;
+  onUpload: (file: File) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="border border-dashed border-brand/15 bg-white px-3 py-2 text-sm text-brand/60">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <span>{uploading ? "Uploading image..." : label}</span>
+        <div className="flex items-center gap-2">
+          <label className="cursor-pointer px-3 py-1.5 text-xs border border-brand/15 hover:bg-brand/[0.03]">
+            Upload
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              disabled={uploading}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) onUpload(file);
+                event.currentTarget.value = "";
+              }}
+            />
+          </label>
+          {imageUrl && (
+            <button type="button" onClick={onRemove} className="text-xs text-destructive">
+              Remove
+            </button>
+          )}
+        </div>
+      </div>
+      {imageUrl && (
+        <img
+          src={imageUrl}
+          alt=""
+          className="mt-3 max-h-40 max-w-xs object-contain border border-brand/10"
+        />
+      )}
+    </div>
   );
 }

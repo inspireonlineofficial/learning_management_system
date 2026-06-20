@@ -37,7 +37,7 @@ type UpdateQuizCommand struct {
 // CreateQuestionCommand represents a question to be created with a quiz
 type CreateQuestionCommand struct {
 	Body        string                        `json:"body"`
-	Type        string                        `json:"type"` // "single", "multiple", "true_false"
+	Type        string                        `json:"type"` // "single", "multiple", "true_false", "short_answer"
 	ContentType string                        `json:"content_type"`
 	ImageURL    string                        `json:"image_url"`
 	Marks       float64                       `json:"marks"`
@@ -92,8 +92,10 @@ type SaveAttemptAnswersCommand struct {
 
 // QuizAnswerCommand represents a student's answer to a question
 type QuizAnswerCommand struct {
-	QuestionID      uuid.UUID
-	SelectedOptions []uuid.UUID
+	QuestionID      uuid.UUID   `json:"question_id"`
+	SelectedOptions []uuid.UUID `json:"selected_option_ids"`
+	TextAnswer      string      `json:"text_answer"`
+	ImageURL        string      `json:"image_url"`
 }
 
 // CreateAssignmentCommand represents the command to create a new assignment
