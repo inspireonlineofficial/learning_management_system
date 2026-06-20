@@ -113,3 +113,5 @@ screenshots/
 **/*.md
 !requirements.md
 /server
+scratch/
+

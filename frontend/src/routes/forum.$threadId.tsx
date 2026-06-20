@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, MessageSquare } from "lucide-react";
 
+import { BrandLogo } from "@/components/layout/brand-logo";
 import { useAuth } from "@/context/auth-context";
 import { getForumThread, listForumPosts } from "@/lib/api/forum";
 
@@ -25,9 +26,7 @@ function PublicForumThreadPage() {
     <div className="min-h-screen bg-surface text-brand font-sans">
       <header className="border-b border-brand/10">
         <div className="max-w-5xl mx-auto px-6 lg:px-10 py-6 flex items-center justify-between">
-          <Link to="/" className="font-serif italic text-2xl text-accent">
-            Inspire LMS
-          </Link>
+          <BrandLogo imageClassName="max-h-14 max-w-[220px]" />
           <Link
             to={isAuthenticated ? "/student/forum" : "/login"}
             className="bg-brand text-white px-4 py-2 text-xs"

@@ -61,14 +61,6 @@ type Config struct {
 	TypesenseHost   string
 	TypesensePort   string
 	TypesenseAPIKey string
-
-	// bKash
-	BkashBaseURL     string
-	BkashAppKey      string
-	BkashAppSecret   string
-	BkashUsername    string
-	BkashPassword    string
-	BkashCallbackURL string
 }
 
 // Load loads configuration from environment variables
@@ -117,13 +109,6 @@ func Load() (*Config, error) {
 		TypesenseHost:   mustGetEnv("TYPESENSE_HOST"),
 		TypesensePort:   getEnvOrDefault("TYPESENSE_PORT", "8108"),
 		TypesenseAPIKey: mustGetEnv("TYPESENSE_API_KEY"),
-
-		BkashBaseURL:     os.Getenv("BKASH_BASE_URL"),
-		BkashAppKey:      os.Getenv("BKASH_APP_KEY"),
-		BkashAppSecret:   os.Getenv("BKASH_APP_SECRET"),
-		BkashUsername:    os.Getenv("BKASH_USERNAME"),
-		BkashPassword:    os.Getenv("BKASH_PASSWORD"),
-		BkashCallbackURL: os.Getenv("BKASH_CALLBACK_URL"),
 	}
 
 	return cfg, nil

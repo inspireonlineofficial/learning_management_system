@@ -2697,17 +2697,17 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/handlers.ErrorResponse'
-  /v1/payments/bkash/callback:
+  /v1/payments/approval/callback:
     get:
-      description: Processes the bKash payment callback and atomically creates an enrollment or order
+      description: Processes the admin approval payment callback and atomically creates an enrollment or order
       produces:
         - application/json
       tags:
         - payments
-      summary: bKash payment callback
+      summary: admin approval payment callback
       parameters:
         - type: string
-          description: bKash payment ID
+          description: admin approval payment ID
           name: paymentID
           in: query
           required: true
@@ -2733,7 +2733,7 @@ paths:
     post:
       security:
         - BearerAuth: []
-      description: Creates a bKash payment intent for a course or book purchase
+      description: Creates a admin approval payment intent for a course or book purchase
       consumes:
         - application/json
       produces:
@@ -6257,7 +6257,7 @@ definitions:
     properties:
       amount:
         type: number
-      bkash_url:
+      approval_url:
         type: string
       currency:
         type: string

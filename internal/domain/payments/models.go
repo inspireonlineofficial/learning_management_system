@@ -32,9 +32,8 @@ const (
 	PaymentStatusRefunded PaymentStatus = "refunded"
 )
 
-// PaymentIntent is the aggregate root for a checkout session.
-// bkash_url is returned to the frontend to redirect the user to the bKash payment page.
-// Raw card data is NEVER stored here — all sensitive data is handled by the provider.
+// PaymentIntent is the aggregate root for a legacy checkout session.
+// New course and book access flows use purchase approval requests instead.
 // Requirements: 24.1, 24.7, 4.1, 4.2, 4.3
 type PaymentIntent struct {
 	ID               uuid.UUID           `json:"id"`
@@ -45,7 +44,7 @@ type PaymentIntent struct {
 	Currency         string              `json:"currency"`
 	Status           PaymentIntentStatus `json:"status"`
 	ProviderIntentID *string             `json:"-"` // never exposed in API
-	BkashURL         *string             `json:"-"` // redirect URL returned at creation, never logged
+	ApprovalURL      *string             `json:"-"` // legacy redirect URL returned at creation, never logged
 	CreatedAt        time.Time           `json:"created_at"`
 	UpdatedAt        time.Time           `json:"updated_at"`
 }

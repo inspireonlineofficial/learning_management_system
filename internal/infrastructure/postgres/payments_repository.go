@@ -27,7 +27,7 @@ func NewPaymentIntentRepository(db *sql.DB) *PaymentIntentRepository {
 func (r *PaymentIntentRepository) Create(ctx context.Context, intent *domainpayments.PaymentIntent) error {
 	_, err := r.db.ExecContext(ctx, `
 		INSERT INTO payment_intents
-			(id, student_id, item_type, item_id, amount, currency, status, provider_intent_id, bkash_url, created_at, updated_at)
+			(id, student_id, item_type, item_id, amount, currency, status, provider_intent_id, approval_url, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
 		intent.ID,
 		intent.StudentID,
@@ -37,7 +37,7 @@ func (r *PaymentIntentRepository) Create(ctx context.Context, intent *domainpaym
 		intent.Currency,
 		intent.Status,
 		intent.ProviderIntentID,
-		intent.BkashURL,
+		intent.ApprovalURL,
 		intent.CreatedAt,
 		intent.UpdatedAt,
 	)
@@ -47,7 +47,7 @@ func (r *PaymentIntentRepository) Create(ctx context.Context, intent *domainpaym
 // FindByID returns a payment intent by its ID, or nil if not found.
 func (r *PaymentIntentRepository) FindByID(ctx context.Context, id uuid.UUID) (*domainpayments.PaymentIntent, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, student_id, item_type, item_id, amount, currency, status, provider_intent_id, bkash_url, created_at, updated_at
+		SELECT id, student_id, item_type, item_id, amount, currency, status, provider_intent_id, approval_url, created_at, updated_at
 		FROM payment_intents
 		WHERE id = $1`, id)
 	return scanPaymentIntent(row)
@@ -70,7 +70,7 @@ func (r *PaymentIntentRepository) Update(ctx context.Context, intent *domainpaym
 // FindByStudentAndItem returns an existing pending intent for the same student+item.
 func (r *PaymentIntentRepository) FindByStudentAndItem(ctx context.Context, studentID, itemID uuid.UUID, itemType domainpayments.ItemType) (*domainpayments.PaymentIntent, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, student_id, item_type, item_id, amount, currency, status, provider_intent_id, bkash_url, created_at, updated_at
+		SELECT id, student_id, item_type, item_id, amount, currency, status, provider_intent_id, approval_url, created_at, updated_at
 		FROM payment_intents
 		WHERE student_id = $1 AND item_id = $2 AND item_type = $3 AND status = 'pending'
 		ORDER BY created_at DESC
@@ -81,10 +81,10 @@ func (r *PaymentIntentRepository) FindByStudentAndItem(ctx context.Context, stud
 }
 
 // FindByProviderIntentID returns a payment intent by its provider-assigned ID.
-// Used to look up the intent during bKash payment callbacks. Requirements: 4.3
+// Retained for legacy payment records. Requirements: 4.3
 func (r *PaymentIntentRepository) FindByProviderIntentID(ctx context.Context, providerIntentID string) (*domainpayments.PaymentIntent, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, student_id, item_type, item_id, amount, currency, status, provider_intent_id, bkash_url, created_at, updated_at
+		SELECT id, student_id, item_type, item_id, amount, currency, status, provider_intent_id, approval_url, created_at, updated_at
 		FROM payment_intents
 		WHERE provider_intent_id = $1`, providerIntentID)
 	return scanPaymentIntent(row)
@@ -101,7 +101,7 @@ func scanPaymentIntent(row *sql.Row) (*domainpayments.PaymentIntent, error) {
 		&intent.Currency,
 		&intent.Status,
 		&intent.ProviderIntentID,
-		&intent.BkashURL,
+		&intent.ApprovalURL,
 		&intent.CreatedAt,
 		&intent.UpdatedAt,
 	)

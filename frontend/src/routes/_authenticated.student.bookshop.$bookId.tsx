@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, BookOpen, ShoppingBag } from "lucide-react";
 
+import { BrandLogo } from "@/components/layout/brand-logo";
 import { formatPrice, getBook } from "@/lib/api/bookshop";
 
 export const Route = createFileRoute("/_authenticated/student/bookshop/$bookId")({
@@ -41,9 +42,7 @@ function BookDetailPage() {
     <div className="min-h-screen bg-surface text-brand font-sans">
       <header className="border-b border-brand/10">
         <div className="max-w-7xl mx-auto px-6 lg:px-10 py-5 flex items-center justify-between">
-          <Link to="/" className="font-serif italic text-2xl text-accent">
-            Inspire LMS
-          </Link>
+          <BrandLogo imageClassName="max-h-14 max-w-[220px]" />
           <Link
             to="/student/bookshop"
             className="flex items-center gap-2 text-xs text-brand/55 hover:text-brand"

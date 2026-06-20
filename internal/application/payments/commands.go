@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// CreateCheckoutIntentCommand initiates a payment intent for a course or book.
+// CreateCheckoutIntentCommand initiates a legacy checkout intent for a course or book.
 // Requirements: 24.1
 type CreateCheckoutIntentCommand struct {
 	StudentID uuid.UUID
@@ -14,10 +14,10 @@ type CreateCheckoutIntentCommand struct {
 	ItemID    uuid.UUID
 }
 
-// ExecutePaymentCommand is used by the BkashCallback handler.
+// ExecutePaymentCommand records a legacy payment execution result.
 // Requirements: 6.1
 type ExecutePaymentCommand struct {
-	PaymentID string // bKash paymentID from callback query param
+	PaymentID string // provider payment ID from callback query param
 	Status    string // "success", "failure", or "cancel"
 }
 
