@@ -114,4 +114,5 @@ screenshots/
 !requirements.md
 /server
 scratch/
+.puku/
 
