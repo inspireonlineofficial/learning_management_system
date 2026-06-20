@@ -33,6 +33,9 @@ export type QuizSummary = {
   total_questions: number;
   total_points: number;
   passing_score: number;
+  is_free?: boolean;
+  is_published?: boolean;
+  is_locked?: boolean;
   attempts_allowed?: number | null;
   attempts_used?: number;
   best_score?: number | null;
@@ -49,6 +52,9 @@ type BackendQuizSummary = {
   time_limit_seconds: number;
   max_attempts: number;
   passing_score_percent: number;
+  is_free?: boolean;
+  is_published?: boolean;
+  is_locked?: boolean;
   attempts_used?: number;
   latest_attempt?: {
     id: string;
@@ -91,6 +97,9 @@ function toQuizSummary(q: BackendQuizSummary): QuizSummary {
     total_questions: 0,
     total_points: 0,
     passing_score: q.passing_score_percent,
+    is_free: q.is_free ?? true,
+    is_published: q.is_published ?? true,
+    is_locked: q.is_locked ?? false,
     attempts_allowed: q.max_attempts || null,
     attempts_used: q.attempts_used ?? 0,
     status:

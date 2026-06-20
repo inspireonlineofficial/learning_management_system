@@ -32,7 +32,9 @@ func (s *service) UpsertCourseReview(ctx context.Context, cmd UpsertCourseReview
 		return nil, apperrors.NewSimpleValidationError("COURSE_NOT_PUBLISHED", "can only review published courses")
 	}
 
-	// TODO: Check if student is enrolled in the course
+	if err := s.ensureStudentHasCourseAccess(ctx, cmd.StudentID, cmd.CourseID); err != nil {
+		return nil, err
+	}
 
 	review := &courses.CourseReview{
 		ID:        uuid.New(),
@@ -58,6 +60,14 @@ func (s *service) UpsertCourseReview(ctx context.Context, cmd UpsertCourseReview
 		CreatedAt: review.CreatedAt,
 		UpdatedAt: review.UpdatedAt,
 	}, nil
+}
+
+// DeleteCourseReview deletes a student's own review.
+func (s *service) DeleteCourseReview(ctx context.Context, cmd DeleteCourseReviewCommand) error {
+	if s.reviewRepo == nil {
+		return apperrors.NewInternalError("REVIEWS_NOT_CONFIGURED", "course reviews are not configured")
+	}
+	return s.reviewRepo.DeleteByStudentAndCourse(ctx, cmd.StudentID, cmd.CourseID)
 }
 
 // ListCourseReviews returns paginated reviews with rating distribution

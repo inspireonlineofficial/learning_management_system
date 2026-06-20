@@ -82,6 +82,7 @@ import { Route as AuthenticatedStudentProgressCourseIdRouteImport } from './rout
 import { Route as AuthenticatedStudentPlayerCourseIdRouteImport } from './routes/_authenticated.student.player.$courseId'
 import { Route as AuthenticatedStudentLiveClassesSessionIdRouteImport } from './routes/_authenticated.student.live-classes.$sessionId'
 import { Route as AuthenticatedStudentForumThreadIdRouteImport } from './routes/_authenticated.student.forum.$threadId'
+import { Route as AuthenticatedStudentCoursesCourseIdRouteImport } from './routes/_authenticated.student.courses.$courseId'
 import { Route as AuthenticatedStudentCheckoutCourseIdRouteImport } from './routes/_authenticated.student.checkout.$courseId'
 import { Route as AuthenticatedStudentCertificatesCourseIdRouteImport } from './routes/_authenticated.student.certificates.$courseId'
 import { Route as AuthenticatedStudentBookshopRequestsRouteImport } from './routes/_authenticated.student.bookshop.requests'
@@ -105,6 +106,8 @@ import { Route as AuthenticatedAdminAnalyticsCoursesIndexRouteImport } from './r
 import { Route as AuthenticatedTeacherQuizBuilderQuizIdEditRouteImport } from './routes/_authenticated.teacher.quiz-builder.$quizId.edit'
 import { Route as AuthenticatedTeacherLiveSessionIdRoomRouteImport } from './routes/_authenticated.teacher.live.$sessionId.room'
 import { Route as AuthenticatedTeacherCoursesCourseIdSubmitRouteImport } from './routes/_authenticated.teacher.courses.$courseId.submit'
+import { Route as AuthenticatedTeacherCoursesCourseIdStudentsRouteImport } from './routes/_authenticated.teacher.courses.$courseId.students'
+import { Route as AuthenticatedTeacherCoursesCourseIdReviewsRouteImport } from './routes/_authenticated.teacher.courses.$courseId.reviews'
 import { Route as AuthenticatedTeacherCoursesCourseIdPreviewRouteImport } from './routes/_authenticated.teacher.courses.$courseId.preview'
 import { Route as AuthenticatedTeacherCoursesCourseIdEditRouteImport } from './routes/_authenticated.teacher.courses.$courseId.edit'
 import { Route as AuthenticatedTeacherCoursesCourseIdContentRouteImport } from './routes/_authenticated.teacher.courses.$courseId.content'
@@ -543,6 +546,12 @@ const AuthenticatedStudentForumThreadIdRoute =
     path: '/$threadId',
     getParentRoute: () => AuthenticatedStudentForumRoute,
   } as any)
+const AuthenticatedStudentCoursesCourseIdRoute =
+  AuthenticatedStudentCoursesCourseIdRouteImport.update({
+    id: '/courses/$courseId',
+    path: '/courses/$courseId',
+    getParentRoute: () => AuthenticatedStudentRoute,
+  } as any)
 const AuthenticatedStudentCheckoutCourseIdRoute =
   AuthenticatedStudentCheckoutCourseIdRouteImport.update({
     id: '/checkout/$courseId',
@@ -681,6 +690,18 @@ const AuthenticatedTeacherCoursesCourseIdSubmitRoute =
     path: '/courses/$courseId/submit',
     getParentRoute: () => AuthenticatedTeacherRoute,
   } as any)
+const AuthenticatedTeacherCoursesCourseIdStudentsRoute =
+  AuthenticatedTeacherCoursesCourseIdStudentsRouteImport.update({
+    id: '/courses/$courseId/students',
+    path: '/courses/$courseId/students',
+    getParentRoute: () => AuthenticatedTeacherRoute,
+  } as any)
+const AuthenticatedTeacherCoursesCourseIdReviewsRoute =
+  AuthenticatedTeacherCoursesCourseIdReviewsRouteImport.update({
+    id: '/courses/$courseId/reviews',
+    path: '/courses/$courseId/reviews',
+    getParentRoute: () => AuthenticatedTeacherRoute,
+  } as any)
 const AuthenticatedTeacherCoursesCourseIdPreviewRoute =
   AuthenticatedTeacherCoursesCourseIdPreviewRouteImport.update({
     id: '/courses/$courseId/preview',
@@ -719,9 +740,9 @@ const AuthenticatedStudentLiveClassesSessionIdRoomRoute =
   } as any)
 const AuthenticatedStudentCoursesCourseIdRequestAccessRoute =
   AuthenticatedStudentCoursesCourseIdRequestAccessRouteImport.update({
-    id: '/courses/$courseId/request-access',
-    path: '/courses/$courseId/request-access',
-    getParentRoute: () => AuthenticatedStudentRoute,
+    id: '/request-access',
+    path: '/request-access',
+    getParentRoute: () => AuthenticatedStudentCoursesCourseIdRoute,
   } as any)
 const AuthenticatedStudentCheckoutItemTypeItemIdRoute =
   AuthenticatedStudentCheckoutItemTypeItemIdRouteImport.update({
@@ -892,6 +913,7 @@ export interface FileRoutesByFullPath {
   '/student/bookshop/requests': typeof AuthenticatedStudentBookshopRequestsRoute
   '/student/certificates/$courseId': typeof AuthenticatedStudentCertificatesCourseIdRoute
   '/student/checkout/$courseId': typeof AuthenticatedStudentCheckoutCourseIdRoute
+  '/student/courses/$courseId': typeof AuthenticatedStudentCoursesCourseIdRouteWithChildren
   '/student/forum/$threadId': typeof AuthenticatedStudentForumThreadIdRoute
   '/student/live-classes/$sessionId': typeof AuthenticatedStudentLiveClassesSessionIdRouteWithChildren
   '/student/player/$courseId': typeof AuthenticatedStudentPlayerCourseIdRoute
@@ -931,6 +953,8 @@ export interface FileRoutesByFullPath {
   '/teacher/courses/$courseId/content': typeof AuthenticatedTeacherCoursesCourseIdContentRoute
   '/teacher/courses/$courseId/edit': typeof AuthenticatedTeacherCoursesCourseIdEditRoute
   '/teacher/courses/$courseId/preview': typeof AuthenticatedTeacherCoursesCourseIdPreviewRoute
+  '/teacher/courses/$courseId/reviews': typeof AuthenticatedTeacherCoursesCourseIdReviewsRoute
+  '/teacher/courses/$courseId/students': typeof AuthenticatedTeacherCoursesCourseIdStudentsRoute
   '/teacher/courses/$courseId/submit': typeof AuthenticatedTeacherCoursesCourseIdSubmitRoute
   '/teacher/live/$sessionId/room': typeof AuthenticatedTeacherLiveSessionIdRoomRoute
   '/teacher/quiz-builder/$quizId/edit': typeof AuthenticatedTeacherQuizBuilderQuizIdEditRoute
@@ -1004,6 +1028,7 @@ export interface FileRoutesByTo {
   '/student/bookshop/requests': typeof AuthenticatedStudentBookshopRequestsRoute
   '/student/certificates/$courseId': typeof AuthenticatedStudentCertificatesCourseIdRoute
   '/student/checkout/$courseId': typeof AuthenticatedStudentCheckoutCourseIdRoute
+  '/student/courses/$courseId': typeof AuthenticatedStudentCoursesCourseIdRouteWithChildren
   '/student/forum/$threadId': typeof AuthenticatedStudentForumThreadIdRoute
   '/student/live-classes/$sessionId': typeof AuthenticatedStudentLiveClassesSessionIdRouteWithChildren
   '/student/player/$courseId': typeof AuthenticatedStudentPlayerCourseIdRoute
@@ -1043,6 +1068,8 @@ export interface FileRoutesByTo {
   '/teacher/courses/$courseId/content': typeof AuthenticatedTeacherCoursesCourseIdContentRoute
   '/teacher/courses/$courseId/edit': typeof AuthenticatedTeacherCoursesCourseIdEditRoute
   '/teacher/courses/$courseId/preview': typeof AuthenticatedTeacherCoursesCourseIdPreviewRoute
+  '/teacher/courses/$courseId/reviews': typeof AuthenticatedTeacherCoursesCourseIdReviewsRoute
+  '/teacher/courses/$courseId/students': typeof AuthenticatedTeacherCoursesCourseIdStudentsRoute
   '/teacher/courses/$courseId/submit': typeof AuthenticatedTeacherCoursesCourseIdSubmitRoute
   '/teacher/live/$sessionId/room': typeof AuthenticatedTeacherLiveSessionIdRoomRoute
   '/teacher/quiz-builder/$quizId/edit': typeof AuthenticatedTeacherQuizBuilderQuizIdEditRoute
@@ -1126,6 +1153,7 @@ export interface FileRoutesById {
   '/_authenticated/student/bookshop/requests': typeof AuthenticatedStudentBookshopRequestsRoute
   '/_authenticated/student/certificates/$courseId': typeof AuthenticatedStudentCertificatesCourseIdRoute
   '/_authenticated/student/checkout/$courseId': typeof AuthenticatedStudentCheckoutCourseIdRoute
+  '/_authenticated/student/courses/$courseId': typeof AuthenticatedStudentCoursesCourseIdRouteWithChildren
   '/_authenticated/student/forum/$threadId': typeof AuthenticatedStudentForumThreadIdRoute
   '/_authenticated/student/live-classes/$sessionId': typeof AuthenticatedStudentLiveClassesSessionIdRouteWithChildren
   '/_authenticated/student/player/$courseId': typeof AuthenticatedStudentPlayerCourseIdRoute
@@ -1165,6 +1193,8 @@ export interface FileRoutesById {
   '/_authenticated/teacher/courses/$courseId/content': typeof AuthenticatedTeacherCoursesCourseIdContentRoute
   '/_authenticated/teacher/courses/$courseId/edit': typeof AuthenticatedTeacherCoursesCourseIdEditRoute
   '/_authenticated/teacher/courses/$courseId/preview': typeof AuthenticatedTeacherCoursesCourseIdPreviewRoute
+  '/_authenticated/teacher/courses/$courseId/reviews': typeof AuthenticatedTeacherCoursesCourseIdReviewsRoute
+  '/_authenticated/teacher/courses/$courseId/students': typeof AuthenticatedTeacherCoursesCourseIdStudentsRoute
   '/_authenticated/teacher/courses/$courseId/submit': typeof AuthenticatedTeacherCoursesCourseIdSubmitRoute
   '/_authenticated/teacher/live/$sessionId/room': typeof AuthenticatedTeacherLiveSessionIdRoomRoute
   '/_authenticated/teacher/quiz-builder/$quizId/edit': typeof AuthenticatedTeacherQuizBuilderQuizIdEditRoute
@@ -1248,6 +1278,7 @@ export interface FileRouteTypes {
     | '/student/bookshop/requests'
     | '/student/certificates/$courseId'
     | '/student/checkout/$courseId'
+    | '/student/courses/$courseId'
     | '/student/forum/$threadId'
     | '/student/live-classes/$sessionId'
     | '/student/player/$courseId'
@@ -1287,6 +1318,8 @@ export interface FileRouteTypes {
     | '/teacher/courses/$courseId/content'
     | '/teacher/courses/$courseId/edit'
     | '/teacher/courses/$courseId/preview'
+    | '/teacher/courses/$courseId/reviews'
+    | '/teacher/courses/$courseId/students'
     | '/teacher/courses/$courseId/submit'
     | '/teacher/live/$sessionId/room'
     | '/teacher/quiz-builder/$quizId/edit'
@@ -1360,6 +1393,7 @@ export interface FileRouteTypes {
     | '/student/bookshop/requests'
     | '/student/certificates/$courseId'
     | '/student/checkout/$courseId'
+    | '/student/courses/$courseId'
     | '/student/forum/$threadId'
     | '/student/live-classes/$sessionId'
     | '/student/player/$courseId'
@@ -1399,6 +1433,8 @@ export interface FileRouteTypes {
     | '/teacher/courses/$courseId/content'
     | '/teacher/courses/$courseId/edit'
     | '/teacher/courses/$courseId/preview'
+    | '/teacher/courses/$courseId/reviews'
+    | '/teacher/courses/$courseId/students'
     | '/teacher/courses/$courseId/submit'
     | '/teacher/live/$sessionId/room'
     | '/teacher/quiz-builder/$quizId/edit'
@@ -1481,6 +1517,7 @@ export interface FileRouteTypes {
     | '/_authenticated/student/bookshop/requests'
     | '/_authenticated/student/certificates/$courseId'
     | '/_authenticated/student/checkout/$courseId'
+    | '/_authenticated/student/courses/$courseId'
     | '/_authenticated/student/forum/$threadId'
     | '/_authenticated/student/live-classes/$sessionId'
     | '/_authenticated/student/player/$courseId'
@@ -1520,6 +1557,8 @@ export interface FileRouteTypes {
     | '/_authenticated/teacher/courses/$courseId/content'
     | '/_authenticated/teacher/courses/$courseId/edit'
     | '/_authenticated/teacher/courses/$courseId/preview'
+    | '/_authenticated/teacher/courses/$courseId/reviews'
+    | '/_authenticated/teacher/courses/$courseId/students'
     | '/_authenticated/teacher/courses/$courseId/submit'
     | '/_authenticated/teacher/live/$sessionId/room'
     | '/_authenticated/teacher/quiz-builder/$quizId/edit'
@@ -2070,6 +2109,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudentForumThreadIdRouteImport
       parentRoute: typeof AuthenticatedStudentForumRoute
     }
+    '/_authenticated/student/courses/$courseId': {
+      id: '/_authenticated/student/courses/$courseId'
+      path: '/courses/$courseId'
+      fullPath: '/student/courses/$courseId'
+      preLoaderRoute: typeof AuthenticatedStudentCoursesCourseIdRouteImport
+      parentRoute: typeof AuthenticatedStudentRoute
+    }
     '/_authenticated/student/checkout/$courseId': {
       id: '/_authenticated/student/checkout/$courseId'
       path: '/checkout/$courseId'
@@ -2231,6 +2277,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTeacherCoursesCourseIdSubmitRouteImport
       parentRoute: typeof AuthenticatedTeacherRoute
     }
+    '/_authenticated/teacher/courses/$courseId/students': {
+      id: '/_authenticated/teacher/courses/$courseId/students'
+      path: '/courses/$courseId/students'
+      fullPath: '/teacher/courses/$courseId/students'
+      preLoaderRoute: typeof AuthenticatedTeacherCoursesCourseIdStudentsRouteImport
+      parentRoute: typeof AuthenticatedTeacherRoute
+    }
+    '/_authenticated/teacher/courses/$courseId/reviews': {
+      id: '/_authenticated/teacher/courses/$courseId/reviews'
+      path: '/courses/$courseId/reviews'
+      fullPath: '/teacher/courses/$courseId/reviews'
+      preLoaderRoute: typeof AuthenticatedTeacherCoursesCourseIdReviewsRouteImport
+      parentRoute: typeof AuthenticatedTeacherRoute
+    }
     '/_authenticated/teacher/courses/$courseId/preview': {
       id: '/_authenticated/teacher/courses/$courseId/preview'
       path: '/courses/$courseId/preview'
@@ -2275,10 +2335,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/student/courses/$courseId/request-access': {
       id: '/_authenticated/student/courses/$courseId/request-access'
-      path: '/courses/$courseId/request-access'
+      path: '/request-access'
       fullPath: '/student/courses/$courseId/request-access'
       preLoaderRoute: typeof AuthenticatedStudentCoursesCourseIdRequestAccessRouteImport
-      parentRoute: typeof AuthenticatedStudentRoute
+      parentRoute: typeof AuthenticatedStudentCoursesCourseIdRoute
     }
     '/_authenticated/student/checkout/$itemType/$itemId': {
       id: '/_authenticated/student/checkout/$itemType/$itemId'
@@ -2646,6 +2706,21 @@ const AuthenticatedStudentAssignmentsAssignmentIdRouteWithChildren =
     AuthenticatedStudentAssignmentsAssignmentIdRouteChildren,
   )
 
+interface AuthenticatedStudentCoursesCourseIdRouteChildren {
+  AuthenticatedStudentCoursesCourseIdRequestAccessRoute: typeof AuthenticatedStudentCoursesCourseIdRequestAccessRoute
+}
+
+const AuthenticatedStudentCoursesCourseIdRouteChildren: AuthenticatedStudentCoursesCourseIdRouteChildren =
+  {
+    AuthenticatedStudentCoursesCourseIdRequestAccessRoute:
+      AuthenticatedStudentCoursesCourseIdRequestAccessRoute,
+  }
+
+const AuthenticatedStudentCoursesCourseIdRouteWithChildren =
+  AuthenticatedStudentCoursesCourseIdRoute._addFileChildren(
+    AuthenticatedStudentCoursesCourseIdRouteChildren,
+  )
+
 interface AuthenticatedStudentRouteChildren {
   AuthenticatedStudentAccessRequestsRoute: typeof AuthenticatedStudentAccessRequestsRoute
   AuthenticatedStudentAchievementsRoute: typeof AuthenticatedStudentAchievementsRoute
@@ -2666,13 +2741,13 @@ interface AuthenticatedStudentRouteChildren {
   AuthenticatedStudentAssignmentsAssignmentIdRoute: typeof AuthenticatedStudentAssignmentsAssignmentIdRouteWithChildren
   AuthenticatedStudentCertificatesCourseIdRoute: typeof AuthenticatedStudentCertificatesCourseIdRoute
   AuthenticatedStudentCheckoutCourseIdRoute: typeof AuthenticatedStudentCheckoutCourseIdRoute
+  AuthenticatedStudentCoursesCourseIdRoute: typeof AuthenticatedStudentCoursesCourseIdRouteWithChildren
   AuthenticatedStudentPlayerCourseIdRoute: typeof AuthenticatedStudentPlayerCourseIdRoute
   AuthenticatedStudentAssessmentsIndexRoute: typeof AuthenticatedStudentAssessmentsIndexRoute
   AuthenticatedStudentAssignmentsIndexRoute: typeof AuthenticatedStudentAssignmentsIndexRoute
   AuthenticatedStudentCertificatesIndexRoute: typeof AuthenticatedStudentCertificatesIndexRoute
   AuthenticatedStudentAssessmentsResultAttemptIdRoute: typeof AuthenticatedStudentAssessmentsResultAttemptIdRoute
   AuthenticatedStudentCheckoutItemTypeItemIdRoute: typeof AuthenticatedStudentCheckoutItemTypeItemIdRoute
-  AuthenticatedStudentCoursesCourseIdRequestAccessRoute: typeof AuthenticatedStudentCoursesCourseIdRequestAccessRoute
 }
 
 const AuthenticatedStudentRouteChildren: AuthenticatedStudentRouteChildren = {
@@ -2704,6 +2779,8 @@ const AuthenticatedStudentRouteChildren: AuthenticatedStudentRouteChildren = {
     AuthenticatedStudentCertificatesCourseIdRoute,
   AuthenticatedStudentCheckoutCourseIdRoute:
     AuthenticatedStudentCheckoutCourseIdRoute,
+  AuthenticatedStudentCoursesCourseIdRoute:
+    AuthenticatedStudentCoursesCourseIdRouteWithChildren,
   AuthenticatedStudentPlayerCourseIdRoute:
     AuthenticatedStudentPlayerCourseIdRoute,
   AuthenticatedStudentAssessmentsIndexRoute:
@@ -2716,8 +2793,6 @@ const AuthenticatedStudentRouteChildren: AuthenticatedStudentRouteChildren = {
     AuthenticatedStudentAssessmentsResultAttemptIdRoute,
   AuthenticatedStudentCheckoutItemTypeItemIdRoute:
     AuthenticatedStudentCheckoutItemTypeItemIdRoute,
-  AuthenticatedStudentCoursesCourseIdRequestAccessRoute:
-    AuthenticatedStudentCoursesCourseIdRequestAccessRoute,
 }
 
 const AuthenticatedStudentRouteWithChildren =
@@ -2755,6 +2830,8 @@ interface AuthenticatedTeacherRouteChildren {
   AuthenticatedTeacherCoursesCourseIdContentRoute: typeof AuthenticatedTeacherCoursesCourseIdContentRoute
   AuthenticatedTeacherCoursesCourseIdEditRoute: typeof AuthenticatedTeacherCoursesCourseIdEditRoute
   AuthenticatedTeacherCoursesCourseIdPreviewRoute: typeof AuthenticatedTeacherCoursesCourseIdPreviewRoute
+  AuthenticatedTeacherCoursesCourseIdReviewsRoute: typeof AuthenticatedTeacherCoursesCourseIdReviewsRoute
+  AuthenticatedTeacherCoursesCourseIdStudentsRoute: typeof AuthenticatedTeacherCoursesCourseIdStudentsRoute
   AuthenticatedTeacherCoursesCourseIdSubmitRoute: typeof AuthenticatedTeacherCoursesCourseIdSubmitRoute
   AuthenticatedTeacherLiveSessionIdRoomRoute: typeof AuthenticatedTeacherLiveSessionIdRoomRoute
   AuthenticatedTeacherQuizBuilderQuizIdEditRoute: typeof AuthenticatedTeacherQuizBuilderQuizIdEditRoute
@@ -2792,6 +2869,10 @@ const AuthenticatedTeacherRouteChildren: AuthenticatedTeacherRouteChildren = {
     AuthenticatedTeacherCoursesCourseIdEditRoute,
   AuthenticatedTeacherCoursesCourseIdPreviewRoute:
     AuthenticatedTeacherCoursesCourseIdPreviewRoute,
+  AuthenticatedTeacherCoursesCourseIdReviewsRoute:
+    AuthenticatedTeacherCoursesCourseIdReviewsRoute,
+  AuthenticatedTeacherCoursesCourseIdStudentsRoute:
+    AuthenticatedTeacherCoursesCourseIdStudentsRoute,
   AuthenticatedTeacherCoursesCourseIdSubmitRoute:
     AuthenticatedTeacherCoursesCourseIdSubmitRoute,
   AuthenticatedTeacherLiveSessionIdRoomRoute:

@@ -35,27 +35,32 @@ const (
 
 // Course is the aggregate root for the courses bounded context
 type Course struct {
-	ID               uuid.UUID
-	TeacherID        uuid.UUID
-	Title            string
-	Slug             string
-	ShortDescription string
-	Description      string
-	Subject          string
-	Level            CourseLevel
-	PriceType        PriceType
-	Price            float64
-	Currency         string
-	Prerequisites    string
-	ThumbnailURL     string
-	Status           CourseStatus
-	RatingAverage    float64
-	RatingCount      int
-	TotalEnrolled    int
-	PublishedAt      *time.Time
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
-	DeletedAt        *time.Time
+	ID                       uuid.UUID
+	TeacherID                uuid.UUID
+	Title                    string
+	Slug                     string
+	ShortDescription         string
+	Description              string
+	Subject                  string
+	Level                    CourseLevel
+	PriceType                PriceType
+	Price                    float64
+	Currency                 string
+	Prerequisites            string
+	Visibility               string
+	LearningOutcomes         string
+	Requirements             string
+	TargetAudience           string
+	EstimatedDurationMinutes int
+	ThumbnailURL             string
+	Status                   CourseStatus
+	RatingAverage            float64
+	RatingCount              int
+	TotalEnrolled            int
+	PublishedAt              *time.Time
+	CreatedAt                time.Time
+	UpdatedAt                time.Time
+	DeletedAt                *time.Time
 }
 
 // CourseStatusTransition defines valid state transitions

@@ -226,6 +226,11 @@ func (s *Server) RegisterRoutes() {
 	s.mux.HandleFunc("GET /v1/courses/{courseId}", s.coursesHandler.GetCourseDetail)
 	s.mux.HandleFunc("GET /v1/courses/{courseId}/reviews", s.coursesHandler.ListCourseReviews)
 	s.mux.HandleFunc("POST /v1/courses/{courseId}/reviews", s.withAuthAndRole("student", s.coursesHandler.UpsertCourseReview, nil))
+	s.mux.HandleFunc("DELETE /v1/courses/{courseId}/reviews/me", s.withAuthAndRole("student", s.coursesHandler.DeleteCourseReview, nil))
+	s.mux.HandleFunc("GET /v1/courses/{courseId}/comments", s.coursesHandler.ListCourseComments)
+	s.mux.HandleFunc("POST /v1/courses/{courseId}/comments", s.withAuth(s.coursesHandler.CreateCourseComment))
+	s.mux.HandleFunc("PATCH /v1/courses/comments/{commentId}", s.withAuth(s.coursesHandler.UpdateCourseComment))
+	s.mux.HandleFunc("DELETE /v1/courses/comments/{commentId}", s.withAuth(s.coursesHandler.DeleteCourseComment))
 	s.mux.HandleFunc("GET /v1/public/slides", s.slidesHandler.ListPublicSlides)
 
 	// Teacher course endpoints (require JWT + teacher role)
@@ -244,6 +249,9 @@ func (s *Server) RegisterRoutes() {
 	s.mux.HandleFunc("POST /v1/teacher/chapters/{chapterId}/lessons", s.withAuthAndRole("teacher", s.coursesHandler.CreateLesson, nil))
 	s.mux.HandleFunc("PATCH /v1/teacher/lessons/{lessonId}", s.withAuthAndRole("teacher", s.coursesHandler.UpdateLesson, nil))
 	s.mux.HandleFunc("DELETE /v1/teacher/lessons/{lessonId}", s.withAuthAndRole("teacher", s.coursesHandler.DeleteLesson, nil))
+	s.mux.HandleFunc("POST /v1/teacher/courses/{courseId}/notes", s.withAuthAndRole("teacher", s.coursesHandler.CreateCourseNote, nil))
+	s.mux.HandleFunc("PATCH /v1/teacher/notes/{noteId}", s.withAuthAndRole("teacher", s.coursesHandler.UpdateCourseNote, nil))
+	s.mux.HandleFunc("DELETE /v1/teacher/notes/{noteId}", s.withAuthAndRole("teacher", s.coursesHandler.DeleteCourseNote, nil))
 	s.mux.HandleFunc("PATCH /v1/teacher/content/reorder", s.withAuthAndRole("teacher", s.coursesHandler.ReorderContent, nil))
 
 	// Admin course endpoints (require JWT + admin role)

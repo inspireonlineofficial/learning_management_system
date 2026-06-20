@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"lms-backend/internal/domain/courses"
+	domainenrollments "lms-backend/internal/domain/enrollments"
 	"lms-backend/internal/domain/notifications"
 	tsclient "lms-backend/internal/infrastructure/typesense"
 	"lms-backend/pkg/apperrors"
@@ -29,7 +30,7 @@ type Service interface {
 	// Admin operations
 	ApproveCourse(ctx context.Context, cmd ApproveCourseCommand) error
 	RejectCourse(ctx context.Context, cmd RejectCourseCommand) error
-	ListPendingCourses(ctx context.Context, page, limit int) ([]CourseResponse, int, error)
+	ListAdminCourses(ctx context.Context, filters courses.CourseFilters, page, limit int) ([]CourseResponse, int, error)
 	GetAdminCourseDetail(ctx context.Context, courseID uuid.UUID) (*CourseDetailResponse, error)
 
 	// Content tree management
@@ -45,6 +46,14 @@ type Service interface {
 	UpdateLesson(ctx context.Context, cmd UpdateLessonCommand) (*LessonResponse, error)
 	DeleteLesson(ctx context.Context, cmd DeleteLessonCommand) error
 
+	CreateCourseNote(ctx context.Context, cmd CreateCourseNoteCommand) (*NoteResponse, error)
+	UpdateCourseNote(ctx context.Context, cmd UpdateCourseNoteCommand) (*NoteResponse, error)
+	DeleteCourseNote(ctx context.Context, cmd DeleteCourseNoteCommand) error
+	ListCourseComments(ctx context.Context, courseID uuid.UUID, page, limit int) (*CommentsResponse, error)
+	CreateCourseComment(ctx context.Context, cmd CreateCourseCommentCommand) (*CommentResponse, error)
+	UpdateCourseComment(ctx context.Context, cmd UpdateCourseCommentCommand) (*CommentResponse, error)
+	DeleteCourseComment(ctx context.Context, cmd DeleteCourseCommentCommand) error
+
 	ReorderContent(ctx context.Context, cmd ReorderContentCommand) error
 
 	// Public operations
@@ -53,6 +62,7 @@ type Service interface {
 
 	// Reviews
 	UpsertCourseReview(ctx context.Context, cmd UpsertCourseReviewCommand) (*CourseReviewResponse, error)
+	DeleteCourseReview(ctx context.Context, cmd DeleteCourseReviewCommand) error
 	ListCourseReviews(ctx context.Context, courseID uuid.UUID, page, limit int) (*CourseReviewsResponse, error)
 
 	// Video and file uploads
@@ -62,17 +72,20 @@ type Service interface {
 }
 
 type service struct {
-	courseRepo  courses.CourseRepository
-	moduleRepo  courses.ModuleRepository
-	chapterRepo courses.ChapterRepository
-	lessonRepo  courses.LessonRepository
-	videoRepo   courses.VideoRepository
-	reviewRepo  courses.CourseReviewRepository
-	indexer     tsclient.Indexer
-	storage     StorageClient
-	jobQueue    notifications.JobQueue
-	videoBucket string
-	filesBucket string
+	courseRepo     courses.CourseRepository
+	moduleRepo     courses.ModuleRepository
+	chapterRepo    courses.ChapterRepository
+	lessonRepo     courses.LessonRepository
+	noteRepo       courses.CourseNoteRepository
+	commentRepo    courses.CourseCommentRepository
+	enrollmentRepo domainenrollments.EnrollmentRepository
+	videoRepo      courses.VideoRepository
+	reviewRepo     courses.CourseReviewRepository
+	indexer        tsclient.Indexer
+	storage        StorageClient
+	jobQueue       notifications.JobQueue
+	videoBucket    string
+	filesBucket    string
 	// Add audit logger and notification queue when implementing admin operations
 }
 
@@ -107,6 +120,9 @@ func NewServiceWithUploadDeps(
 	moduleRepo courses.ModuleRepository,
 	chapterRepo courses.ChapterRepository,
 	lessonRepo courses.LessonRepository,
+	noteRepo courses.CourseNoteRepository,
+	commentRepo courses.CourseCommentRepository,
+	enrollmentRepo domainenrollments.EnrollmentRepository,
 	videoRepo courses.VideoRepository,
 	reviewRepo courses.CourseReviewRepository,
 	indexer tsclient.Indexer,
@@ -116,6 +132,9 @@ func NewServiceWithUploadDeps(
 	filesBucket string,
 ) Service {
 	svc := NewService(courseRepo, moduleRepo, chapterRepo, lessonRepo, videoRepo, reviewRepo, indexer).(*service)
+	svc.noteRepo = noteRepo
+	svc.commentRepo = commentRepo
+	svc.enrollmentRepo = enrollmentRepo
 	svc.storage = storage
 	svc.jobQueue = jobQueue
 	svc.videoBucket = videoBucket
@@ -138,22 +157,27 @@ func (s *service) CreateCourse(ctx context.Context, cmd CreateCourseCommand) (*C
 		return nil, err
 	}
 	course := &courses.Course{
-		ID:               uuid.New(),
-		TeacherID:        cmd.TeacherID,
-		Title:            cmd.Title,
-		Slug:             cmd.Slug,
-		ShortDescription: cmd.ShortDescription,
-		Description:      cmd.Description,
-		Subject:          cmd.Subject,
-		Level:            courses.CourseLevel(cmd.Level),
-		PriceType:        normalizedPriceType,
-		Price:            normalizedPrice,
-		Currency:         normalizedCurrency,
-		Prerequisites:    cmd.Prerequisites,
-		ThumbnailURL:     cmd.ThumbnailURL,
-		Status:           courses.CourseStatusDraft,
-		CreatedAt:        time.Now(),
-		UpdatedAt:        time.Now(),
+		ID:                       uuid.New(),
+		TeacherID:                cmd.TeacherID,
+		Title:                    cmd.Title,
+		Slug:                     cmd.Slug,
+		ShortDescription:         cmd.ShortDescription,
+		Description:              cmd.Description,
+		Subject:                  cmd.Subject,
+		Level:                    courses.CourseLevel(cmd.Level),
+		PriceType:                normalizedPriceType,
+		Price:                    normalizedPrice,
+		Currency:                 normalizedCurrency,
+		Prerequisites:            cmd.Prerequisites,
+		Visibility:               normalizeCourseVisibility(cmd.Visibility),
+		LearningOutcomes:         strings.TrimSpace(cmd.LearningOutcomes),
+		Requirements:             strings.TrimSpace(cmd.Requirements),
+		TargetAudience:           strings.TrimSpace(cmd.TargetAudience),
+		EstimatedDurationMinutes: normalizeEstimatedDuration(cmd.EstimatedDurationMinutes),
+		ThumbnailURL:             cmd.ThumbnailURL,
+		Status:                   courses.CourseStatusDraft,
+		CreatedAt:                time.Now(),
+		UpdatedAt:                time.Now(),
 	}
 
 	err = s.courseRepo.Create(ctx, course)
@@ -201,6 +225,26 @@ func normalizeCreateCoursePriceType(raw string, price float64) string {
 	return string(courses.PriceTypeFree)
 }
 
+func normalizeCourseVisibility(raw string) string {
+	visibility := strings.TrimSpace(raw)
+	if visibility == "" {
+		return "public"
+	}
+	switch visibility {
+	case "public", "unlisted", "private":
+		return visibility
+	default:
+		return "public"
+	}
+}
+
+func normalizeEstimatedDuration(minutes int) int {
+	if minutes < 0 {
+		return 0
+	}
+	return minutes
+}
+
 // UpdateCourse updates an existing course
 func (s *service) UpdateCourse(ctx context.Context, cmd UpdateCourseCommand) (*CourseResponse, error) {
 	course, err := s.courseRepo.FindByID(ctx, cmd.CourseID)
@@ -234,6 +278,11 @@ func (s *service) UpdateCourse(ctx context.Context, cmd UpdateCourseCommand) (*C
 	course.Price = normalizedPrice
 	course.Currency = normalizedCurrency
 	course.Prerequisites = cmd.Prerequisites
+	course.Visibility = normalizeCourseVisibility(cmd.Visibility)
+	course.LearningOutcomes = strings.TrimSpace(cmd.LearningOutcomes)
+	course.Requirements = strings.TrimSpace(cmd.Requirements)
+	course.TargetAudience = strings.TrimSpace(cmd.TargetAudience)
+	course.EstimatedDurationMinutes = normalizeEstimatedDuration(cmd.EstimatedDurationMinutes)
 	course.ThumbnailURL = cmd.ThumbnailURL
 
 	err = s.courseRepo.Update(ctx, course)
@@ -355,8 +404,8 @@ func (s *service) ListTeacherCourses(ctx context.Context, teacherID uuid.UUID, p
 	return responses, total, nil
 }
 
-// ListPendingCourses returns admin-reviewable courses.
-func (s *service) ListPendingCourses(ctx context.Context, page, limit int) ([]CourseResponse, int, error) {
+// ListAdminCourses returns courses for admin management.
+func (s *service) ListAdminCourses(ctx context.Context, filters courses.CourseFilters, page, limit int) ([]CourseResponse, int, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -364,9 +413,7 @@ func (s *service) ListPendingCourses(ctx context.Context, page, limit int) ([]Co
 		limit = 20
 	}
 
-	courseList, total, err := s.courseRepo.List(ctx, courses.CourseFilters{
-		Status: courses.CourseStatusPending,
-	}, page, limit)
+	courseList, total, err := s.courseRepo.List(ctx, filters, page, limit)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -391,26 +438,31 @@ func (s *service) GetAdminCourseDetail(ctx context.Context, courseID uuid.UUID) 
 
 func (s *service) toCourseResponse(course *courses.Course) *CourseResponse {
 	return &CourseResponse{
-		ID:               course.ID,
-		TeacherID:        course.TeacherID,
-		Title:            course.Title,
-		Slug:             course.Slug,
-		ShortDescription: course.ShortDescription,
-		Description:      course.Description,
-		Subject:          course.Subject,
-		Level:            string(course.Level),
-		PriceType:        string(course.PriceType),
-		Price:            course.Price,
-		Currency:         course.Currency,
-		Prerequisites:    course.Prerequisites,
-		ThumbnailURL:     course.ThumbnailURL,
-		Status:           string(course.Status),
-		RatingAverage:    course.RatingAverage,
-		RatingCount:      course.RatingCount,
-		TotalEnrolled:    course.TotalEnrolled,
-		PublishedAt:      course.PublishedAt,
-		CreatedAt:        course.CreatedAt,
-		UpdatedAt:        course.UpdatedAt,
+		ID:                       course.ID,
+		TeacherID:                course.TeacherID,
+		Title:                    course.Title,
+		Slug:                     course.Slug,
+		ShortDescription:         course.ShortDescription,
+		Description:              course.Description,
+		Subject:                  course.Subject,
+		Level:                    string(course.Level),
+		PriceType:                string(course.PriceType),
+		Price:                    course.Price,
+		Currency:                 course.Currency,
+		Prerequisites:            course.Prerequisites,
+		Visibility:               course.Visibility,
+		LearningOutcomes:         course.LearningOutcomes,
+		Requirements:             course.Requirements,
+		TargetAudience:           course.TargetAudience,
+		EstimatedDurationMinutes: course.EstimatedDurationMinutes,
+		ThumbnailURL:             course.ThumbnailURL,
+		Status:                   string(course.Status),
+		RatingAverage:            course.RatingAverage,
+		RatingCount:              course.RatingCount,
+		TotalEnrolled:            course.TotalEnrolled,
+		PublishedAt:              course.PublishedAt,
+		CreatedAt:                course.CreatedAt,
+		UpdatedAt:                course.UpdatedAt,
 	}
 }
 
@@ -478,10 +530,73 @@ func (s *service) buildCourseDetailResponse(ctx context.Context, course *courses
 		})
 	}
 
+	isEnrolled := false
+	if studentID != nil && s.enrollmentRepo != nil {
+		if enrollment, err := s.enrollmentRepo.FindByStudentAndCourse(ctx, *studentID, course.ID); err == nil && enrollment != nil && enrollment.CanAccess() {
+			isEnrolled = true
+		}
+	}
+
+	noteResponses := make([]NoteResponse, 0)
+	if s.noteRepo != nil {
+		notes, err := s.noteRepo.FindByCourseID(ctx, course.ID)
+		if err != nil {
+			return nil, err
+		}
+		for _, note := range notes {
+			if course.Status == courses.CourseStatusPublished && !note.IsPublished {
+				continue
+			}
+			noteResponses = append(noteResponses, s.toNoteResponseForAccess(note, isEnrolled))
+		}
+	}
+
+	commentResponses := make([]CommentResponse, 0)
+	if s.commentRepo != nil {
+		commentList, _, err := s.commentRepo.FindByCourseID(ctx, course.ID, 1, 100)
+		if err != nil {
+			return nil, err
+		}
+		for _, comment := range commentList {
+			commentResponses = append(commentResponses, toCommentResponse(comment))
+		}
+	}
+
 	return &CourseDetailResponse{
 		CourseResponse: *s.toCourseResponse(course),
 		Modules:        moduleResponses,
+		Notes:          noteResponses,
+		Comments:       commentResponses,
+		IsEnrolled:     isEnrolled,
 	}, nil
+}
+
+func (s *service) toNoteResponse(note *courses.CourseNote) NoteResponse {
+	return s.toNoteResponseForAccess(note, true)
+}
+
+func (s *service) toNoteResponseForAccess(note *courses.CourseNote, hasApprovedAccess bool) NoteResponse {
+	content := note.Content
+	fileURL := note.FileURL
+	locked := !note.IsFree && !hasApprovedAccess
+	if locked {
+		content = ""
+		fileURL = ""
+	}
+	return NoteResponse{
+		ID:          note.ID,
+		CourseID:    note.CourseID,
+		ModuleID:    note.ModuleID,
+		LessonID:    note.LessonID,
+		Title:       note.Title,
+		Content:     content,
+		FileURL:     fileURL,
+		IsFree:      note.IsFree,
+		IsPublished: note.IsPublished,
+		IsLocked:    locked,
+		CreatedAt:   note.CreatedAt,
+		UpdatedAt:   note.UpdatedAt,
+	}
 }
 
 // ApproveCourse approves a pending course

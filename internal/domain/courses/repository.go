@@ -27,6 +27,7 @@ type CourseFilters struct {
 	MinPrice  *float64
 	MaxPrice  *float64
 	Status    CourseStatus
+	TeacherID *uuid.UUID
 	SortBy    string // "newest", "popular", "rating", "price_asc", "price_desc"
 }
 
@@ -62,6 +63,24 @@ type LessonRepository interface {
 	Reorder(ctx context.Context, chapterID uuid.UUID, positions map[uuid.UUID]int) error
 }
 
+// CourseNoteRepository defines the interface for notes attached to course content.
+type CourseNoteRepository interface {
+	Create(ctx context.Context, note *CourseNote) error
+	FindByID(ctx context.Context, id uuid.UUID) (*CourseNote, error)
+	FindByCourseID(ctx context.Context, courseID uuid.UUID) ([]*CourseNote, error)
+	Update(ctx context.Context, note *CourseNote) error
+	SoftDelete(ctx context.Context, id uuid.UUID) error
+}
+
+// CourseCommentRepository defines persistence for course discussions.
+type CourseCommentRepository interface {
+	Create(ctx context.Context, comment *CourseComment) error
+	FindByID(ctx context.Context, id uuid.UUID) (*CourseComment, error)
+	FindByCourseID(ctx context.Context, courseID uuid.UUID, page, limit int) ([]*CourseComment, int, error)
+	Update(ctx context.Context, comment *CourseComment) error
+	SoftDelete(ctx context.Context, id uuid.UUID) error
+}
+
 // VideoRepository defines the interface for video persistence
 type VideoRepository interface {
 	Create(ctx context.Context, video *Video) error
@@ -75,5 +94,6 @@ type CourseReviewRepository interface {
 	FindByID(ctx context.Context, id uuid.UUID) (*CourseReview, error)
 	FindByCourseID(ctx context.Context, courseID uuid.UUID, page, limit int) ([]*CourseReview, int, error)
 	FindByStudentAndCourse(ctx context.Context, studentID, courseID uuid.UUID) (*CourseReview, error)
+	DeleteByStudentAndCourse(ctx context.Context, studentID, courseID uuid.UUID) error
 	GetRatingDistribution(ctx context.Context, courseID uuid.UUID) (map[int]int, error)
 }

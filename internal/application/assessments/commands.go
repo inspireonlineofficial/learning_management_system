@@ -13,6 +13,8 @@ type CreateQuizCommand struct {
 	PassingScorePercent        float64
 	ShuffleQuestions           bool
 	ShowAnswersAfterSubmission bool
+	IsFree                     bool
+	IsPublished                bool
 	Questions                  []CreateQuestionCommand
 }
 
@@ -27,6 +29,8 @@ type UpdateQuizCommand struct {
 	PassingScorePercent        float64
 	ShuffleQuestions           bool
 	ShowAnswersAfterSubmission bool
+	IsFree                     bool
+	IsPublished                bool
 	Questions                  []CreateQuestionCommand
 }
 
