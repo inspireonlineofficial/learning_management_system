@@ -192,14 +192,26 @@ function toQuiz(quiz: BackendTeacherQuiz): Quiz {
 }
 
 function toQuestion(question: BackendTeacherQuestion): QuizQuestion {
+  const type =
+    question.type === "multiple"
+      ? "multi_select"
+      : question.type === "single"
+        ? "single_choice"
+        : question.type === "short_answer"
+          ? "short_answer"
+          : "true_false";
+  const options = question.options?.map((option) => ({
+    id: option.id,
+    text: option.body,
+    content_type:
+      option.content_type ?? (option.image_url ? (option.body ? "text_image" : "image") : "text"),
+    image_url: option.image_url,
+    is_correct: option.is_correct,
+  }));
+
   return {
     id: question.id,
-    type:
-      question.type === "multiple"
-        ? "multi_select"
-        : question.type === "single"
-          ? "single_choice"
-          : "true_false",
+    type,
     prompt: question.body,
     content_type:
       question.content_type ??
@@ -207,15 +219,10 @@ function toQuestion(question: BackendTeacherQuestion): QuizQuestion {
     image_url: question.image_url,
     points: question.marks ?? 1,
     is_required: question.is_required ?? true,
-    options: question.options?.map((option) => ({
-      id: option.id,
-      text: option.body,
-      content_type:
-        option.content_type ?? (option.image_url ? (option.body ? "text_image" : "image") : "text"),
-      image_url: option.image_url,
-      is_correct: option.is_correct,
-    })),
+    options,
     correct_option_ids: question.correct_option_ids,
+    correct_text:
+      type === "short_answer" ? options?.find((option) => option.is_correct)?.text : undefined,
     explanation: question.explanation,
   };
 }
@@ -244,25 +251,36 @@ function toQuizPayload(input: TeacherQuizInput & { questions?: QuizQuestion[] })
                 ? "multiple"
                 : question.type === "single_choice"
                   ? "single"
-                  : "true_false",
+                  : question.type === "short_answer"
+                    ? "short_answer"
+                    : "true_false",
             position: index + 1,
             explanation: question.explanation ?? "",
             options:
-              question.options && question.options.length > 0
-                ? question.options.map((option, optionIndex) => ({
-                    body: option.text,
-                    content_type: option.content_type,
-                    image_url: option.image_url,
-                    is_correct:
-                      question.correct_option_ids && question.correct_option_ids.length > 0
-                        ? question.correct_option_ids.includes(option.id)
-                        : optionIndex === 0,
-                    position: optionIndex + 1,
-                  }))
-                : [
-                    { body: "True", is_correct: true, position: 1 },
-                    { body: "False", is_correct: false, position: 2 },
-                  ],
+              question.type === "short_answer"
+                ? [
+                    {
+                      body: question.correct_text ?? "",
+                      content_type: "text",
+                      is_correct: true,
+                      position: 1,
+                    },
+                  ]
+                : question.options && question.options.length > 0
+                  ? question.options.map((option, optionIndex) => ({
+                      body: option.text,
+                      content_type: option.content_type,
+                      image_url: option.image_url,
+                      is_correct:
+                        question.correct_option_ids && question.correct_option_ids.length > 0
+                          ? question.correct_option_ids.includes(option.id)
+                          : option.is_correct || optionIndex === 0,
+                      position: optionIndex + 1,
+                    }))
+                  : [
+                      { body: "True", is_correct: true, position: 1 },
+                      { body: "False", is_correct: false, position: 2 },
+                    ],
           }))
         : [
             {
@@ -284,18 +302,27 @@ function toQuizPayload(input: TeacherQuizInput & { questions?: QuizQuestion[] })
 
 function toQuestionPayload(input: Partial<TeacherQuestionInput>) {
   const options =
-    input.options && input.options.length > 0
-      ? input.options.map((option, index) => ({
-          text: option.text,
-          content_type: option.content_type,
-          image_url: option.image_url,
-          is_correct: option.is_correct ?? index === 0,
-          position: index + 1,
-        }))
-      : [
-          { text: "True", is_correct: true, position: 1 },
-          { text: "False", is_correct: false, position: 2 },
-        ];
+    input.type === "short_answer"
+      ? [
+          {
+            text: input.correct_text ?? "",
+            content_type: "text",
+            is_correct: true,
+            position: 1,
+          },
+        ]
+      : input.options && input.options.length > 0
+        ? input.options.map((option, index) => ({
+            text: option.text,
+            content_type: option.content_type,
+            image_url: option.image_url,
+            is_correct: option.is_correct ?? index === 0,
+            position: index + 1,
+          }))
+        : [
+            { text: "True", is_correct: true, position: 1 },
+            { text: "False", is_correct: false, position: 2 },
+          ];
   return {
     type: input.type ?? "true_false",
     prompt: input.prompt ?? "Draft question",
@@ -305,6 +332,7 @@ function toQuestionPayload(input: Partial<TeacherQuestionInput>) {
     is_required: input.is_required ?? true,
     position: 1,
     explanation: input.explanation ?? "",
+    correct_text: input.correct_text,
     options,
   };
 }

@@ -241,8 +241,21 @@ func validateCreateQuiz(cmd CreateQuizCommand) error {
 		}
 		if question.Type != string(assessments.QuestionTypeSingle) &&
 			question.Type != string(assessments.QuestionTypeMultiple) &&
-			question.Type != string(assessments.QuestionTypeTrueFalse) {
+			question.Type != string(assessments.QuestionTypeTrueFalse) &&
+			question.Type != string(assessments.QuestionTypeShort) {
 			return apperrors.NewSimpleValidationError("INVALID_QUESTION_TYPE", "question type is invalid")
+		}
+		if question.Type == string(assessments.QuestionTypeShort) {
+			correctTextAnswers := 0
+			for _, option := range question.Options {
+				if option.IsCorrect && strings.TrimSpace(option.Body) != "" {
+					correctTextAnswers++
+				}
+			}
+			if correctTextAnswers == 0 {
+				return apperrors.NewSimpleValidationError("CORRECT_TEXT_REQUIRED", "short answer questions must include an expected answer")
+			}
+			continue
 		}
 		if len(question.Options) < 2 {
 			return apperrors.NewSimpleValidationError("OPTIONS_REQUIRED", "each question must include at least two options")
@@ -1130,8 +1143,12 @@ func (s *service) scoreAttempt(ctx context.Context, quizID uuid.UUID, answers []
 
 	// Build answer map for quick lookup
 	answerMap := make(map[uuid.UUID][]uuid.UUID)
+	textAnswerMap := make(map[uuid.UUID]string)
+	imageAnswerMap := make(map[uuid.UUID]string)
 	for _, answer := range answers {
 		answerMap[answer.QuestionID] = answer.SelectedOptions
+		textAnswerMap[answer.QuestionID] = answer.TextAnswer
+		imageAnswerMap[answer.QuestionID] = answer.ImageURL
 	}
 
 	// Score each question
@@ -1150,14 +1167,27 @@ func (s *service) scoreAttempt(ctx context.Context, quizID uuid.UUID, answers []
 			}
 		}
 
-		// Get student's selected options
 		selectedIDs := answerMap[question.ID]
 		if selectedIDs == nil {
 			selectedIDs = []uuid.UUID{}
 		}
 
-		// Check if answer is correct
-		isCorrect := areAnswersEqual(selectedIDs, correctIDs)
+		isCorrect := false
+		textAnswer := ""
+		imageAnswer := ""
+		if question.Type == assessments.QuestionTypeShort {
+			textAnswer = textAnswerMap[question.ID]
+			imageAnswer = imageAnswerMap[question.ID]
+			normalizedAnswer := normalizeShortAnswer(textAnswer)
+			for _, opt := range options {
+				if opt.IsCorrect && normalizeShortAnswer(opt.Body) == normalizedAnswer {
+					isCorrect = normalizedAnswer != ""
+					break
+				}
+			}
+		} else {
+			isCorrect = areAnswersEqual(selectedIDs, correctIDs)
+		}
 		if isCorrect {
 			correctCount++
 		}
@@ -1167,6 +1197,8 @@ func (s *service) scoreAttempt(ctx context.Context, quizID uuid.UUID, answers []
 			IsCorrect:       isCorrect,
 			SelectedOptions: selectedIDs,
 			CorrectOptions:  correctIDs,
+			TextAnswer:      textAnswer,
+			ImageURL:        imageAnswer,
 			Explanation:     question.Explanation,
 		})
 	}
@@ -1181,6 +1213,10 @@ func (s *service) scoreAttempt(ctx context.Context, quizID uuid.UUID, answers []
 		ScorePercent:    scorePercent,
 		QuestionResults: questionResults,
 	}, nil
+}
+
+func normalizeShortAnswer(value string) string {
+	return strings.Join(strings.Fields(strings.ToLower(strings.TrimSpace(value))), " ")
 }
 
 // scoreResult holds the scoring result
@@ -1239,14 +1275,16 @@ func shuffleQuestions(questions []*assessments.Question) []*assessments.Question
 
 func (s *service) toQuestionStudentResponse(question *assessments.Question, options []*assessments.QuestionOption) QuestionStudentResponse {
 	optionResponses := make([]QuestionOptionStudentResponse, 0, len(options))
-	for _, opt := range options {
-		optionResponses = append(optionResponses, QuestionOptionStudentResponse{
-			ID:          opt.ID,
-			Body:        opt.Body,
-			ContentType: opt.ContentType,
-			ImageURL:    opt.ImageURL,
-			Position:    opt.Position,
-		})
+	if question.Type != assessments.QuestionTypeShort {
+		for _, opt := range options {
+			optionResponses = append(optionResponses, QuestionOptionStudentResponse{
+				ID:          opt.ID,
+				Body:        opt.Body,
+				ContentType: opt.ContentType,
+				ImageURL:    opt.ImageURL,
+				Position:    opt.Position,
+			})
+		}
 	}
 
 	return QuestionStudentResponse{

@@ -134,7 +134,13 @@ function toQuestion(q: {
   return {
     id: q.id,
     type:
-      q.type === "multiple" ? "multi_select" : q.type === "single" ? "single_choice" : "true_false",
+      q.type === "multiple"
+        ? "multi_select"
+        : q.type === "single"
+          ? "single_choice"
+          : q.type === "short_answer"
+            ? "short_answer"
+            : "true_false",
     prompt: q.body,
     content_type: q.content_type ?? (q.image_url ? (q.body ? "text_image" : "image") : "text"),
     image_url: q.image_url,
@@ -166,7 +172,12 @@ export type QuizAttempt = {
   status: "in_progress" | "submitted" | "graded";
   current_question_index?: number;
   questions: QuizQuestion[];
-  answers: Record<string, string[] | string>; // questionId → option ids or text
+  answers: Record<string, string[] | string | ShortAnswerValue>; // questionId to option ids or short answer
+};
+
+export type ShortAnswerValue = {
+  text?: string;
+  image_url?: string;
 };
 
 export type QuizResult = QuizAttempt & {
@@ -313,7 +324,17 @@ export async function submitQuizAttempt(attemptId: string, answers: QuizAttempt[
         question_id,
         selected_option_ids: Array.isArray(selected_option_ids)
           ? selected_option_ids
-          : [selected_option_ids],
+          : typeof selected_option_ids === "string"
+            ? [selected_option_ids]
+            : [],
+        text_answer:
+          typeof selected_option_ids === "object" && !Array.isArray(selected_option_ids)
+            ? selected_option_ids.text
+            : undefined,
+        image_url:
+          typeof selected_option_ids === "object" && !Array.isArray(selected_option_ids)
+            ? selected_option_ids.image_url
+            : undefined,
       })),
     },
   }).then((result) => ({

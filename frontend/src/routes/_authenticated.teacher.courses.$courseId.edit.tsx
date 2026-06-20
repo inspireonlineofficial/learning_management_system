@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
   ChevronDown,
@@ -37,6 +37,7 @@ import {
   updateModule,
   updateCourseNote,
 } from "@/lib/api/teacher";
+import { createQuiz } from "@/lib/api/teacher-quizzes";
 
 export const Route = createFileRoute("/_authenticated/teacher/courses/$courseId/edit")({
   component: EditCoursePage,
@@ -587,6 +588,7 @@ function ChapterCard({
   const [lessonFree, setLessonFree] = useState(true);
   const [lessonDownloadable, setLessonDownloadable] = useState(false);
   const [lessonVideo, setLessonVideo] = useState<File | null>(null);
+  const [lessonFileKey, setLessonFileKey] = useState(0);
   const [draggedLessonId, setDraggedLessonId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -634,6 +636,7 @@ function ChapterCard({
       toast.success("Lesson added");
       setLessonTitle("");
       setLessonVideo(null);
+      setLessonFileKey((key) => key + 1);
       setLessonFree(true);
       onChange();
     },
@@ -799,11 +802,28 @@ function ChapterCard({
                 Downloadable
               </label>
               <Input
+                key={lessonFileKey}
                 type="file"
                 accept="video/mp4,video/webm,video/quicktime"
+                disabled={lessonType !== "video"}
                 onChange={(e) => setLessonVideo(e.target.files?.[0] ?? null)}
               />
             </div>
+            {lessonVideo && (
+              <div className="flex items-center justify-between gap-3 border border-brand/10 bg-white px-3 py-2 text-xs text-brand/60">
+                <span className="truncate">{lessonVideo.name}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLessonVideo(null);
+                    setLessonFileKey((key) => key + 1);
+                  }}
+                  className="text-destructive hover:underline"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
             <div className="flex justify-end">
               <button
                 onClick={() => create.mutate()}
@@ -859,7 +879,9 @@ function LessonRow({
   onDragOver?: (event: DragEvent<HTMLLIElement>) => void;
   onDrop?: () => void;
 }) {
+  const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
+  const [addingNote, setAddingNote] = useState(false);
   const [draft, setDraft] = useState({
     title: lesson.title,
     type: (lesson.type as "video" | "text" | "attachment") ?? "video",
@@ -871,6 +893,13 @@ function LessonRow({
     status: (lesson.status as "draft" | "published") ?? "draft",
   });
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoFileKey, setVideoFileKey] = useState(0);
+  const [quickNote, setQuickNote] = useState({
+    title: "",
+    content: "",
+    is_free: true,
+    is_published: false,
+  });
 
   useEffect(() => {
     setDraft({
@@ -908,7 +937,45 @@ function LessonRow({
       toast.success("Lesson saved");
       setEditing(false);
       setVideoFile(null);
+      setVideoFileKey((key) => key + 1);
       onChange();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const createNote = useMutation({
+    mutationFn: () =>
+      createCourseNote(courseId, {
+        lesson_id: lesson.id,
+        title: quickNote.title.trim(),
+        content: quickNote.content.trim(),
+        is_free: quickNote.is_free,
+        is_published: quickNote.is_published,
+      }),
+    onSuccess: () => {
+      toast.success("Note added");
+      setAddingNote(false);
+      setQuickNote({ title: "", content: "", is_free: true, is_published: false });
+      onChange();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const createLessonQuiz = useMutation({
+    mutationFn: () =>
+      createQuiz({
+        course_id: courseId,
+        lesson_id: lesson.id,
+        title: `${lesson.title} quiz`,
+        passing_score: 70,
+        time_limit_minutes: 30,
+        attempts_allowed: 1,
+        is_free: lesson.is_free ?? true,
+        is_published: false,
+      }),
+    onSuccess: (quiz) => {
+      toast.success("Quiz draft created");
+      navigate({ to: "/teacher/quiz-builder/$quizId/edit", params: { quizId: quiz.id } });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -989,11 +1056,28 @@ function LessonRow({
               <option value="published">Published</option>
             </select>
             <Input
+              key={videoFileKey}
               type="file"
               accept="video/mp4,video/webm,video/quicktime"
+              disabled={draft.type !== "video"}
               onChange={(e) => setVideoFile(e.target.files?.[0] ?? null)}
             />
           </div>
+          {videoFile && (
+            <div className="flex items-center justify-between gap-3 border border-brand/10 bg-white px-3 py-2 text-xs text-brand/60">
+              <span className="truncate">{videoFile.name}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setVideoFile(null);
+                  setVideoFileKey((key) => key + 1);
+                }}
+                className="text-destructive hover:underline"
+              >
+                Remove
+              </button>
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-4 text-xs text-brand/70">
             <label className="flex items-center gap-2">
@@ -1059,27 +1143,109 @@ function LessonRow({
           </div>
         </div>
       ) : (
-        <div className="flex items-center justify-between gap-3">
-          <button onClick={() => setEditing(true)} className="text-left flex-1">
-            <p className="font-medium text-sm">{lesson.title}</p>
-            <p className="mt-1 text-[11px] text-brand/45 uppercase tracking-wider">
-              {lesson.type ?? "video"}
-              {lesson.is_free_preview ? " · preview" : ""}
-              {lesson.is_free === false ? " · paid" : " · free"}
-              {lesson.is_downloadable ? " · downloadable" : ""}
-              {typeof lesson.duration_seconds === "number"
-                ? ` · ${Math.round(lesson.duration_seconds / 60)}m`
-                : ""}
-            </p>
-          </button>
-          <button
-            onClick={() => {
-              if (confirm("Delete lesson?")) remove.mutate();
-            }}
-            className="p-1.5 text-brand/45 hover:text-destructive"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <button onClick={() => setEditing(true)} className="text-left flex-1">
+              <p className="font-medium text-sm">{lesson.title}</p>
+              <p className="mt-1 text-[11px] text-brand/45 uppercase tracking-wider">
+                {lesson.type ?? "video"}
+                {lesson.is_free_preview ? " · preview" : ""}
+                {lesson.is_free === false ? " · paid" : " · free"}
+                {lesson.is_downloadable ? " · downloadable" : ""}
+                {typeof lesson.duration_seconds === "number"
+                  ? ` · ${Math.round(lesson.duration_seconds / 60)}m`
+                  : ""}
+              </p>
+            </button>
+            <button
+              onClick={() => {
+                if (confirm("Delete lesson?")) remove.mutate();
+              }}
+              className="inline-flex items-center gap-1.5 px-2 py-1 text-xs text-brand/50 hover:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Remove
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 border-t border-brand/10 pt-3">
+            <button
+              onClick={() => setAddingNote((value) => !value)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs border border-brand/15 hover:bg-brand/[0.03]"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Add note
+            </button>
+            <button
+              onClick={() => createLessonQuiz.mutate()}
+              disabled={createLessonQuiz.isPending}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs border border-brand/15 hover:bg-brand/[0.03] disabled:opacity-50"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              {createLessonQuiz.isPending ? "Creating quiz..." : "Add quiz"}
+            </button>
+          </div>
+          {addingNote && (
+            <div className="border border-dashed border-brand/15 bg-white p-3 space-y-3">
+              <Input
+                value={quickNote.title}
+                onChange={(e) => setQuickNote((current) => ({ ...current, title: e.target.value }))}
+                placeholder="Note title"
+              />
+              <textarea
+                value={quickNote.content}
+                onChange={(e) =>
+                  setQuickNote((current) => ({ ...current, content: e.target.value }))
+                }
+                rows={3}
+                placeholder="Note content"
+                className="w-full px-3 py-2 text-sm border border-brand/15 bg-white resize-y"
+              />
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex gap-4 text-xs text-brand/70">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={quickNote.is_free}
+                      onChange={(e) =>
+                        setQuickNote((current) => ({ ...current, is_free: e.target.checked }))
+                      }
+                    />
+                    Free access
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={quickNote.is_published}
+                      onChange={(e) =>
+                        setQuickNote((current) => ({
+                          ...current,
+                          is_published: e.target.checked,
+                        }))
+                      }
+                    />
+                    Published
+                  </label>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setAddingNote(false)}
+                    className="px-3 py-2 text-xs text-brand/70"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => createNote.mutate()}
+                    disabled={
+                      createNote.isPending || !quickNote.title.trim() || !quickNote.content.trim()
+                    }
+                    className="px-4 py-2 bg-brand text-white text-xs disabled:opacity-50"
+                  >
+                    {createNote.isPending ? "Saving..." : "Save note"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </li>
@@ -1155,6 +1321,15 @@ function NotesEditor({
         is_published: false,
       });
       onChange();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const upload = useMutation({
+    mutationFn: (file: File) => uploadLessonFile(file),
+    onSuccess: (result) => {
+      setForm((current) => ({ ...current, file_url: result.presigned_url }));
+      toast.success("Attachment uploaded");
     },
     onError: (e: Error) => toast.error(e.message),
   });

@@ -11,14 +11,16 @@ import {
   submitQuizAttempt,
   type QuizAttempt,
   type QuizQuestion,
+  type ShortAnswerValue,
 } from "@/lib/api/quizzes";
+import { uploadLessonFile } from "@/lib/api/teacher";
 
 export const Route = createFileRoute("/_authenticated/student/assessments/$quizId/attempt")({
   validateSearch: z.object({ attempt: z.string().optional() }),
   component: QuizRunner,
 });
 
-type Answers = Record<string, string[] | string>;
+type Answers = Record<string, string[] | string | ShortAnswerValue>;
 
 function QuizRunner() {
   const { quizId } = Route.useParams();
@@ -112,7 +114,7 @@ function QuizRunner() {
     submitMutation.mutate();
   };
 
-  const questions = startedAttempt?.questions ?? [];
+  const questions = useMemo(() => startedAttempt?.questions ?? [], [startedAttempt?.questions]);
   const q = questions[idx];
   const answeredCount = useMemo(
     () => questions.filter((qq) => isAnswered(answers[qq.id])).length,
@@ -242,6 +244,10 @@ function isAnswered(v: unknown) {
   if (v == null) return false;
   if (typeof v === "string") return v.trim() !== "";
   if (Array.isArray(v)) return v.length > 0;
+  if (typeof v === "object") {
+    const answer = v as ShortAnswerValue;
+    return Boolean(answer.text?.trim() || answer.image_url);
+  }
   return true;
 }
 
@@ -257,42 +263,92 @@ function QuestionInput({
   onChange,
 }: {
   question: QuizQuestion;
-  value: string[] | string | undefined;
-  onChange: (v: string[] | string) => void;
+  value: string[] | string | ShortAnswerValue | undefined;
+  onChange: (v: string[] | string | ShortAnswerValue) => void;
 }) {
+  const shortValue: ShortAnswerValue =
+    typeof value === "string" ? { text: value } : Array.isArray(value) ? {} : (value ?? {});
+  const upload = useMutation({
+    mutationFn: (file: File) => uploadLessonFile(file),
+    onSuccess: (result) => {
+      onChange({ ...shortValue, image_url: result.presigned_url });
+      toast.success("Image uploaded");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   if (question.type === "short_answer") {
     return (
-      <textarea
-        value={typeof value === "string" ? value : ""}
-        onChange={(e) => onChange(e.target.value)}
-        rows={6}
-        maxLength={2000}
-        placeholder="Type your answer…"
-        className="w-full p-4 bg-white border border-brand/15 focus:border-brand/40 focus:outline-none text-sm leading-relaxed"
-      />
+      <div className="space-y-3">
+        <textarea
+          value={shortValue.text ?? ""}
+          onChange={(e) => onChange({ ...shortValue, text: e.target.value })}
+          rows={6}
+          maxLength={2000}
+          placeholder="Type your answer..."
+          className="w-full p-4 bg-white border border-brand/15 focus:border-brand/40 focus:outline-none text-sm leading-relaxed"
+        />
+        <label className="flex items-center justify-between gap-3 border border-dashed border-brand/15 bg-white px-3 py-2 text-sm text-brand/60">
+          <span>{upload.isPending ? "Uploading image..." : "Upload answer image"}</span>
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            className="max-w-[220px] text-xs"
+            disabled={upload.isPending}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) upload.mutate(file);
+              event.currentTarget.value = "";
+            }}
+          />
+        </label>
+        {shortValue.image_url && (
+          <div className="flex items-start gap-3 border border-brand/10 bg-white p-3">
+            <img
+              src={shortValue.image_url}
+              alt=""
+              className="max-h-40 max-w-xs object-contain border border-brand/10"
+            />
+            <button
+              type="button"
+              onClick={() => onChange({ ...shortValue, image_url: undefined })}
+              className="text-xs text-destructive hover:underline"
+            >
+              Remove image
+            </button>
+          </div>
+        )}
+      </div>
     );
   }
 
   if (question.type === "true_false") {
     const v = Array.isArray(value) ? value[0] : value;
+    const options =
+      question.options && question.options.length > 0
+        ? question.options
+        : [
+            { id: "true", text: "True" },
+            { id: "false", text: "False" },
+          ];
     return (
       <div className="space-y-2">
-        {["true", "false"].map((opt) => (
+        {options.map((opt) => (
           <label
-            key={opt}
+            key={opt.id}
             className={`flex items-center gap-3 p-4 border cursor-pointer transition-colors ${
-              v === opt
+              v === opt.id
                 ? "border-brand bg-brand/[0.04]"
                 : "border-brand/15 hover:border-brand/40 bg-white"
             }`}
           >
             <input
               type="radio"
-              checked={v === opt}
-              onChange={() => onChange(opt)}
+              checked={v === opt.id}
+              onChange={() => onChange([opt.id])}
               className="accent-brand"
             />
-            <span className="text-sm capitalize">{opt}</span>
+            <span className="text-sm capitalize">{opt.text}</span>
           </label>
         ))}
       </div>

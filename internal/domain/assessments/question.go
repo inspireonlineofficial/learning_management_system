@@ -13,6 +13,7 @@ const (
 	QuestionTypeSingle    QuestionType = "single"
 	QuestionTypeMultiple  QuestionType = "multiple"
 	QuestionTypeTrueFalse QuestionType = "true_false"
+	QuestionTypeShort     QuestionType = "short_answer"
 )
 
 // Question represents a quiz question entity
