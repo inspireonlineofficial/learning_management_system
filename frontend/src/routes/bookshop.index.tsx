@@ -4,6 +4,7 @@ import { BookOpen, Search, Star } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 
+import { BrandLogo } from "@/components/layout/brand-logo";
 import { useAuth } from "@/context/auth-context";
 import { formatPrice, listBooks, type BookSummary } from "@/lib/api/bookshop";
 
@@ -37,9 +38,7 @@ function PublicBookshopIndex() {
     <div className="min-h-screen overflow-x-hidden bg-surface text-brand font-sans">
       <header className="border-b border-brand/10">
         <div className="max-w-7xl mx-auto px-6 lg:px-10 py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <Link to="/" className="font-serif italic text-2xl text-accent">
-            Inspire LMS
-          </Link>
+          <BrandLogo imageClassName="max-h-14 max-w-[220px]" />
           <nav className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 text-sm sm:w-auto">
             <Link to="/courses" className="text-brand/70 hover:text-brand transition-colors">
               Courses

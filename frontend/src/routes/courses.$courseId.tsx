@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { PreviewPlayerDialog } from "@/components/course/preview-player-dialog";
+import { BrandLogo } from "@/components/layout/brand-logo";
 import { useAuth } from "@/context/auth-context";
 import {
   createCourseComment,
@@ -158,9 +159,7 @@ function CourseDetailPage() {
   return (
     <div className="min-h-screen bg-surface text-brand font-sans">
       <header className="px-6 md:px-12 lg:px-20 py-6 flex items-center justify-between border-b border-brand/10">
-        <Link to="/" className="font-serif italic text-2xl text-accent tracking-tight">
-          Inspire LMS
-        </Link>
+        <BrandLogo imageClassName="max-h-14 max-w-[220px]" />
         <nav className="flex items-center gap-6 text-sm">
           <Link to="/courses" className="text-brand/60 hover:text-brand transition-colors">
             Catalog

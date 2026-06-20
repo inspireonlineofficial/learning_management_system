@@ -9,17 +9,17 @@ import (
 	"github.com/google/uuid"
 )
 
-// CheckoutIntentResponse is returned after creating a payment intent.
-// bkash_url is included here (only at creation time) for the frontend to redirect to bKash.
+// CheckoutIntentResponse is returned after creating a legacy checkout intent.
+// approval_url is included only for backward-compatible clients.
 // Requirements: 24.1, 4.1, 4.2
 type CheckoutIntentResponse struct {
 	PaymentIntentID uuid.UUID `json:"payment_intent_id"`
 	Amount          float64   `json:"amount"`
 	Currency        string    `json:"currency"`
-	BkashURL        string    `json:"bkash_url"`
+	ApprovalURL     string    `json:"approval_url"`
 }
 
-// ExecutePaymentResponse is returned by the BkashCallback handler.
+// ExecutePaymentResponse is returned by legacy payment execution handlers.
 // Either enrollment_id or order_id will be set depending on item_type.
 // Requirements: 6.1, 7.2
 type ExecutePaymentResponse struct {

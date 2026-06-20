@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
 
 import libraryHero from "@/assets/library-hero.jpg";
+import { BrandLogo } from "@/components/layout/brand-logo";
 
 type AuthShellProps = {
   eyebrow?: string;
@@ -17,9 +17,7 @@ export function AuthShell({ eyebrow, heading, subheading, children, footer }: Au
       {/* Left: brand panel */}
       <aside className="hidden md:flex md:w-1/2 lg:w-3/5 bg-brand relative overflow-hidden p-12 lg:p-16 flex-col justify-between text-white">
         <div className="relative z-10">
-          <Link to="/" className="font-serif italic text-2xl tracking-tight text-accent">
-            Inspire LMS
-          </Link>
+          <BrandLogo imageClassName="max-h-16 max-w-[240px]" />
           <h1 className="font-serif text-5xl lg:text-6xl mt-10 leading-[1.05] max-w-lg text-balance">
             Science tutoring that keeps students on track.
           </h1>
@@ -50,9 +48,7 @@ export function AuthShell({ eyebrow, heading, subheading, children, footer }: Au
       <main className="min-w-0 flex-1 flex flex-col p-6 sm:p-10 md:p-16 lg:p-20 justify-center min-h-screen md:min-h-0">
         <div className="auth-form-shell mx-auto w-full">
           <div className="md:hidden mb-10">
-            <Link to="/" className="font-serif italic text-xl text-accent">
-              Inspire LMS
-            </Link>
+            <BrandLogo imageClassName="max-h-12 max-w-[190px]" />
           </div>
 
           <header className="mb-10">

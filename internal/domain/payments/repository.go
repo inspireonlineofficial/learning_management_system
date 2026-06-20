@@ -23,7 +23,7 @@ type PaymentIntentRepository interface {
 	FindByStudentAndItem(ctx context.Context, studentID, itemID uuid.UUID, itemType ItemType) (*PaymentIntent, error)
 
 	// FindByProviderIntentID returns a payment intent by its provider-assigned ID.
-	// Used to look up the intent during bKash payment callbacks. Requirements: 4.3
+	// Retained for legacy payment records. Requirements: 4.3
 	FindByProviderIntentID(ctx context.Context, providerIntentID string) (*PaymentIntent, error)
 }
 

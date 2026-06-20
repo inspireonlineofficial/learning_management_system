@@ -28,6 +28,7 @@ import {
 import { useEffect, useState, type ComponentType, type ReactNode } from "react";
 import { toast } from "sonner";
 
+import { BrandLogo } from "@/components/layout/brand-logo";
 import { useAuth } from "@/context/auth-context";
 import { getImpersonationOrigin, isImpersonating, stopImpersonation } from "@/lib/session";
 
@@ -153,9 +154,7 @@ export function AppShell({
       <div className="flex min-h-screen flex-col lg:flex-row">
         <aside className="lg:w-64 lg:fixed lg:inset-y-0 lg:flex lg:flex-col border-b lg:border-b-0 lg:border-r border-brand/10 bg-surface/95 backdrop-blur">
           <div className="px-6 py-6 lg:py-8">
-            <Link to="/" className="font-serif italic text-2xl text-accent tracking-tight">
-              Inspire LMS
-            </Link>
+            <BrandLogo imageClassName="max-h-12 max-w-[170px]" />
             {user?.role && user.role !== "student" && (
               <p className="mt-1 eyebrow text-brand/45">{user.role} portal</p>
             )}
