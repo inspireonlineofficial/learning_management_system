@@ -440,9 +440,11 @@ func (s *service) buildCourseDetailResponse(ctx context.Context, course *courses
 					ID:              lesson.ID,
 					ChapterID:       lesson.ChapterID,
 					Title:           lesson.Title,
+					Description:     lesson.Description,
 					Type:            string(lesson.Type),
 					DurationSeconds: lesson.DurationSeconds,
 					IsFreePreview:   lesson.IsFreePreview,
+					IsFree:          lesson.IsFree,
 					IsDownloadable:  lesson.IsDownloadable,
 					Position:        lesson.Position,
 					Status:          string(lesson.Status),
@@ -463,13 +465,16 @@ func (s *service) buildCourseDetailResponse(ctx context.Context, course *courses
 		}
 
 		moduleResponses = append(moduleResponses, ModuleResponse{
-			ID:        module.ID,
-			CourseID:  module.CourseID,
-			Title:     module.Title,
-			Position:  module.Position,
-			Chapters:  chapterResponses,
-			CreatedAt: module.CreatedAt,
-			UpdatedAt: module.UpdatedAt,
+			ID:          module.ID,
+			CourseID:    module.CourseID,
+			Title:       module.Title,
+			Description: module.Description,
+			Position:    module.Position,
+			IsFree:      module.IsFree,
+			IsPublished: module.IsPublished,
+			Chapters:    chapterResponses,
+			CreatedAt:   module.CreatedAt,
+			UpdatedAt:   module.UpdatedAt,
 		})
 	}
 

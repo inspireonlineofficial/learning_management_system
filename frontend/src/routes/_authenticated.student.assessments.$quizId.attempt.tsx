@@ -155,6 +155,13 @@ function QuizRunner() {
       <div className="grid lg:grid-cols-[1fr_280px] gap-10 px-6 md:px-12 py-10 max-w-6xl mx-auto">
         <article>
           <h1 className="font-serif text-2xl lg:text-3xl leading-snug text-balance">{q.prompt}</h1>
+          {q.image_url && (
+            <img
+              src={q.image_url}
+              alt=""
+              className="mt-5 max-h-80 w-full max-w-2xl object-contain border border-brand/10 bg-white"
+            />
+          )}
           <p className="mt-2 text-xs text-brand/45">
             {q.points} point{q.points === 1 ? "" : "s"}
           </p>
@@ -323,7 +330,16 @@ function QuestionInput({
               }}
               className="mt-1 accent-brand"
             />
-            <span className="text-sm leading-relaxed">{opt.text}</span>
+            <span className="grid gap-2 text-sm leading-relaxed">
+              {opt.image_url && (
+                <img
+                  src={opt.image_url}
+                  alt=""
+                  className="max-h-40 max-w-xs object-contain border border-brand/10 bg-white"
+                />
+              )}
+              {opt.text && <span>{opt.text}</span>}
+            </span>
           </label>
         );
       })}

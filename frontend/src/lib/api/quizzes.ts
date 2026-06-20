@@ -6,8 +6,17 @@ export type QuizQuestion = {
   id: string;
   type: QuestionType;
   prompt: string;
+  content_type?: "text" | "image" | "text_image";
+  image_url?: string;
   points: number;
-  options?: { id: string; text: string }[];
+  is_required?: boolean;
+  options?: {
+    id: string;
+    text: string;
+    content_type?: "text" | "image" | "text_image";
+    image_url?: string;
+    is_correct?: boolean;
+  }[];
   // present only on review/result
   correct_option_ids?: string[];
   correct_text?: string;
@@ -99,7 +108,17 @@ function toQuestion(q: {
   id: string;
   body: string;
   type: string;
-  options?: Array<{ id: string; body: string }>;
+  content_type?: "text" | "image" | "text_image";
+  image_url?: string;
+  marks?: number;
+  is_required?: boolean;
+  options?: Array<{
+    id: string;
+    body: string;
+    content_type?: "text" | "image" | "text_image";
+    image_url?: string;
+    is_correct?: boolean;
+  }>;
   correct_option_ids?: string[];
   explanation?: string;
 }): QuizQuestion {
@@ -108,8 +127,18 @@ function toQuestion(q: {
     type:
       q.type === "multiple" ? "multi_select" : q.type === "single" ? "single_choice" : "true_false",
     prompt: q.body,
-    points: 1,
-    options: q.options?.map((option) => ({ id: option.id, text: option.body })),
+    content_type: q.content_type ?? (q.image_url ? (q.body ? "text_image" : "image") : "text"),
+    image_url: q.image_url,
+    points: q.marks ?? 1,
+    is_required: q.is_required ?? true,
+    options: q.options?.map((option) => ({
+      id: option.id,
+      text: option.body,
+      content_type:
+        option.content_type ?? (option.image_url ? (option.body ? "text_image" : "image") : "text"),
+      image_url: option.image_url,
+      is_correct: option.is_correct,
+    })),
     correct_option_ids: q.correct_option_ids,
     explanation: q.explanation,
   };
@@ -181,7 +210,16 @@ export function startQuizAttempt(quizId: string) {
       id: string;
       body: string;
       type: string;
-      options?: Array<{ id: string; body: string }>;
+      content_type?: "text" | "image" | "text_image";
+      image_url?: string;
+      marks?: number;
+      is_required?: boolean;
+      options?: Array<{
+        id: string;
+        body: string;
+        content_type?: "text" | "image" | "text_image";
+        image_url?: string;
+      }>;
     }>;
   }>(`/v1/quizzes/${encodeURIComponent(quizId)}/attempts`, {
     method: "POST",

@@ -38,13 +38,16 @@ type CourseDetailResponse struct {
 
 // ModuleResponse represents a module in API responses
 type ModuleResponse struct {
-	ID        uuid.UUID         `json:"id"`
-	CourseID  uuid.UUID         `json:"course_id"`
-	Title     string            `json:"title"`
-	Position  int               `json:"position"`
-	Chapters  []ChapterResponse `json:"chapters"`
-	CreatedAt time.Time         `json:"created_at"`
-	UpdatedAt time.Time         `json:"updated_at"`
+	ID          uuid.UUID         `json:"id"`
+	CourseID    uuid.UUID         `json:"course_id"`
+	Title       string            `json:"title"`
+	Description string            `json:"description"`
+	Position    int               `json:"position"`
+	IsFree      bool              `json:"is_free"`
+	IsPublished bool              `json:"is_published"`
+	Chapters    []ChapterResponse `json:"chapters"`
+	CreatedAt   time.Time         `json:"created_at"`
+	UpdatedAt   time.Time         `json:"updated_at"`
 }
 
 // ChapterResponse represents a chapter in API responses
@@ -63,9 +66,11 @@ type LessonResponse struct {
 	ID               uuid.UUID  `json:"id"`
 	ChapterID        uuid.UUID  `json:"chapter_id"`
 	Title            string     `json:"title"`
+	Description      string     `json:"description"`
 	Type             string     `json:"type"`
 	DurationSeconds  int        `json:"duration_seconds"`
 	IsFreePreview    bool       `json:"is_free_preview"`
+	IsFree           bool       `json:"is_free"`
 	IsDownloadable   bool       `json:"is_downloadable"`
 	Position         int        `json:"position"`
 	Status           string     `json:"status"`

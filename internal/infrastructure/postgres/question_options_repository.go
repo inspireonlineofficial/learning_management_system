@@ -23,12 +23,12 @@ func NewQuestionOptionRepository(db *sql.DB) assessments.QuestionOptionRepositor
 func (r *questionOptionRepository) Create(ctx context.Context, option *assessments.QuestionOption) error {
 	query := `
 		INSERT INTO question_options (
-			id, question_id, body, is_correct, position
-		) VALUES ($1, $2, $3, $4, $5)
+			id, question_id, body, content_type, image_url, is_correct, position
+		) VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
 
 	_, err := r.db.ExecContext(ctx, query,
-		option.ID, option.QuestionID, option.Body, option.IsCorrect, option.Position,
+		option.ID, option.QuestionID, option.Body, option.ContentType, option.ImageURL, option.IsCorrect, option.Position,
 	)
 
 	return err
@@ -47,8 +47,8 @@ func (r *questionOptionRepository) CreateBatch(ctx context.Context, options []*a
 
 	stmt, err := tx.PrepareContext(ctx, `
 		INSERT INTO question_options (
-			id, question_id, body, is_correct, position
-		) VALUES ($1, $2, $3, $4, $5)
+			id, question_id, body, content_type, image_url, is_correct, position
+		) VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`)
 	if err != nil {
 		return err
@@ -57,7 +57,7 @@ func (r *questionOptionRepository) CreateBatch(ctx context.Context, options []*a
 
 	for _, option := range options {
 		_, err := stmt.ExecContext(ctx,
-			option.ID, option.QuestionID, option.Body, option.IsCorrect, option.Position,
+			option.ID, option.QuestionID, option.Body, option.ContentType, option.ImageURL, option.IsCorrect, option.Position,
 		)
 		if err != nil {
 			return err
@@ -69,7 +69,7 @@ func (r *questionOptionRepository) CreateBatch(ctx context.Context, options []*a
 
 func (r *questionOptionRepository) FindByQuestionID(ctx context.Context, questionID uuid.UUID) ([]*assessments.QuestionOption, error) {
 	query := `
-		SELECT id, question_id, body, is_correct, position
+		SELECT id, question_id, body, content_type, image_url, is_correct, position
 		FROM question_options
 		WHERE question_id = $1
 		ORDER BY position ASC
@@ -85,7 +85,7 @@ func (r *questionOptionRepository) FindByQuestionID(ctx context.Context, questio
 	for rows.Next() {
 		option := &assessments.QuestionOption{}
 		err := rows.Scan(
-			&option.ID, &option.QuestionID, &option.Body, &option.IsCorrect, &option.Position,
+			&option.ID, &option.QuestionID, &option.Body, &option.ContentType, &option.ImageURL, &option.IsCorrect, &option.Position,
 		)
 		if err != nil {
 			return nil, err
@@ -110,7 +110,7 @@ func (r *questionOptionRepository) FindByQuestionIDs(ctx context.Context, questi
 	}
 
 	query := fmt.Sprintf(`
-		SELECT id, question_id, body, is_correct, position
+		SELECT id, question_id, body, content_type, image_url, is_correct, position
 		FROM question_options
 		WHERE question_id IN (%s)
 		ORDER BY question_id, position ASC
@@ -126,7 +126,7 @@ func (r *questionOptionRepository) FindByQuestionIDs(ctx context.Context, questi
 	for rows.Next() {
 		option := &assessments.QuestionOption{}
 		err := rows.Scan(
-			&option.ID, &option.QuestionID, &option.Body, &option.IsCorrect, &option.Position,
+			&option.ID, &option.QuestionID, &option.Body, &option.ContentType, &option.ImageURL, &option.IsCorrect, &option.Position,
 		)
 		if err != nil {
 			return nil, err
@@ -140,12 +140,12 @@ func (r *questionOptionRepository) FindByQuestionIDs(ctx context.Context, questi
 func (r *questionOptionRepository) Update(ctx context.Context, option *assessments.QuestionOption) error {
 	query := `
 		UPDATE question_options
-		SET body = $2, is_correct = $3, position = $4
+		SET body = $2, content_type = $3, image_url = $4, is_correct = $5, position = $6
 		WHERE id = $1
 	`
 
 	_, err := r.db.ExecContext(ctx, query,
-		option.ID, option.Body, option.IsCorrect, option.Position,
+		option.ID, option.Body, option.ContentType, option.ImageURL, option.IsCorrect, option.Position,
 	)
 
 	return err

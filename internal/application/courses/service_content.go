@@ -26,12 +26,15 @@ func (s *service) CreateModule(ctx context.Context, cmd CreateModuleCommand) (*M
 	}
 
 	module := &courses.Module{
-		ID:        uuid.New(),
-		CourseID:  cmd.CourseID,
-		Title:     cmd.Title,
-		Position:  cmd.Position,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		ID:          uuid.New(),
+		CourseID:    cmd.CourseID,
+		Title:       cmd.Title,
+		Description: cmd.Description,
+		Position:    cmd.Position,
+		IsFree:      cmd.IsFree,
+		IsPublished: cmd.IsPublished,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}
 
 	err = s.moduleRepo.Create(ctx, module)
@@ -40,13 +43,16 @@ func (s *service) CreateModule(ctx context.Context, cmd CreateModuleCommand) (*M
 	}
 
 	return &ModuleResponse{
-		ID:        module.ID,
-		CourseID:  module.CourseID,
-		Title:     module.Title,
-		Position:  module.Position,
-		Chapters:  []ChapterResponse{},
-		CreatedAt: module.CreatedAt,
-		UpdatedAt: module.UpdatedAt,
+		ID:          module.ID,
+		CourseID:    module.CourseID,
+		Title:       module.Title,
+		Description: module.Description,
+		Position:    module.Position,
+		IsFree:      module.IsFree,
+		IsPublished: module.IsPublished,
+		Chapters:    []ChapterResponse{},
+		CreatedAt:   module.CreatedAt,
+		UpdatedAt:   module.UpdatedAt,
 	}, nil
 }
 
@@ -68,7 +74,10 @@ func (s *service) UpdateModule(ctx context.Context, cmd UpdateModuleCommand) (*M
 	}
 
 	module.Title = cmd.Title
+	module.Description = cmd.Description
 	module.Position = cmd.Position
+	module.IsFree = cmd.IsFree
+	module.IsPublished = cmd.IsPublished
 
 	err = s.moduleRepo.Update(ctx, module)
 	if err != nil {
@@ -76,13 +85,16 @@ func (s *service) UpdateModule(ctx context.Context, cmd UpdateModuleCommand) (*M
 	}
 
 	return &ModuleResponse{
-		ID:        module.ID,
-		CourseID:  module.CourseID,
-		Title:     module.Title,
-		Position:  module.Position,
-		Chapters:  []ChapterResponse{},
-		CreatedAt: module.CreatedAt,
-		UpdatedAt: module.UpdatedAt,
+		ID:          module.ID,
+		CourseID:    module.CourseID,
+		Title:       module.Title,
+		Description: module.Description,
+		Position:    module.Position,
+		IsFree:      module.IsFree,
+		IsPublished: module.IsPublished,
+		Chapters:    []ChapterResponse{},
+		CreatedAt:   module.CreatedAt,
+		UpdatedAt:   module.UpdatedAt,
 	}, nil
 }
 
@@ -240,10 +252,12 @@ func (s *service) CreateLesson(ctx context.Context, cmd CreateLessonCommand) (*L
 		ID:              uuid.New(),
 		ChapterID:       cmd.ChapterID,
 		Title:           cmd.Title,
+		Description:     cmd.Description,
 		Type:            courses.LessonType(cmd.Type),
 		VideoID:         cmd.VideoID,
 		DurationSeconds: cmd.DurationSeconds,
 		IsFreePreview:   cmd.IsFreePreview,
+		IsFree:          cmd.IsFree,
 		IsDownloadable:  cmd.IsDownloadable,
 		Position:        cmd.Position,
 		Status:          courses.LessonStatus(cmd.Status),
@@ -273,9 +287,11 @@ func (s *service) CreateLesson(ctx context.Context, cmd CreateLessonCommand) (*L
 		ID:              lesson.ID,
 		ChapterID:       lesson.ChapterID,
 		Title:           lesson.Title,
+		Description:     lesson.Description,
 		Type:            string(lesson.Type),
 		DurationSeconds: lesson.DurationSeconds,
 		IsFreePreview:   lesson.IsFreePreview,
+		IsFree:          lesson.IsFree,
 		IsDownloadable:  lesson.IsDownloadable,
 		Position:        lesson.Position,
 		Status:          string(lesson.Status),
@@ -312,10 +328,12 @@ func (s *service) UpdateLesson(ctx context.Context, cmd UpdateLessonCommand) (*L
 	}
 
 	lesson.Title = cmd.Title
+	lesson.Description = cmd.Description
 	lesson.Type = courses.LessonType(cmd.Type)
 	lesson.VideoID = cmd.VideoID
 	lesson.DurationSeconds = cmd.DurationSeconds
 	lesson.IsFreePreview = cmd.IsFreePreview
+	lesson.IsFree = cmd.IsFree
 	lesson.IsDownloadable = cmd.IsDownloadable
 	lesson.Position = cmd.Position
 	lesson.Status = courses.LessonStatus(cmd.Status)
@@ -346,9 +364,11 @@ func (s *service) UpdateLesson(ctx context.Context, cmd UpdateLessonCommand) (*L
 		ID:              lesson.ID,
 		ChapterID:       lesson.ChapterID,
 		Title:           lesson.Title,
+		Description:     lesson.Description,
 		Type:            string(lesson.Type),
 		DurationSeconds: lesson.DurationSeconds,
 		IsFreePreview:   lesson.IsFreePreview,
+		IsFree:          lesson.IsFree,
 		IsDownloadable:  lesson.IsDownloadable,
 		Position:        lesson.Position,
 		Status:          string(lesson.Status),

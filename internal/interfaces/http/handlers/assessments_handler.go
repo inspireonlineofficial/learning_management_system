@@ -1030,16 +1030,22 @@ func (h *AssessmentsHandler) GradeSubmission(w http.ResponseWriter, r *http.Requ
 
 func decodeTeacherQuestionRequest(r *http.Request) (assessments.CreateQuestionCommand, error) {
 	var req struct {
-		Body        string `json:"body"`
-		Prompt      string `json:"prompt"`
-		Type        string `json:"type"`
-		Position    int    `json:"position"`
-		Explanation string `json:"explanation"`
+		Body        string  `json:"body"`
+		Prompt      string  `json:"prompt"`
+		Type        string  `json:"type"`
+		ContentType string  `json:"content_type"`
+		ImageURL    string  `json:"image_url"`
+		Marks       float64 `json:"marks"`
+		IsRequired  *bool   `json:"is_required"`
+		Position    int     `json:"position"`
+		Explanation string  `json:"explanation"`
 		Options     []struct {
-			Body      string `json:"body"`
-			Text      string `json:"text"`
-			IsCorrect bool   `json:"is_correct"`
-			Position  int    `json:"position"`
+			Body        string `json:"body"`
+			Text        string `json:"text"`
+			ContentType string `json:"content_type"`
+			ImageURL    string `json:"image_url"`
+			IsCorrect   bool   `json:"is_correct"`
+			Position    int    `json:"position"`
 		} `json:"options"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -1069,15 +1075,26 @@ func decodeTeacherQuestionRequest(r *http.Request) (assessments.CreateQuestionCo
 			position = i + 1
 		}
 		options = append(options, assessments.CreateQuestionOptionCommand{
-			Body:      optionBody,
-			IsCorrect: opt.IsCorrect,
-			Position:  position,
+			Body:        optionBody,
+			ContentType: opt.ContentType,
+			ImageURL:    opt.ImageURL,
+			IsCorrect:   opt.IsCorrect,
+			Position:    position,
 		})
+	}
+
+	isRequired := true
+	if req.IsRequired != nil {
+		isRequired = *req.IsRequired
 	}
 
 	return assessments.CreateQuestionCommand{
 		Body:        body,
 		Type:        questionType,
+		ContentType: req.ContentType,
+		ImageURL:    req.ImageURL,
+		Marks:       req.Marks,
+		IsRequired:  isRequired,
 		Position:    req.Position,
 		Explanation: req.Explanation,
 		Options:     options,

@@ -32,11 +32,15 @@ type UpdateQuizCommand struct {
 
 // CreateQuestionCommand represents a question to be created with a quiz
 type CreateQuestionCommand struct {
-	Body        string
-	Type        string // "single", "multiple", "true_false"
-	Position    int
-	Explanation string
-	Options     []CreateQuestionOptionCommand
+	Body        string                        `json:"body"`
+	Type        string                        `json:"type"` // "single", "multiple", "true_false"
+	ContentType string                        `json:"content_type"`
+	ImageURL    string                        `json:"image_url"`
+	Marks       float64                       `json:"marks"`
+	IsRequired  bool                          `json:"is_required"`
+	Position    int                           `json:"position"`
+	Explanation string                        `json:"explanation"`
+	Options     []CreateQuestionOptionCommand `json:"options"`
 }
 
 // CreateStandaloneQuestionCommand creates a question for an existing quiz.
@@ -55,9 +59,11 @@ type UpdateQuestionCommand struct {
 
 // CreateQuestionOptionCommand represents an option for a question
 type CreateQuestionOptionCommand struct {
-	Body      string
-	IsCorrect bool
-	Position  int
+	Body        string `json:"body"`
+	ContentType string `json:"content_type"`
+	ImageURL    string `json:"image_url"`
+	IsCorrect   bool   `json:"is_correct"`
+	Position    int    `json:"position"`
 }
 
 // StartAttemptCommand represents the command to start a quiz attempt

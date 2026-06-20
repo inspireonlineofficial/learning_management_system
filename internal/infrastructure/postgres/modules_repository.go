@@ -22,12 +22,13 @@ func NewModuleRepository(db *sql.DB) courses.ModuleRepository {
 
 func (r *moduleRepository) Create(ctx context.Context, module *courses.Module) error {
 	query := `
-		INSERT INTO modules (id, course_id, title, position, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO modules (id, course_id, title, description, position, is_free, is_published, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
 
 	_, err := r.db.ExecContext(ctx, query,
-		module.ID, module.CourseID, module.Title, module.Position,
+		module.ID, module.CourseID, module.Title, module.Description, module.Position,
+		module.IsFree, module.IsPublished,
 		module.CreatedAt, module.UpdatedAt,
 	)
 
@@ -36,14 +37,15 @@ func (r *moduleRepository) Create(ctx context.Context, module *courses.Module) e
 
 func (r *moduleRepository) FindByID(ctx context.Context, id uuid.UUID) (*courses.Module, error) {
 	query := `
-		SELECT id, course_id, title, position, created_at, updated_at, deleted_at
+		SELECT id, course_id, title, description, position, is_free, is_published, created_at, updated_at, deleted_at
 		FROM modules
 		WHERE id = $1 AND deleted_at IS NULL
 	`
 
 	module := &courses.Module{}
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&module.ID, &module.CourseID, &module.Title, &module.Position,
+		&module.ID, &module.CourseID, &module.Title, &module.Description, &module.Position,
+		&module.IsFree, &module.IsPublished,
 		&module.CreatedAt, &module.UpdatedAt, &module.DeletedAt,
 	)
 
@@ -56,7 +58,7 @@ func (r *moduleRepository) FindByID(ctx context.Context, id uuid.UUID) (*courses
 
 func (r *moduleRepository) FindByCourseID(ctx context.Context, courseID uuid.UUID) ([]*courses.Module, error) {
 	query := `
-		SELECT id, course_id, title, position, created_at, updated_at, deleted_at
+		SELECT id, course_id, title, description, position, is_free, is_published, created_at, updated_at, deleted_at
 		FROM modules
 		WHERE course_id = $1 AND deleted_at IS NULL
 		ORDER BY position ASC
@@ -72,7 +74,8 @@ func (r *moduleRepository) FindByCourseID(ctx context.Context, courseID uuid.UUI
 	for rows.Next() {
 		module := &courses.Module{}
 		err := rows.Scan(
-			&module.ID, &module.CourseID, &module.Title, &module.Position,
+			&module.ID, &module.CourseID, &module.Title, &module.Description, &module.Position,
+			&module.IsFree, &module.IsPublished,
 			&module.CreatedAt, &module.UpdatedAt, &module.DeletedAt,
 		)
 		if err != nil {
@@ -87,14 +90,14 @@ func (r *moduleRepository) FindByCourseID(ctx context.Context, courseID uuid.UUI
 func (r *moduleRepository) Update(ctx context.Context, module *courses.Module) error {
 	query := `
 		UPDATE modules
-		SET title = $2, position = $3, updated_at = $4
+		SET title = $2, description = $3, position = $4, is_free = $5, is_published = $6, updated_at = $7
 		WHERE id = $1 AND deleted_at IS NULL
 	`
 
 	module.UpdatedAt = time.Now()
 
 	_, err := r.db.ExecContext(ctx, query,
-		module.ID, module.Title, module.Position, module.UpdatedAt,
+		module.ID, module.Title, module.Description, module.Position, module.IsFree, module.IsPublished, module.UpdatedAt,
 	)
 
 	return err
