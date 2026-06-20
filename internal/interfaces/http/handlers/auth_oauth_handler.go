@@ -13,10 +13,10 @@ import (
 // OAuthRedirect handles GET /v1/auth/oauth/:provider
 //
 // @Summary      OAuth redirect
-// @Description  Redirects the user to the OAuth provider's authorization page. Supports google, github, and microsoft.
+// @Description  Redirects the user to the OAuth provider's authorization page. Supports google.
 // @Tags         auth
 // @Produce      json
-// @Param        provider  path      string  true  "OAuth provider (google, github, microsoft)"
+// @Param        provider  path      string  true  "OAuth provider (google)"
 // @Success      302       {string}  string  "Redirect to provider authorization URL"
 // @Failure      400       {object}  ValidationErrorResponse
 // @Router       /v1/auth/oauth/{provider} [get]
@@ -54,7 +54,7 @@ func (h *AuthHandler) OAuthRedirect(w http.ResponseWriter, r *http.Request) {
 // @Description  Handles the OAuth provider callback, exchanges the authorization code for JWT tokens
 // @Tags         auth
 // @Produce      json
-// @Param        provider  path      string  true  "OAuth provider (google, github, microsoft)"
+// @Param        provider  path      string  true  "OAuth provider (google)"
 // @Param        code      query     string  true  "Authorization code from provider"
 // @Param        state     query     string  true  "State parameter for CSRF protection"
 // @Success      200       {object}  auth.OAuthResult
@@ -180,7 +180,7 @@ func isLoopbackHost(hostport string) bool {
 // ConnectProvider handles POST /v1/auth/me/oauth/connect
 //
 // @Summary      Connect OAuth provider
-// @Description  Links an OAuth provider (google, github, microsoft) to the authenticated user's account using an OAuth authorization code
+// @Description  Links an OAuth provider (google) to the authenticated user's account using an OAuth authorization code
 // @Tags         auth
 // @Accept       json
 // @Produce      json
@@ -235,7 +235,7 @@ func (h *AuthHandler) ConnectProvider(w http.ResponseWriter, r *http.Request) {
 // @Description  Unlinks the specified OAuth provider from the authenticated user's account
 // @Tags         auth
 // @Produce      json
-// @Param        provider  path      string  true  "OAuth provider name (google, github, microsoft)"
+// @Param        provider  path      string  true  "OAuth provider name (google)"
 // @Success      200       {object}  object{message=string}
 // @Failure      400       {object}  ValidationErrorResponse
 // @Failure      401       {object}  ErrorResponse

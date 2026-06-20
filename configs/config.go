@@ -48,13 +48,7 @@ type Config struct {
 	GoogleClientSecret string
 	GoogleRedirectURL  string
 
-	GitHubClientID     string
-	GitHubClientSecret string
-	GitHubRedirectURL  string
 
-	MicrosoftClientID       string
-	MicrosoftClientSecret   string
-	MicrosoftRedirectURL    string
 	OAuthTokenEncryptionKey string
 
 	// Typesense
@@ -97,13 +91,7 @@ func Load() (*Config, error) {
 		GoogleClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
 		GoogleRedirectURL:  os.Getenv("GOOGLE_REDIRECT_URL"),
 
-		GitHubClientID:     os.Getenv("GITHUB_CLIENT_ID"),
-		GitHubClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
-		GitHubRedirectURL:  os.Getenv("GITHUB_REDIRECT_URL"),
 
-		MicrosoftClientID:       os.Getenv("MICROSOFT_CLIENT_ID"),
-		MicrosoftClientSecret:   os.Getenv("MICROSOFT_CLIENT_SECRET"),
-		MicrosoftRedirectURL:    os.Getenv("MICROSOFT_REDIRECT_URL"),
 		OAuthTokenEncryptionKey: getEnvOrDefault("OAUTH_TOKEN_ENCRYPTION_KEY", getEnvOrDefault("JWT_ISSUER", "lms-backend")),
 
 		TypesenseHost:   mustGetEnv("TYPESENSE_HOST"),
