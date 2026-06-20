@@ -11,6 +11,8 @@ export type TeacherQuizInput = {
   time_limit_minutes?: number | null;
   passing_score?: number;
   attempts_allowed?: number | null;
+  is_free?: boolean;
+  is_published?: boolean;
 };
 
 export type TeacherQuestionInput = {
@@ -39,6 +41,8 @@ type BackendTeacherQuiz = {
   time_limit_seconds: number;
   max_attempts: number;
   passing_score_percent: number;
+  is_free?: boolean;
+  is_published?: boolean;
   shuffle_questions?: boolean;
   show_answers_after_submission?: boolean;
   questions?: BackendTeacherQuestion[];
@@ -105,6 +109,8 @@ export function createQuiz(input: TeacherQuizInput) {
       time_limit_seconds: (input.time_limit_minutes ?? 30) * 60,
       max_attempts: input.attempts_allowed ?? 1,
       passing_score_percent: input.passing_score ?? 60,
+      is_free: input.is_free ?? true,
+      is_published: input.is_published ?? true,
       shuffle_questions: false,
       show_answers_after_submission: true,
       questions: toQuizPayload(input).questions,
@@ -124,6 +130,8 @@ export function updateQuiz(quizId: string, input: Partial<TeacherQuizInput>) {
         time_limit_minutes: input.time_limit_minutes ?? current.time_limit_minutes,
         passing_score: input.passing_score ?? current.passing_score,
         attempts_allowed: input.attempts_allowed ?? current.attempts_allowed,
+        is_free: input.is_free ?? current.is_free,
+        is_published: input.is_published ?? current.is_published,
         questions: current.questions ?? [],
       }),
     }).then(toQuiz),
@@ -176,6 +184,8 @@ function toQuiz(quiz: BackendTeacherQuiz): Quiz {
     total_questions: questions.length,
     total_points: questions.length,
     passing_score: quiz.passing_score_percent,
+    is_free: quiz.is_free ?? true,
+    is_published: quiz.is_published ?? true,
     attempts_allowed: quiz.max_attempts || null,
     questions,
   } as Quiz & { questions: QuizQuestion[] };
@@ -217,6 +227,8 @@ function toQuizPayload(input: TeacherQuizInput & { questions?: QuizQuestion[] })
     time_limit_seconds: Math.max(1, input.time_limit_minutes ?? 30) * 60,
     max_attempts: input.attempts_allowed ?? 1,
     passing_score_percent: input.passing_score ?? 60,
+    is_free: input.is_free ?? true,
+    is_published: input.is_published ?? true,
     shuffle_questions: false,
     show_answers_after_submission: true,
     questions:

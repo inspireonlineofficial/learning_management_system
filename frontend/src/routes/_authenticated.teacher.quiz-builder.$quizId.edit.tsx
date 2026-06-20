@@ -94,6 +94,8 @@ function QuizMeta({
     passing_score: number;
     time_limit_minutes?: number | null;
     attempts_allowed?: number | null;
+    is_free?: boolean;
+    is_published?: boolean;
   };
   onSaved: () => void;
 }) {
@@ -104,6 +106,8 @@ function QuizMeta({
     passing_score: initial.passing_score,
     time_limit_minutes: initial.time_limit_minutes ?? 0,
     attempts_allowed: initial.attempts_allowed ?? 0,
+    is_free: initial.is_free ?? true,
+    is_published: initial.is_published ?? true,
   });
 
   const save = useMutation({
@@ -114,6 +118,8 @@ function QuizMeta({
         passing_score: Number(form.passing_score) || 0,
         time_limit_minutes: Number(form.time_limit_minutes) || null,
         attempts_allowed: Number(form.attempts_allowed) || null,
+        is_free: form.is_free,
+        is_published: form.is_published,
       }),
     onSuccess: () => {
       toast.success("Saved");
@@ -179,6 +185,24 @@ function QuizMeta({
             onChange={(e) => setForm({ ...form, attempts_allowed: Number(e.target.value) })}
             className="w-full mt-1 px-2 py-1.5 border border-brand/15 bg-white"
           />
+        </label>
+      </div>
+      <div className="flex flex-wrap gap-5 text-xs text-brand/70">
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={form.is_free}
+            onChange={(e) => setForm({ ...form, is_free: e.target.checked })}
+          />
+          Free access
+        </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={form.is_published}
+            onChange={(e) => setForm({ ...form, is_published: e.target.checked })}
+          />
+          Published
         </label>
       </div>
       <div className="flex justify-end gap-2">

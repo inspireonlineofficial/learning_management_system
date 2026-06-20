@@ -19,6 +19,8 @@ function CreateQuizPage() {
     passing_score: 70,
     time_limit_minutes: 30,
     attempts_allowed: 1,
+    is_free: true,
+    is_published: true,
   });
 
   const courses = useQuery({
@@ -34,6 +36,8 @@ function CreateQuizPage() {
         passing_score: Number(form.passing_score) || 70,
         time_limit_minutes: Number(form.time_limit_minutes) || 30,
         attempts_allowed: Number(form.attempts_allowed) || 1,
+        is_free: form.is_free,
+        is_published: form.is_published,
       }),
     onSuccess: (quiz) => {
       toast.success("Quiz draft created");
@@ -91,6 +95,25 @@ function CreateQuizPage() {
             max={10}
             onChange={(value) => setForm({ ...form, attempts_allowed: value })}
           />
+        </div>
+
+        <div className="flex flex-wrap gap-5 text-sm text-brand/70">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={form.is_free}
+              onChange={(event) => setForm({ ...form, is_free: event.target.checked })}
+            />
+            Free access
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={form.is_published}
+              onChange={(event) => setForm({ ...form, is_published: event.target.checked })}
+            />
+            Published
+          </label>
         </div>
 
         <button

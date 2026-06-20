@@ -1,10 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CheckCircle2, ChevronLeft, Circle, Download, PlayCircle, Trash2 } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronLeft,
+  Circle,
+  Download,
+  FileText,
+  Lock,
+  PlayCircle,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { getCourse } from "@/lib/api/courses";
+import {
+  createCourseComment,
+  deleteCourseComment,
+  getCourse,
+  updateCourseComment,
+  type CourseComment,
+} from "@/lib/api/courses";
+import { useAuth } from "@/context/auth-context";
 import { completeLesson, getCourseProgress, getLesson } from "@/lib/api/student";
 import { downloadLesson, isLessonDownloaded, removeOfflineLesson } from "@/lib/offline-lessons";
 
@@ -14,6 +30,7 @@ export const Route = createFileRoute("/_authenticated/student/player/$courseId")
 
 function PlayerPage() {
   const { courseId } = Route.useParams();
+  const { user } = useAuth();
   const qc = useQueryClient();
 
   const { data: course } = useQuery({
@@ -69,6 +86,47 @@ function PlayerPage() {
   const activeCompleted = activeLessonId ? completedSet.has(activeLessonId) : false;
   const courseTitle = course?.title ?? "Loading…";
   const pct = progress?.progress_percent ?? 0;
+  const activeNotes = (course?.notes ?? []).filter(
+    (note) => !note.lesson_id || note.lesson_id === activeLessonId,
+  );
+  const activeComments = (course?.comments ?? []).filter(
+    (comment) => !comment.lesson_id || comment.lesson_id === activeLessonId,
+  );
+
+  const commentMutation = useMutation({
+    mutationFn: (input: { content: string; parent_comment_id?: string }) =>
+      createCourseComment(courseId, {
+        ...input,
+        lesson_id: activeLessonId ?? undefined,
+      }),
+    onSuccess: () => {
+      toast.success("Comment posted.");
+      qc.invalidateQueries({ queryKey: ["course", courseId] });
+    },
+    onError: (e: Error) => toast.error(e.message ?? "Could not post comment"),
+  });
+
+  const deleteCommentMutation = useMutation({
+    mutationFn: (commentId: string) => deleteCourseComment(commentId),
+    onSuccess: () => {
+      toast.success("Comment deleted.");
+      qc.invalidateQueries({ queryKey: ["course", courseId] });
+    },
+    onError: (e: Error) => toast.error(e.message ?? "Could not delete comment"),
+  });
+
+  const updateCommentMutation = useMutation({
+    mutationFn: (input: { commentId: string; content?: string; is_pinned?: boolean }) =>
+      updateCourseComment(input.commentId, {
+        content: input.content,
+        is_pinned: input.is_pinned,
+      }),
+    onSuccess: () => {
+      toast.success("Comment updated.");
+      qc.invalidateQueries({ queryKey: ["course", courseId] });
+    },
+    onError: (e: Error) => toast.error(e.message ?? "Could not update comment"),
+  });
 
   const [downloaded, setDownloaded] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -240,6 +298,76 @@ function PlayerPage() {
               </section>
             )}
 
+            {activeNotes.length > 0 && (
+              <section className="mt-10 border-t border-brand/10 pt-8">
+                <h2 className="font-serif text-xl mb-4">Notes</h2>
+                <ul className="space-y-3">
+                  {activeNotes.map((note) => {
+                    const locked = note.is_locked ?? (!note.is_free && !course?.is_enrolled);
+                    return (
+                      <li key={note.id} className="border border-brand/10 bg-white/50 p-4">
+                        <div className="flex items-start gap-3">
+                          {locked ? (
+                            <Lock className="h-4 w-4 mt-0.5 text-brand/35" />
+                          ) : (
+                            <FileText className="h-4 w-4 mt-0.5 text-accent" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm">{note.title}</p>
+                            {locked ? (
+                              <p className="mt-1 text-xs text-brand/50">
+                                Locked until admin approval.
+                              </p>
+                            ) : (
+                              <>
+                                {note.content && (
+                                  <p className="mt-2 text-sm text-brand/70 whitespace-pre-wrap">
+                                    {note.content}
+                                  </p>
+                                )}
+                                {note.file_url && (
+                                  <a
+                                    href={note.file_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="mt-3 inline-block text-xs text-accent hover:underline"
+                                  >
+                                    Open attachment
+                                  </a>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            )}
+
+            <LessonDiscussion
+              comments={activeComments}
+              userId={user?.id}
+              userRole={user?.role}
+              saving={
+                commentMutation.isPending ||
+                updateCommentMutation.isPending ||
+                deleteCommentMutation.isPending
+              }
+              onPost={(content) => commentMutation.mutate({ content })}
+              onReply={(parentId, content) =>
+                commentMutation.mutate({ content, parent_comment_id: parentId })
+              }
+              onUpdate={(commentId, content) =>
+                updateCommentMutation.mutate({ commentId, content })
+              }
+              onPin={(commentId, isPinned) =>
+                updateCommentMutation.mutate({ commentId, is_pinned: isPinned })
+              }
+              onDelete={(commentId) => deleteCommentMutation.mutate(commentId)}
+            />
+
             <footer className="mt-12 pt-8 border-t border-brand/10 flex flex-wrap items-center justify-between gap-4">
               <p className="text-xs text-brand/45">
                 {activeCompleted ? "Completed" : "Mark this lesson complete to advance."}
@@ -284,5 +412,193 @@ function PlayerPage() {
         )}
       </main>
     </div>
+  );
+}
+
+function LessonDiscussion({
+  comments,
+  userId,
+  userRole,
+  saving,
+  onPost,
+  onReply,
+  onUpdate,
+  onPin,
+  onDelete,
+}: {
+  comments: CourseComment[];
+  userId?: string;
+  userRole?: string;
+  saving: boolean;
+  onPost: (content: string) => void;
+  onReply: (parentId: string, content: string) => void;
+  onUpdate: (commentId: string, content: string) => void;
+  onPin: (commentId: string, isPinned: boolean) => void;
+  onDelete: (commentId: string) => void;
+}) {
+  const [content, setContent] = useState("");
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [reply, setReply] = useState("");
+  const [editing, setEditing] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const roots = comments.filter((comment) => !comment.parent_comment_id);
+  const replies = comments.reduce<Record<string, CourseComment[]>>((acc, comment) => {
+    if (!comment.parent_comment_id) return acc;
+    acc[comment.parent_comment_id] = [...(acc[comment.parent_comment_id] ?? []), comment];
+    return acc;
+  }, {});
+  return (
+    <section className="mt-10 border-t border-brand/10 pt-8">
+      <h2 className="font-serif text-xl mb-4">Discussion</h2>
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!content.trim()) return;
+          onPost(content.trim());
+          setContent("");
+        }}
+      >
+        <textarea
+          value={content}
+          onChange={(event) => setContent(event.target.value)}
+          rows={3}
+          placeholder="Ask a question about this lesson."
+          className="w-full border border-brand/15 bg-white px-3 py-2 text-sm"
+        />
+        <button
+          type="submit"
+          disabled={saving || !content.trim()}
+          className="mt-3 bg-brand px-4 py-2 text-sm text-white disabled:opacity-50"
+        >
+          {saving ? "Posting..." : "Post comment"}
+        </button>
+      </form>
+      <ul className="mt-5 space-y-3">
+        {roots.length === 0 && <li className="text-sm text-brand/45">No comments yet.</li>}
+        {roots.map((comment) => {
+          const canEdit = comment.user_id === userId;
+          const canModerate = userRole === "teacher" || userRole === "admin";
+          const canDelete = canEdit || canModerate;
+          return (
+            <li key={comment.id} className="border border-brand/10 bg-white/50 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  {comment.is_pinned && (
+                    <p className="mb-1 text-[10px] uppercase tracking-[0.18em] text-accent">
+                      Pinned
+                    </p>
+                  )}
+                  {editing === comment.id ? (
+                    <textarea
+                      value={draft}
+                      onChange={(event) => setDraft(event.target.value)}
+                      rows={3}
+                      className="w-full border border-brand/15 bg-white px-3 py-2 text-sm"
+                    />
+                  ) : (
+                    <p className="text-sm text-brand/75 whitespace-pre-wrap">{comment.content}</p>
+                  )}
+                  <p className="mt-2 text-[11px] text-brand/40">
+                    {new Date(comment.created_at).toLocaleString()}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-3 text-xs">
+                    <button type="button" onClick={() => setReplyTo(comment.id)}>
+                      Reply
+                    </button>
+                    {canEdit &&
+                      (editing === comment.id ? (
+                        <>
+                          <button
+                            type="button"
+                            disabled={saving || !draft.trim()}
+                            onClick={() => {
+                              onUpdate(comment.id, draft.trim());
+                              setEditing(null);
+                            }}
+                          >
+                            Save
+                          </button>
+                          <button type="button" onClick={() => setEditing(null)}>
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditing(comment.id);
+                            setDraft(comment.content);
+                          }}
+                        >
+                          Edit
+                        </button>
+                      ))}
+                    {canModerate && (
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={() => onPin(comment.id, !comment.is_pinned)}
+                      >
+                        {comment.is_pinned ? "Unpin" : "Pin"}
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        type="button"
+                        onClick={() => onDelete(comment.id)}
+                        disabled={saving}
+                        className="text-brand/45 hover:text-destructive disabled:opacity-50"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                  {replyTo === comment.id && (
+                    <form
+                      className="mt-3"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        if (!reply.trim()) return;
+                        onReply(comment.id, reply.trim());
+                        setReply("");
+                        setReplyTo(null);
+                      }}
+                    >
+                      <textarea
+                        value={reply}
+                        onChange={(event) => setReply(event.target.value)}
+                        rows={2}
+                        className="w-full border border-brand/15 bg-white px-3 py-2 text-sm"
+                      />
+                      <button
+                        type="submit"
+                        disabled={saving || !reply.trim()}
+                        className="mt-2 bg-brand px-3 py-1.5 text-xs text-white disabled:opacity-50"
+                      >
+                        Post reply
+                      </button>
+                    </form>
+                  )}
+                  {(replies[comment.id] ?? []).length > 0 && (
+                    <ul className="mt-4 space-y-2 border-l border-brand/10 pl-4">
+                      {(replies[comment.id] ?? []).map((child) => (
+                        <li key={child.id} className="bg-white/60 p-3">
+                          <p className="text-sm text-brand/70 whitespace-pre-wrap">
+                            {child.content}
+                          </p>
+                          <p className="mt-2 text-[11px] text-brand/40">
+                            {new Date(child.created_at).toLocaleString()}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

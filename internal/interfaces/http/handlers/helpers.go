@@ -47,6 +47,14 @@ func getUserIDFromContext(r *http.Request) (uuid.UUID, error) {
 	return userID, nil
 }
 
+func getUserRoleFromContext(r *http.Request) (string, error) {
+	role, ok := r.Context().Value("role").(string)
+	if !ok || role == "" {
+		return "", apperrors.ErrUnauthorized
+	}
+	return role, nil
+}
+
 func decodeJSONBody(r *http.Request, target interface{}) error {
 	if err := json.NewDecoder(r.Body).Decode(target); err != nil {
 		return apperrors.NewSimpleValidationError("INVALID_JSON", "invalid request body")

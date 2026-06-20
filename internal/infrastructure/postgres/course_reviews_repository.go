@@ -115,6 +115,21 @@ func (r *courseReviewRepository) FindByStudentAndCourse(ctx context.Context, stu
 	return review, err
 }
 
+func (r *courseReviewRepository) DeleteByStudentAndCourse(ctx context.Context, studentID, courseID uuid.UUID) error {
+	result, err := r.db.ExecContext(ctx, `DELETE FROM course_reviews WHERE student_id = $1 AND course_id = $2`, studentID, courseID)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return fmt.Errorf("review not found")
+	}
+	return nil
+}
+
 func (r *courseReviewRepository) GetRatingDistribution(ctx context.Context, courseID uuid.UUID) (map[int]int, error) {
 	query := `
 		SELECT rating, COUNT(*) as count

@@ -26,15 +26,18 @@ func (r *courseRepository) Create(ctx context.Context, course *courses.Course) e
 		INSERT INTO courses (
 			id, teacher_id, title, slug, short_description, description,
 			subject, level, price_type, price, currency, prerequisites,
-			thumbnail_url, status, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+			visibility, learning_outcomes, requirements, target_audience,
+			estimated_duration_minutes, thumbnail_url, status, created_at, updated_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
 	`
 
 	_, err := r.db.ExecContext(ctx, query,
 		course.ID, course.TeacherID, course.Title, course.Slug,
 		course.ShortDescription, course.Description, course.Subject,
 		course.Level, course.PriceType, course.Price, course.Currency,
-		course.Prerequisites, course.ThumbnailURL, course.Status,
+		course.Prerequisites, course.Visibility, course.LearningOutcomes,
+		course.Requirements, course.TargetAudience, course.EstimatedDurationMinutes,
+		course.ThumbnailURL, course.Status,
 		course.CreatedAt, course.UpdatedAt,
 	)
 
@@ -45,7 +48,8 @@ func (r *courseRepository) FindByID(ctx context.Context, id uuid.UUID) (*courses
 	query := `
 		SELECT id, teacher_id, title, slug, short_description, description,
 			subject, level, price_type, price, currency, prerequisites,
-			thumbnail_url, status, rating_average, rating_count, total_enrolled,
+			visibility, learning_outcomes, requirements, target_audience,
+			estimated_duration_minutes, thumbnail_url, status, rating_average, rating_count, total_enrolled,
 			published_at, created_at, updated_at, deleted_at
 		FROM courses
 		WHERE id = $1 AND deleted_at IS NULL
@@ -56,7 +60,9 @@ func (r *courseRepository) FindByID(ctx context.Context, id uuid.UUID) (*courses
 		&course.ID, &course.TeacherID, &course.Title, &course.Slug,
 		&course.ShortDescription, &course.Description, &course.Subject,
 		&course.Level, &course.PriceType, &course.Price, &course.Currency,
-		&course.Prerequisites, &course.ThumbnailURL, &course.Status,
+		&course.Prerequisites, &course.Visibility, &course.LearningOutcomes,
+		&course.Requirements, &course.TargetAudience, &course.EstimatedDurationMinutes,
+		&course.ThumbnailURL, &course.Status,
 		&course.RatingAverage, &course.RatingCount, &course.TotalEnrolled,
 		&course.PublishedAt, &course.CreatedAt, &course.UpdatedAt, &course.DeletedAt,
 	)
@@ -72,7 +78,8 @@ func (r *courseRepository) FindBySlug(ctx context.Context, slug string) (*course
 	query := `
 		SELECT id, teacher_id, title, slug, short_description, description,
 			subject, level, price_type, price, currency, prerequisites,
-			thumbnail_url, status, rating_average, rating_count, total_enrolled,
+			visibility, learning_outcomes, requirements, target_audience,
+			estimated_duration_minutes, thumbnail_url, status, rating_average, rating_count, total_enrolled,
 			published_at, created_at, updated_at, deleted_at
 		FROM courses
 		WHERE slug = $1 AND deleted_at IS NULL
@@ -83,7 +90,9 @@ func (r *courseRepository) FindBySlug(ctx context.Context, slug string) (*course
 		&course.ID, &course.TeacherID, &course.Title, &course.Slug,
 		&course.ShortDescription, &course.Description, &course.Subject,
 		&course.Level, &course.PriceType, &course.Price, &course.Currency,
-		&course.Prerequisites, &course.ThumbnailURL, &course.Status,
+		&course.Prerequisites, &course.Visibility, &course.LearningOutcomes,
+		&course.Requirements, &course.TargetAudience, &course.EstimatedDurationMinutes,
+		&course.ThumbnailURL, &course.Status,
 		&course.RatingAverage, &course.RatingCount, &course.TotalEnrolled,
 		&course.PublishedAt, &course.CreatedAt, &course.UpdatedAt, &course.DeletedAt,
 	)
@@ -108,7 +117,8 @@ func (r *courseRepository) FindByTeacherID(ctx context.Context, teacherID uuid.U
 	query := `
 		SELECT id, teacher_id, title, slug, short_description, description,
 			subject, level, price_type, price, currency, prerequisites,
-			thumbnail_url, status, rating_average, rating_count, total_enrolled,
+			visibility, learning_outcomes, requirements, target_audience,
+			estimated_duration_minutes, thumbnail_url, status, rating_average, rating_count, total_enrolled,
 			published_at, created_at, updated_at, deleted_at
 		FROM courses
 		WHERE teacher_id = $1 AND deleted_at IS NULL
@@ -129,7 +139,9 @@ func (r *courseRepository) FindByTeacherID(ctx context.Context, teacherID uuid.U
 			&course.ID, &course.TeacherID, &course.Title, &course.Slug,
 			&course.ShortDescription, &course.Description, &course.Subject,
 			&course.Level, &course.PriceType, &course.Price, &course.Currency,
-			&course.Prerequisites, &course.ThumbnailURL, &course.Status,
+			&course.Prerequisites, &course.Visibility, &course.LearningOutcomes,
+			&course.Requirements, &course.TargetAudience, &course.EstimatedDurationMinutes,
+			&course.ThumbnailURL, &course.Status,
 			&course.RatingAverage, &course.RatingCount, &course.TotalEnrolled,
 			&course.PublishedAt, &course.CreatedAt, &course.UpdatedAt, &course.DeletedAt,
 		)
@@ -147,8 +159,9 @@ func (r *courseRepository) Update(ctx context.Context, course *courses.Course) e
 		UPDATE courses
 		SET title = $2, slug = $3, short_description = $4, description = $5,
 			subject = $6, level = $7, price_type = $8, price = $9, currency = $10,
-			prerequisites = $11, thumbnail_url = $12, status = $13, published_at = $14,
-			updated_at = $15
+			prerequisites = $11, visibility = $12, learning_outcomes = $13,
+			requirements = $14, target_audience = $15, estimated_duration_minutes = $16,
+			thumbnail_url = $17, status = $18, published_at = $19, updated_at = $20
 		WHERE id = $1 AND deleted_at IS NULL
 	`
 
@@ -157,8 +170,10 @@ func (r *courseRepository) Update(ctx context.Context, course *courses.Course) e
 	_, err := r.db.ExecContext(ctx, query,
 		course.ID, course.Title, course.Slug, course.ShortDescription,
 		course.Description, course.Subject, course.Level, course.PriceType,
-		course.Price, course.Currency, course.Prerequisites, course.ThumbnailURL,
-		course.Status, course.PublishedAt, course.UpdatedAt,
+		course.Price, course.Currency, course.Prerequisites, course.Visibility,
+		course.LearningOutcomes, course.Requirements, course.TargetAudience,
+		course.EstimatedDurationMinutes, course.ThumbnailURL, course.Status,
+		course.PublishedAt, course.UpdatedAt,
 	)
 
 	return err
@@ -208,6 +223,12 @@ func (r *courseRepository) List(ctx context.Context, filters courses.CourseFilte
 		argPos++
 	}
 
+	if filters.TeacherID != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("teacher_id = $%d", argPos))
+		args = append(args, *filters.TeacherID)
+		argPos++
+	}
+
 	if filters.MinPrice != nil {
 		whereClauses = append(whereClauses, fmt.Sprintf("price >= $%d", argPos))
 		args = append(args, *filters.MinPrice)
@@ -249,7 +270,8 @@ func (r *courseRepository) List(ctx context.Context, filters courses.CourseFilte
 	query := fmt.Sprintf(`
 		SELECT id, teacher_id, title, slug, short_description, description,
 			subject, level, price_type, price, currency, prerequisites,
-			thumbnail_url, status, rating_average, rating_count, total_enrolled,
+			visibility, learning_outcomes, requirements, target_audience,
+			estimated_duration_minutes, thumbnail_url, status, rating_average, rating_count, total_enrolled,
 			published_at, created_at, updated_at, deleted_at
 		FROM courses
 		WHERE %s
@@ -272,7 +294,9 @@ func (r *courseRepository) List(ctx context.Context, filters courses.CourseFilte
 			&course.ID, &course.TeacherID, &course.Title, &course.Slug,
 			&course.ShortDescription, &course.Description, &course.Subject,
 			&course.Level, &course.PriceType, &course.Price, &course.Currency,
-			&course.Prerequisites, &course.ThumbnailURL, &course.Status,
+			&course.Prerequisites, &course.Visibility, &course.LearningOutcomes,
+			&course.Requirements, &course.TargetAudience, &course.EstimatedDurationMinutes,
+			&course.ThumbnailURL, &course.Status,
 			&course.RatingAverage, &course.RatingCount, &course.TotalEnrolled,
 			&course.PublishedAt, &course.CreatedAt, &course.UpdatedAt, &course.DeletedAt,
 		)

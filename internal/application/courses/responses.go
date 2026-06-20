@@ -8,32 +8,40 @@ import (
 
 // CourseResponse represents a course in API responses
 type CourseResponse struct {
-	ID               uuid.UUID  `json:"id"`
-	TeacherID        uuid.UUID  `json:"teacher_id"`
-	Title            string     `json:"title"`
-	Slug             string     `json:"slug"`
-	ShortDescription string     `json:"short_description"`
-	Description      string     `json:"description"`
-	Subject          string     `json:"subject"`
-	Level            string     `json:"level"`
-	PriceType        string     `json:"price_type"`
-	Price            float64    `json:"price"`
-	Currency         string     `json:"currency"`
-	Prerequisites    string     `json:"prerequisites"`
-	ThumbnailURL     string     `json:"thumbnail_url"`
-	Status           string     `json:"status"`
-	RatingAverage    float64    `json:"rating_average"`
-	RatingCount      int        `json:"rating_count"`
-	TotalEnrolled    int        `json:"total_enrolled"`
-	PublishedAt      *time.Time `json:"published_at"`
-	CreatedAt        time.Time  `json:"created_at"`
-	UpdatedAt        time.Time  `json:"updated_at"`
+	ID                       uuid.UUID  `json:"id"`
+	TeacherID                uuid.UUID  `json:"teacher_id"`
+	Title                    string     `json:"title"`
+	Slug                     string     `json:"slug"`
+	ShortDescription         string     `json:"short_description"`
+	Description              string     `json:"description"`
+	Subject                  string     `json:"subject"`
+	Level                    string     `json:"level"`
+	PriceType                string     `json:"price_type"`
+	Price                    float64    `json:"price"`
+	Currency                 string     `json:"currency"`
+	Prerequisites            string     `json:"prerequisites"`
+	Visibility               string     `json:"visibility"`
+	LearningOutcomes         string     `json:"learning_outcomes"`
+	Requirements             string     `json:"requirements"`
+	TargetAudience           string     `json:"target_audience"`
+	EstimatedDurationMinutes int        `json:"estimated_duration_minutes"`
+	ThumbnailURL             string     `json:"thumbnail_url"`
+	Status                   string     `json:"status"`
+	RatingAverage            float64    `json:"rating_average"`
+	RatingCount              int        `json:"rating_count"`
+	TotalEnrolled            int        `json:"total_enrolled"`
+	PublishedAt              *time.Time `json:"published_at"`
+	CreatedAt                time.Time  `json:"created_at"`
+	UpdatedAt                time.Time  `json:"updated_at"`
 }
 
 // CourseDetailResponse represents detailed course information with content tree
 type CourseDetailResponse struct {
 	CourseResponse
-	Modules []ModuleResponse `json:"modules"`
+	Modules    []ModuleResponse  `json:"modules"`
+	Notes      []NoteResponse    `json:"notes"`
+	Comments   []CommentResponse `json:"comments"`
+	IsEnrolled bool              `json:"is_enrolled"`
 }
 
 // ModuleResponse represents a module in API responses
@@ -80,6 +88,22 @@ type LessonResponse struct {
 	UpdatedAt        time.Time  `json:"updated_at"`
 }
 
+// NoteResponse represents a course/module/lesson note in API responses.
+type NoteResponse struct {
+	ID          uuid.UUID  `json:"id"`
+	CourseID    uuid.UUID  `json:"course_id"`
+	ModuleID    *uuid.UUID `json:"module_id,omitempty"`
+	LessonID    *uuid.UUID `json:"lesson_id,omitempty"`
+	Title       string     `json:"title"`
+	Content     string     `json:"content"`
+	FileURL     string     `json:"file_url"`
+	IsFree      bool       `json:"is_free"`
+	IsPublished bool       `json:"is_published"`
+	IsLocked    bool       `json:"is_locked"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+}
+
 // VideoStatusResponse represents video processing status
 type VideoStatusResponse struct {
 	VideoID uuid.UUID `json:"video_id"`
@@ -102,6 +126,27 @@ type CourseReviewResponse struct {
 	Comment   string    `json:"comment"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// CommentResponse represents a course discussion comment.
+type CommentResponse struct {
+	ID              uuid.UUID  `json:"id"`
+	CourseID        uuid.UUID  `json:"course_id"`
+	ModuleID        *uuid.UUID `json:"module_id,omitempty"`
+	LessonID        *uuid.UUID `json:"lesson_id,omitempty"`
+	QuizID          *uuid.UUID `json:"quiz_id,omitempty"`
+	UserID          uuid.UUID  `json:"user_id"`
+	ParentCommentID *uuid.UUID `json:"parent_comment_id,omitempty"`
+	Content         string     `json:"content"`
+	IsPinned        bool       `json:"is_pinned"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
+}
+
+// CommentsResponse represents paginated course comments.
+type CommentsResponse struct {
+	Comments []CommentResponse `json:"comments"`
+	Meta     interface{}       `json:"meta"`
 }
 
 // RatingDistributionResponse represents rating distribution summary

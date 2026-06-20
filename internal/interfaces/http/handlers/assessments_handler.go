@@ -70,6 +70,8 @@ func (h *AssessmentsHandler) CreateQuiz(w http.ResponseWriter, r *http.Request) 
 		PassingScorePercent        float64                             `json:"passing_score_percent"`
 		ShuffleQuestions           bool                                `json:"shuffle_questions"`
 		ShowAnswersAfterSubmission bool                                `json:"show_answers_after_submission"`
+		IsFree                     *bool                               `json:"is_free"`
+		IsPublished                *bool                               `json:"is_published"`
 		Questions                  []assessments.CreateQuestionCommand `json:"questions"`
 	}
 
@@ -100,6 +102,8 @@ func (h *AssessmentsHandler) CreateQuiz(w http.ResponseWriter, r *http.Request) 
 		PassingScorePercent:        req.PassingScorePercent,
 		ShuffleQuestions:           req.ShuffleQuestions,
 		ShowAnswersAfterSubmission: req.ShowAnswersAfterSubmission,
+		IsFree:                     boolValue(req.IsFree, true),
+		IsPublished:                boolValue(req.IsPublished, true),
 		Questions:                  req.Questions,
 	}
 
@@ -190,6 +194,8 @@ func (h *AssessmentsHandler) UpdateTeacherQuiz(w http.ResponseWriter, r *http.Re
 		PassingScorePercent        float64                             `json:"passing_score_percent"`
 		ShuffleQuestions           bool                                `json:"shuffle_questions"`
 		ShowAnswersAfterSubmission bool                                `json:"show_answers_after_submission"`
+		IsFree                     *bool                               `json:"is_free"`
+		IsPublished                *bool                               `json:"is_published"`
 		Questions                  []assessments.CreateQuestionCommand `json:"questions"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -217,6 +223,8 @@ func (h *AssessmentsHandler) UpdateTeacherQuiz(w http.ResponseWriter, r *http.Re
 		PassingScorePercent:        req.PassingScorePercent,
 		ShuffleQuestions:           req.ShuffleQuestions,
 		ShowAnswersAfterSubmission: req.ShowAnswersAfterSubmission,
+		IsFree:                     boolValue(req.IsFree, true),
+		IsPublished:                boolValue(req.IsPublished, true),
 		Questions:                  req.Questions,
 	})
 	if err != nil {
@@ -1099,4 +1107,11 @@ func decodeTeacherQuestionRequest(r *http.Request) (assessments.CreateQuestionCo
 		Explanation: req.Explanation,
 		Options:     options,
 	}, nil
+}
+
+func boolValue(value *bool, fallback bool) bool {
+	if value == nil {
+		return fallback
+	}
+	return *value
 }

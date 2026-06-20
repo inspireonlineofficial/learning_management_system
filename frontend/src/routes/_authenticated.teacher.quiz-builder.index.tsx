@@ -66,6 +66,9 @@ function Page() {
                   {q.course_title ?? "Standalone"} · {q.total_questions} questions · passing{" "}
                   {q.passing_score}%
                 </p>
+                <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-brand/40">
+                  {q.is_free ? "Free" : "Paid"} · {q.is_published === false ? "Draft" : "Published"}
+                </p>
               </Link>
               <button
                 onClick={() => {

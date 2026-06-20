@@ -17,6 +17,8 @@ type Quiz struct {
 	PassingScorePercent        float64 // default 60
 	ShuffleQuestions           bool
 	ShowAnswersAfterSubmission bool
+	IsFree                     bool
+	IsPublished                bool
 	CreatedAt                  time.Time
 	UpdatedAt                  time.Time
 }

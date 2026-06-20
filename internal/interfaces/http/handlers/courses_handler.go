@@ -214,6 +214,153 @@ func (h *CoursesHandler) UpsertCourseReview(w http.ResponseWriter, r *http.Reque
 	json.NewEncoder(w).Encode(review)
 }
 
+// DeleteCourseReview handles DELETE /v1/courses/{courseId}/reviews/me
+func (h *CoursesHandler) DeleteCourseReview(w http.ResponseWriter, r *http.Request) {
+	courseID, err := uuid.Parse(r.PathValue("courseId"))
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_ID", "invalid course ID"))
+		return
+	}
+	userID, err := getUserIDFromContext(r)
+	if err != nil {
+		writeErrorResponse(w, apperrors.ErrUnauthorized)
+		return
+	}
+	if err := h.service.DeleteCourseReview(r.Context(), courses.DeleteCourseReviewCommand{CourseID: courseID, StudentID: userID}); err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// ListCourseComments handles GET /v1/courses/{courseId}/comments
+func (h *CoursesHandler) ListCourseComments(w http.ResponseWriter, r *http.Request) {
+	courseID, err := uuid.Parse(r.PathValue("courseId"))
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_ID", "invalid course ID"))
+		return
+	}
+	params := pagination.ParseParams(r)
+	comments, err := h.service.ListCourseComments(r.Context(), courseID, params.Page, params.Limit)
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(comments)
+}
+
+// CreateCourseComment handles POST /v1/courses/{courseId}/comments
+func (h *CoursesHandler) CreateCourseComment(w http.ResponseWriter, r *http.Request) {
+	courseID, err := uuid.Parse(r.PathValue("courseId"))
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_ID", "invalid course ID"))
+		return
+	}
+	userID, err := getUserIDFromContext(r)
+	if err != nil {
+		writeErrorResponse(w, apperrors.ErrUnauthorized)
+		return
+	}
+	role, err := getUserRoleFromContext(r)
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	var req struct {
+		ModuleID        *uuid.UUID `json:"module_id"`
+		LessonID        *uuid.UUID `json:"lesson_id"`
+		QuizID          *uuid.UUID `json:"quiz_id"`
+		ParentCommentID *uuid.UUID `json:"parent_comment_id"`
+		Content         string     `json:"content"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_JSON", "invalid request body"))
+		return
+	}
+	comment, err := h.service.CreateCourseComment(r.Context(), courses.CreateCourseCommentCommand{
+		CourseID:        courseID,
+		UserID:          userID,
+		Role:            role,
+		ModuleID:        req.ModuleID,
+		LessonID:        req.LessonID,
+		QuizID:          req.QuizID,
+		ParentCommentID: req.ParentCommentID,
+		Content:         req.Content,
+	})
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(comment)
+}
+
+// UpdateCourseComment handles PATCH /v1/courses/comments/{commentId}
+func (h *CoursesHandler) UpdateCourseComment(w http.ResponseWriter, r *http.Request) {
+	commentID, err := uuid.Parse(r.PathValue("commentId"))
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_ID", "invalid comment ID"))
+		return
+	}
+	userID, err := getUserIDFromContext(r)
+	if err != nil {
+		writeErrorResponse(w, apperrors.ErrUnauthorized)
+		return
+	}
+	role, err := getUserRoleFromContext(r)
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	var req struct {
+		Content  string `json:"content"`
+		IsPinned *bool  `json:"is_pinned"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_JSON", "invalid request body"))
+		return
+	}
+	comment, err := h.service.UpdateCourseComment(r.Context(), courses.UpdateCourseCommentCommand{
+		CommentID: commentID,
+		UserID:    userID,
+		Role:      role,
+		Content:   req.Content,
+		IsPinned:  req.IsPinned,
+	})
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(comment)
+}
+
+// DeleteCourseComment handles DELETE /v1/courses/comments/{commentId}
+func (h *CoursesHandler) DeleteCourseComment(w http.ResponseWriter, r *http.Request) {
+	commentID, err := uuid.Parse(r.PathValue("commentId"))
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_ID", "invalid comment ID"))
+		return
+	}
+	userID, err := getUserIDFromContext(r)
+	if err != nil {
+		writeErrorResponse(w, apperrors.ErrUnauthorized)
+		return
+	}
+	role, err := getUserRoleFromContext(r)
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	if err := h.service.DeleteCourseComment(r.Context(), courses.DeleteCourseCommentCommand{CommentID: commentID, UserID: userID, Role: role}); err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // Teacher endpoints
 
 // ListTeacherCourses handles GET /v1/teacher/courses
@@ -265,18 +412,23 @@ func (h *CoursesHandler) CreateCourse(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Title            string  `json:"title"`
-		Slug             string  `json:"slug"`
-		Subtitle         string  `json:"subtitle"`
-		ShortDescription string  `json:"short_description"`
-		Description      string  `json:"description"`
-		Subject          string  `json:"subject"`
-		Level            string  `json:"level"`
-		PriceType        string  `json:"price_type"`
-		Price            float64 `json:"price"`
-		Currency         string  `json:"currency"`
-		Prerequisites    string  `json:"prerequisites"`
-		ThumbnailURL     string  `json:"thumbnail_url"`
+		Title                    string  `json:"title"`
+		Slug                     string  `json:"slug"`
+		Subtitle                 string  `json:"subtitle"`
+		ShortDescription         string  `json:"short_description"`
+		Description              string  `json:"description"`
+		Subject                  string  `json:"subject"`
+		Level                    string  `json:"level"`
+		PriceType                string  `json:"price_type"`
+		Price                    float64 `json:"price"`
+		Currency                 string  `json:"currency"`
+		Prerequisites            string  `json:"prerequisites"`
+		Visibility               string  `json:"visibility"`
+		LearningOutcomes         string  `json:"learning_outcomes"`
+		Requirements             string  `json:"requirements"`
+		TargetAudience           string  `json:"target_audience"`
+		EstimatedDurationMinutes int     `json:"estimated_duration_minutes"`
+		ThumbnailURL             string  `json:"thumbnail_url"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -285,18 +437,23 @@ func (h *CoursesHandler) CreateCourse(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cmd := courses.CreateCourseCommand{
-		TeacherID:        userID,
-		Title:            req.Title,
-		Slug:             req.Slug,
-		ShortDescription: firstNonEmpty(req.ShortDescription, req.Subtitle),
-		Description:      req.Description,
-		Subject:          req.Subject,
-		Level:            req.Level,
-		PriceType:        req.PriceType,
-		Price:            req.Price,
-		Currency:         req.Currency,
-		Prerequisites:    req.Prerequisites,
-		ThumbnailURL:     req.ThumbnailURL,
+		TeacherID:                userID,
+		Title:                    req.Title,
+		Slug:                     req.Slug,
+		ShortDescription:         firstNonEmpty(req.ShortDescription, req.Subtitle),
+		Description:              req.Description,
+		Subject:                  req.Subject,
+		Level:                    req.Level,
+		PriceType:                req.PriceType,
+		Price:                    req.Price,
+		Currency:                 req.Currency,
+		Prerequisites:            req.Prerequisites,
+		Visibility:               req.Visibility,
+		LearningOutcomes:         req.LearningOutcomes,
+		Requirements:             req.Requirements,
+		TargetAudience:           req.TargetAudience,
+		EstimatedDurationMinutes: req.EstimatedDurationMinutes,
+		ThumbnailURL:             req.ThumbnailURL,
 	}
 
 	course, err := h.service.CreateCourse(r.Context(), cmd)
@@ -324,6 +481,18 @@ func boolDefault(value *bool, fallback bool) bool {
 		return fallback
 	}
 	return *value
+}
+
+func optionalUUID(raw string) (*uuid.UUID, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil, nil
+	}
+	parsed, err := uuid.Parse(raw)
+	if err != nil {
+		return nil, err
+	}
+	return &parsed, nil
 }
 
 // UpdateCourse handles PATCH /v1/teacher/courses/{courseId}
@@ -357,17 +526,22 @@ func (h *CoursesHandler) UpdateCourse(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Title            string  `json:"title"`
-		Slug             string  `json:"slug"`
-		ShortDescription string  `json:"short_description"`
-		Description      string  `json:"description"`
-		Subject          string  `json:"subject"`
-		Level            string  `json:"level"`
-		PriceType        string  `json:"price_type"`
-		Price            float64 `json:"price"`
-		Currency         string  `json:"currency"`
-		Prerequisites    string  `json:"prerequisites"`
-		ThumbnailURL     string  `json:"thumbnail_url"`
+		Title                    string  `json:"title"`
+		Slug                     string  `json:"slug"`
+		ShortDescription         string  `json:"short_description"`
+		Description              string  `json:"description"`
+		Subject                  string  `json:"subject"`
+		Level                    string  `json:"level"`
+		PriceType                string  `json:"price_type"`
+		Price                    float64 `json:"price"`
+		Currency                 string  `json:"currency"`
+		Prerequisites            string  `json:"prerequisites"`
+		Visibility               string  `json:"visibility"`
+		LearningOutcomes         string  `json:"learning_outcomes"`
+		Requirements             string  `json:"requirements"`
+		TargetAudience           string  `json:"target_audience"`
+		EstimatedDurationMinutes int     `json:"estimated_duration_minutes"`
+		ThumbnailURL             string  `json:"thumbnail_url"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -376,19 +550,24 @@ func (h *CoursesHandler) UpdateCourse(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cmd := courses.UpdateCourseCommand{
-		CourseID:         courseID,
-		TeacherID:        userID,
-		Title:            req.Title,
-		Slug:             req.Slug,
-		ShortDescription: req.ShortDescription,
-		Description:      req.Description,
-		Subject:          req.Subject,
-		Level:            req.Level,
-		PriceType:        req.PriceType,
-		Price:            req.Price,
-		Currency:         req.Currency,
-		Prerequisites:    req.Prerequisites,
-		ThumbnailURL:     req.ThumbnailURL,
+		CourseID:                 courseID,
+		TeacherID:                userID,
+		Title:                    req.Title,
+		Slug:                     req.Slug,
+		ShortDescription:         req.ShortDescription,
+		Description:              req.Description,
+		Subject:                  req.Subject,
+		Level:                    req.Level,
+		PriceType:                req.PriceType,
+		Price:                    req.Price,
+		Currency:                 req.Currency,
+		Prerequisites:            req.Prerequisites,
+		Visibility:               req.Visibility,
+		LearningOutcomes:         req.LearningOutcomes,
+		Requirements:             req.Requirements,
+		TargetAudience:           req.TargetAudience,
+		EstimatedDurationMinutes: req.EstimatedDurationMinutes,
+		ThumbnailURL:             req.ThumbnailURL,
 	}
 
 	course, err := h.service.UpdateCourse(r.Context(), cmd)
@@ -873,6 +1052,123 @@ func (h *CoursesHandler) DeleteLesson(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// CreateCourseNote handles POST /v1/teacher/courses/{courseId}/notes
+func (h *CoursesHandler) CreateCourseNote(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value("user_id").(uuid.UUID)
+	courseID, err := uuid.Parse(r.PathValue("courseId"))
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_ID", "invalid course ID"))
+		return
+	}
+
+	var req struct {
+		ModuleID    string `json:"module_id"`
+		LessonID    string `json:"lesson_id"`
+		Title       string `json:"title"`
+		Content     string `json:"content"`
+		FileURL     string `json:"file_url"`
+		IsFree      *bool  `json:"is_free"`
+		IsPublished *bool  `json:"is_published"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_JSON", "invalid request body"))
+		return
+	}
+	moduleID, err := optionalUUID(req.ModuleID)
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_MODULE_ID", "invalid module ID"))
+		return
+	}
+	lessonID, err := optionalUUID(req.LessonID)
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_LESSON_ID", "invalid lesson ID"))
+		return
+	}
+
+	result, err := h.service.CreateCourseNote(r.Context(), courses.CreateCourseNoteCommand{
+		CourseID:    courseID,
+		TeacherID:   userID,
+		ModuleID:    moduleID,
+		LessonID:    lessonID,
+		Title:       req.Title,
+		Content:     req.Content,
+		FileURL:     req.FileURL,
+		IsFree:      boolDefault(req.IsFree, true),
+		IsPublished: boolDefault(req.IsPublished, false),
+	})
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	writeJSONResponse(w, http.StatusCreated, result)
+}
+
+// UpdateCourseNote handles PATCH /v1/teacher/notes/{noteId}
+func (h *CoursesHandler) UpdateCourseNote(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value("user_id").(uuid.UUID)
+	noteID, err := uuid.Parse(r.PathValue("noteId"))
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_ID", "invalid note ID"))
+		return
+	}
+
+	var req struct {
+		ModuleID    string `json:"module_id"`
+		LessonID    string `json:"lesson_id"`
+		Title       string `json:"title"`
+		Content     string `json:"content"`
+		FileURL     string `json:"file_url"`
+		IsFree      *bool  `json:"is_free"`
+		IsPublished *bool  `json:"is_published"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_JSON", "invalid request body"))
+		return
+	}
+	moduleID, err := optionalUUID(req.ModuleID)
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_MODULE_ID", "invalid module ID"))
+		return
+	}
+	lessonID, err := optionalUUID(req.LessonID)
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_LESSON_ID", "invalid lesson ID"))
+		return
+	}
+
+	result, err := h.service.UpdateCourseNote(r.Context(), courses.UpdateCourseNoteCommand{
+		NoteID:      noteID,
+		TeacherID:   userID,
+		ModuleID:    moduleID,
+		LessonID:    lessonID,
+		Title:       req.Title,
+		Content:     req.Content,
+		FileURL:     req.FileURL,
+		IsFree:      boolDefault(req.IsFree, true),
+		IsPublished: boolDefault(req.IsPublished, false),
+	})
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	writeJSONResponse(w, http.StatusOK, result)
+}
+
+// DeleteCourseNote handles DELETE /v1/teacher/notes/{noteId}
+func (h *CoursesHandler) DeleteCourseNote(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value("user_id").(uuid.UUID)
+	noteID, err := uuid.Parse(r.PathValue("noteId"))
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_ID", "invalid note ID"))
+		return
+	}
+	if err := h.service.DeleteCourseNote(r.Context(), courses.DeleteCourseNoteCommand{NoteID: noteID, TeacherID: userID}); err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // ReorderContent handles PATCH /v1/teacher/content/reorder
 func (h *CoursesHandler) ReorderContent(w http.ResponseWriter, r *http.Request) {
 	userID, err := getUserIDFromContext(r)
@@ -922,7 +1218,20 @@ func (h *CoursesHandler) ReorderContent(w http.ResponseWriter, r *http.Request) 
 // ListPendingCourses handles GET /v1/admin/courses
 func (h *CoursesHandler) ListPendingCourses(w http.ResponseWriter, r *http.Request) {
 	params := pagination.ParseParams(r)
-	courseList, total, err := h.service.ListPendingCourses(r.Context(), params.Page, params.Limit)
+	filters := domainCourses.CourseFilters{
+		Search: r.URL.Query().Get("search"),
+		Status: domainCourses.CourseStatus(r.URL.Query().Get("status")),
+	}
+	if teacherIDRaw := strings.TrimSpace(r.URL.Query().Get("teacher_id")); teacherIDRaw != "" {
+		teacherID, err := uuid.Parse(teacherIDRaw)
+		if err != nil {
+			writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_TEACHER_ID", "invalid teacher ID"))
+			return
+		}
+		filters.TeacherID = &teacherID
+	}
+
+	courseList, total, err := h.service.ListAdminCourses(r.Context(), filters, params.Page, params.Limit)
 	if err != nil {
 		writeErrorResponse(w, err)
 		return

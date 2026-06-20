@@ -10,8 +10,14 @@ export type CourseSummary = {
   cover_url?: string | null;
   category?: { id: string; name: string } | null;
   level?: CourseLevel;
+  price_type?: "free" | "paid";
   price?: number;
   currency?: string;
+  visibility?: "public" | "unlisted" | "private";
+  learning_outcomes?: string;
+  requirements_text?: string;
+  target_audience?: string;
+  estimated_duration_minutes?: number;
   rating?: number;
   enrollment_count?: number;
   duration_minutes?: number;
@@ -21,17 +27,48 @@ export type CourseSummary = {
 export type Lesson = {
   id: string;
   title: string;
+  description?: string;
   chapter_id?: string;
   duration_minutes?: number;
   duration_seconds?: number;
   type?: "video" | "text" | "attachment" | string;
   is_preview?: boolean;
   is_free_preview?: boolean;
+  is_free?: boolean;
   is_downloadable?: boolean;
   status?: string;
   video_url?: string | null;
   body_html?: string | null;
   resources?: { id: string; title: string; url: string }[];
+};
+
+export type CourseNote = {
+  id: string;
+  course_id: string;
+  module_id?: string | null;
+  lesson_id?: string | null;
+  title: string;
+  content: string;
+  file_url?: string;
+  is_free: boolean;
+  is_published: boolean;
+  is_locked?: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CourseComment = {
+  id: string;
+  course_id: string;
+  module_id?: string | null;
+  lesson_id?: string | null;
+  quiz_id?: string | null;
+  user_id: string;
+  parent_comment_id?: string | null;
+  content: string;
+  is_pinned: boolean;
+  created_at: string;
+  updated_at: string;
 };
 
 export type Chapter = {
@@ -46,7 +83,10 @@ export type Module = {
   id: string;
   course_id?: string;
   title: string;
+  description?: string;
   position?: number;
+  is_free?: boolean;
+  is_published?: boolean;
   chapters?: Chapter[];
   lessons: Lesson[];
 };
@@ -55,13 +95,35 @@ export type CourseDetail = CourseSummary & {
   description?: string;
   outcomes?: string[];
   requirements?: string[];
+  learning_outcomes?: string;
+  prerequisites?: string;
+  target_audience?: string;
+  estimated_duration_minutes?: number;
   modules?: Module[];
+  notes?: CourseNote[];
+  comments?: CourseComment[];
   is_enrolled?: boolean;
 };
 
 export type Paginated<T> = {
   data: T[];
   meta: { page: number; limit: number; total: number; total_pages: number };
+};
+
+export type CourseReview = {
+  id: string;
+  course_id: string;
+  student_id: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CourseReviewsResponse = {
+  reviews: CourseReview[];
+  distribution?: Record<string, number>;
+  meta?: Paginated<CourseReview>["meta"];
 };
 
 type CoursesListResponse = Paginated<CourseSummary> & {
@@ -122,6 +184,80 @@ export function listCategories() {
   });
 }
 
+export function listCourseReviews(
+  courseId: string,
+  params: { page?: number; limit?: number } = {},
+) {
+  return apiRequest<CourseReviewsResponse>(`/v1/courses/${encodeURIComponent(courseId)}/reviews`, {
+    query: params,
+  });
+}
+
+export function upsertCourseReview(courseId: string, input: { rating: number; comment: string }) {
+  return apiRequest<CourseReview>(`/v1/courses/${encodeURIComponent(courseId)}/reviews`, {
+    method: "POST",
+    auth: true,
+    body: input,
+  });
+}
+
+export function deleteMyCourseReview(courseId: string) {
+  return apiRequest<void>(`/v1/courses/${encodeURIComponent(courseId)}/reviews/me`, {
+    method: "DELETE",
+    auth: true,
+  });
+}
+
+export type CourseCommentsResponse = {
+  comments: CourseComment[];
+  meta?: Paginated<CourseComment>["meta"];
+};
+
+export function listCourseComments(
+  courseId: string,
+  params: { page?: number; limit?: number } = {},
+) {
+  return apiRequest<CourseCommentsResponse>(
+    `/v1/courses/${encodeURIComponent(courseId)}/comments`,
+    { query: params },
+  );
+}
+
+export function createCourseComment(
+  courseId: string,
+  input: {
+    content: string;
+    module_id?: string;
+    lesson_id?: string;
+    quiz_id?: string;
+    parent_comment_id?: string;
+  },
+) {
+  return apiRequest<CourseComment>(`/v1/courses/${encodeURIComponent(courseId)}/comments`, {
+    method: "POST",
+    auth: true,
+    body: input,
+  });
+}
+
+export function updateCourseComment(
+  commentId: string,
+  input: { content?: string; is_pinned?: boolean },
+) {
+  return apiRequest<CourseComment>(`/v1/courses/comments/${encodeURIComponent(commentId)}`, {
+    method: "PATCH",
+    auth: true,
+    body: input,
+  });
+}
+
+export function deleteCourseComment(commentId: string) {
+  return apiRequest<void>(`/v1/courses/comments/${encodeURIComponent(commentId)}`, {
+    method: "DELETE",
+    auth: true,
+  });
+}
+
 export type LessonPreview = {
   url: string;
   mime_type?: string;
@@ -137,10 +273,14 @@ export function getLessonPreview(courseId: string, lessonId: string) {
   ).then((result) => ({ url: result.signed_url }));
 }
 
-type RawCourseDetail = Omit<CourseDetail, "modules"> & {
+type RawCourseDetail = Omit<CourseDetail, "modules" | "outcomes" | "requirements"> & {
   short_description?: string;
   subject?: string;
   thumbnail_url?: string | null;
+  learning_outcomes?: string;
+  requirements?: string;
+  prerequisites?: string;
+  estimated_duration_minutes?: number;
   rating_average?: number;
   total_enrolled?: number;
   modules?: Array<
@@ -163,6 +303,7 @@ type RawCourseSummary = CourseSummary & {
   short_description?: string;
   subject?: string;
   thumbnail_url?: string | null;
+  estimated_duration_minutes?: number;
   rating_average?: number;
   total_enrolled?: number;
 };
@@ -176,6 +317,7 @@ function normalizeCourseSummary(course: RawCourseSummary): CourseSummary {
       course.category ?? (course.subject ? { id: course.subject, name: course.subject } : null),
     rating: course.rating ?? course.rating_average,
     enrollment_count: course.enrollment_count ?? course.total_enrolled,
+    duration_minutes: course.duration_minutes ?? course.estimated_duration_minutes,
   };
 }
 
@@ -184,6 +326,10 @@ export function normalizeCourseDetail(course: RawCourseDetail): CourseDetail {
   return {
     ...course,
     ...normalized,
+    outcomes: course.outcomes ?? splitLines(course.learning_outcomes),
+    requirements: Array.isArray(course.requirements)
+      ? course.requirements
+      : splitLines(course.requirements ?? course.prerequisites),
     modules: course.modules?.map((module) => {
       const chapters = module.chapters ?? [];
       const lessons = chapters.flatMap((chapter) =>
@@ -207,4 +353,12 @@ export function normalizeCourseDetail(course: RawCourseDetail): CourseDetail {
       };
     }),
   };
+}
+
+function splitLines(value?: string | string[]) {
+  if (Array.isArray(value)) return value;
+  return (value ?? "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
 }

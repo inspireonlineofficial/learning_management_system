@@ -223,6 +223,8 @@ func main() {
 	moduleRepo := postgres.NewModuleRepository(db)
 	chapterRepo := postgres.NewChapterRepository(db)
 	lessonRepo := postgres.NewLessonRepository(db)
+	courseNoteRepo := postgres.NewCourseNoteRepository(db)
+	courseCommentRepo := postgres.NewCourseCommentRepository(db)
 	videoRepo := postgres.NewVideoRepository(db)
 	courseReviewRepo := postgres.NewCourseReviewRepository(db)
 	logger.Info(ctx, "Courses repositories initialized")
@@ -239,6 +241,9 @@ func main() {
 		moduleRepo,
 		chapterRepo,
 		lessonRepo,
+		courseNoteRepo,
+		courseCommentRepo,
+		enrollmentRepo,
 		videoRepo,
 		courseReviewRepo,
 		tsClient,

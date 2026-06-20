@@ -159,6 +159,8 @@ func (s *service) CreateQuiz(ctx context.Context, cmd CreateQuizCommand) (*QuizR
 		PassingScorePercent:        cmd.PassingScorePercent,
 		ShuffleQuestions:           cmd.ShuffleQuestions,
 		ShowAnswersAfterSubmission: cmd.ShowAnswersAfterSubmission,
+		IsFree:                     cmd.IsFree,
+		IsPublished:                cmd.IsPublished,
 		CreatedAt:                  time.Now(),
 		UpdatedAt:                  time.Now(),
 	}
@@ -377,6 +379,8 @@ func (s *service) UpdateQuiz(ctx context.Context, cmd UpdateQuizCommand) (*QuizT
 		PassingScorePercent:        cmd.PassingScorePercent,
 		ShuffleQuestions:           cmd.ShuffleQuestions,
 		ShowAnswersAfterSubmission: cmd.ShowAnswersAfterSubmission,
+		IsFree:                     cmd.IsFree,
+		IsPublished:                cmd.IsPublished,
 		Questions:                  cmd.Questions,
 	}
 	if err := validateCreateQuiz(createCmd); err != nil {
@@ -390,6 +394,8 @@ func (s *service) UpdateQuiz(ctx context.Context, cmd UpdateQuizCommand) (*QuizT
 	quiz.PassingScorePercent = cmd.PassingScorePercent
 	quiz.ShuffleQuestions = cmd.ShuffleQuestions
 	quiz.ShowAnswersAfterSubmission = cmd.ShowAnswersAfterSubmission
+	quiz.IsFree = cmd.IsFree
+	quiz.IsPublished = cmd.IsPublished
 	quiz.UpdatedAt = time.Now().UTC()
 
 	if err := s.quizRepo.Update(ctx, quiz); err != nil {
@@ -656,6 +662,8 @@ func (s *service) toQuizResponse(quiz *assessments.Quiz) *QuizResponse {
 		PassingScorePercent:        quiz.PassingScorePercent,
 		ShuffleQuestions:           quiz.ShuffleQuestions,
 		ShowAnswersAfterSubmission: quiz.ShowAnswersAfterSubmission,
+		IsFree:                     quiz.IsFree,
+		IsPublished:                quiz.IsPublished,
 		CreatedAt:                  quiz.CreatedAt,
 		UpdatedAt:                  quiz.UpdatedAt,
 	}
@@ -723,6 +731,8 @@ func (s *service) ListStudentQuizzes(ctx context.Context, studentID uuid.UUID) (
 				TimeLimitSeconds:    quiz.TimeLimitSeconds,
 				MaxAttempts:         quiz.MaxAttempts,
 				PassingScorePercent: quiz.PassingScorePercent,
+				IsFree:              quiz.IsFree,
+				IsLocked:            false,
 				AttemptsUsed:        len(attempts),
 				LatestAttempt:       toStudentAttemptResult(firstAttempt(attempts)),
 			})
@@ -739,7 +749,7 @@ func (s *service) GetStudentQuizDetail(ctx context.Context, quizID, studentID uu
 		return nil, apperrors.NewNotFoundError("QUIZ_NOT_FOUND", "quiz not found")
 	}
 
-	if err := s.ensureStudentEnrolledInCourse(ctx, studentID, quiz.CourseID); err != nil {
+	if err := s.ensureStudentCanAccessQuiz(ctx, studentID, quiz); err != nil {
 		return nil, err
 	}
 
@@ -757,6 +767,8 @@ func (s *service) GetStudentQuizDetail(ctx context.Context, quizID, studentID uu
 			TimeLimitSeconds:    quiz.TimeLimitSeconds,
 			MaxAttempts:         quiz.MaxAttempts,
 			PassingScorePercent: quiz.PassingScorePercent,
+			IsFree:              quiz.IsFree,
+			IsLocked:            false,
 			AttemptsUsed:        len(attempts),
 			LatestAttempt:       toStudentAttemptResult(firstAttempt(attempts)),
 		},
@@ -771,7 +783,7 @@ func (s *service) GetStudentQuizAttemptResult(ctx context.Context, quizID, attem
 		return nil, apperrors.NewNotFoundError("QUIZ_NOT_FOUND", "quiz not found")
 	}
 
-	if err := s.ensureStudentEnrolledInCourse(ctx, studentID, quiz.CourseID); err != nil {
+	if err := s.ensureStudentCanAccessQuiz(ctx, studentID, quiz); err != nil {
 		return nil, err
 	}
 
@@ -803,7 +815,7 @@ func (s *service) GetStudentAttempt(ctx context.Context, attemptID, studentID uu
 	if err != nil {
 		return nil, apperrors.NewNotFoundError("QUIZ_NOT_FOUND", "quiz not found")
 	}
-	if err := s.ensureStudentEnrolledInCourse(ctx, studentID, quiz.CourseID); err != nil {
+	if err := s.ensureStudentCanAccessQuiz(ctx, studentID, quiz); err != nil {
 		return nil, err
 	}
 	return toStudentAttemptResult(attempt), nil
@@ -817,7 +829,7 @@ func (s *service) StartAttempt(ctx context.Context, cmd StartAttemptCommand) (*Q
 		return nil, err
 	}
 
-	if err := s.ensureStudentEnrolledInCourse(ctx, cmd.StudentID, quiz.CourseID); err != nil {
+	if err := s.ensureStudentCanAccessQuiz(ctx, cmd.StudentID, quiz); err != nil {
 		return nil, err
 	}
 
@@ -926,7 +938,7 @@ func (s *service) SaveAttemptAnswers(ctx context.Context, cmd SaveAttemptAnswers
 	if err != nil {
 		return nil, apperrors.NewNotFoundError("QUIZ_NOT_FOUND", "quiz not found")
 	}
-	if err := s.ensureStudentEnrolledInCourse(ctx, cmd.StudentID, quiz.CourseID); err != nil {
+	if err := s.ensureStudentCanAccessQuiz(ctx, cmd.StudentID, quiz); err != nil {
 		return nil, err
 	}
 	if quiz.HasTimeLimit() && attempt.HasExpired(quiz.TimeLimitSeconds) {
@@ -1787,6 +1799,16 @@ func (s *service) ensureStudentEnrolledInCourse(ctx context.Context, studentID, 
 		return apperrors.NewForbiddenError("NOT_ENROLLED", "you are not enrolled in this course")
 	}
 	return nil
+}
+
+func (s *service) ensureStudentCanAccessQuiz(ctx context.Context, studentID uuid.UUID, quiz *assessments.Quiz) error {
+	if quiz == nil {
+		return apperrors.NewNotFoundError("QUIZ_NOT_FOUND", "quiz not found")
+	}
+	if quiz.IsFree && quiz.IsPublished {
+		return nil
+	}
+	return s.ensureStudentEnrolledInCourse(ctx, studentID, quiz.CourseID)
 }
 
 func firstAttempt(attempts []*assessments.QuizAttempt) *assessments.QuizAttempt {

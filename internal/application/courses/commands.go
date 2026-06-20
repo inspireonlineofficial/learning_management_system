@@ -8,35 +8,45 @@ import (
 
 // CreateCourseCommand represents the command to create a new course
 type CreateCourseCommand struct {
-	TeacherID        uuid.UUID
-	Title            string
-	Slug             string
-	ShortDescription string
-	Description      string
-	Subject          string
-	Level            string
-	PriceType        string
-	Price            float64
-	Currency         string
-	Prerequisites    string
-	ThumbnailURL     string
+	TeacherID                uuid.UUID
+	Title                    string
+	Slug                     string
+	ShortDescription         string
+	Description              string
+	Subject                  string
+	Level                    string
+	PriceType                string
+	Price                    float64
+	Currency                 string
+	Prerequisites            string
+	Visibility               string
+	LearningOutcomes         string
+	Requirements             string
+	TargetAudience           string
+	EstimatedDurationMinutes int
+	ThumbnailURL             string
 }
 
 // UpdateCourseCommand represents the command to update a course
 type UpdateCourseCommand struct {
-	CourseID         uuid.UUID
-	TeacherID        uuid.UUID
-	Title            string
-	Slug             string
-	ShortDescription string
-	Description      string
-	Subject          string
-	Level            string
-	PriceType        string
-	Price            float64
-	Currency         string
-	Prerequisites    string
-	ThumbnailURL     string
+	CourseID                 uuid.UUID
+	TeacherID                uuid.UUID
+	Title                    string
+	Slug                     string
+	ShortDescription         string
+	Description              string
+	Subject                  string
+	Level                    string
+	PriceType                string
+	Price                    float64
+	Currency                 string
+	Prerequisites            string
+	Visibility               string
+	LearningOutcomes         string
+	Requirements             string
+	TargetAudience           string
+	EstimatedDurationMinutes int
+	ThumbnailURL             string
 }
 
 // SubmitCourseCommand represents the command to submit a course for review
@@ -152,6 +162,66 @@ type DeleteLessonCommand struct {
 	TeacherID uuid.UUID
 }
 
+// CreateCourseNoteCommand represents the command to create a course note.
+type CreateCourseNoteCommand struct {
+	CourseID    uuid.UUID
+	TeacherID   uuid.UUID
+	ModuleID    *uuid.UUID
+	LessonID    *uuid.UUID
+	Title       string
+	Content     string
+	FileURL     string
+	IsFree      bool
+	IsPublished bool
+}
+
+// UpdateCourseNoteCommand represents the command to update a course note.
+type UpdateCourseNoteCommand struct {
+	NoteID      uuid.UUID
+	TeacherID   uuid.UUID
+	ModuleID    *uuid.UUID
+	LessonID    *uuid.UUID
+	Title       string
+	Content     string
+	FileURL     string
+	IsFree      bool
+	IsPublished bool
+}
+
+// DeleteCourseNoteCommand represents the command to delete a course note.
+type DeleteCourseNoteCommand struct {
+	NoteID    uuid.UUID
+	TeacherID uuid.UUID
+}
+
+// CreateCourseCommentCommand creates a discussion comment on course content.
+type CreateCourseCommentCommand struct {
+	CourseID        uuid.UUID
+	UserID          uuid.UUID
+	Role            string
+	ModuleID        *uuid.UUID
+	LessonID        *uuid.UUID
+	QuizID          *uuid.UUID
+	ParentCommentID *uuid.UUID
+	Content         string
+}
+
+// UpdateCourseCommentCommand updates a discussion comment.
+type UpdateCourseCommentCommand struct {
+	CommentID uuid.UUID
+	UserID    uuid.UUID
+	Role      string
+	Content   string
+	IsPinned  *bool
+}
+
+// DeleteCourseCommentCommand deletes a discussion comment.
+type DeleteCourseCommentCommand struct {
+	CommentID uuid.UUID
+	UserID    uuid.UUID
+	Role      string
+}
+
 // ReorderContentCommand represents the command to reorder content
 type ReorderContentCommand struct {
 	TeacherID uuid.UUID
@@ -187,4 +257,10 @@ type UpsertCourseReviewCommand struct {
 	StudentID uuid.UUID
 	Rating    int
 	Comment   string
+}
+
+// DeleteCourseReviewCommand deletes a student's own course review.
+type DeleteCourseReviewCommand struct {
+	CourseID  uuid.UUID
+	StudentID uuid.UUID
 }

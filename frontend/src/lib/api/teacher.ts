@@ -1,5 +1,5 @@
 import { apiRequest } from "./client";
-import type { Chapter, CourseDetail, CourseSummary, Lesson, Module } from "./courses";
+import type { Chapter, CourseDetail, CourseNote, CourseSummary, Lesson, Module } from "./courses";
 import { normalizeCourseDetail } from "./courses";
 
 export type TeacherCourse = CourseSummary & {
@@ -36,9 +36,17 @@ export type CourseInput = {
   subtitle?: string;
   description?: string;
   category_id?: string;
+  subject?: string;
   level?: "beginner" | "intermediate" | "advanced";
   language?: string;
   price_cents?: number;
+  price_type?: "free" | "paid";
+  visibility?: "public" | "unlisted" | "private";
+  learning_outcomes?: string;
+  requirements?: string;
+  prerequisites?: string;
+  target_audience?: string;
+  estimated_duration_minutes?: number;
   cover_url?: string;
 };
 
@@ -49,8 +57,10 @@ export function createCourse(input: CourseInput) {
     body: {
       ...input,
       short_description: input.subtitle,
+      subject: input.subject ?? input.category_id,
       price_type: input.price_cents && input.price_cents > 0 ? "paid" : "free",
       price: input.price_cents ? input.price_cents / 100 : 0,
+      thumbnail_url: input.cover_url,
     },
   });
 }
@@ -66,7 +76,16 @@ export function updateCourse(courseId: string, input: Partial<CourseInput>) {
   return apiRequest<CourseDetail>(`/v1/teacher/courses/${encodeURIComponent(courseId)}`, {
     method: "PATCH",
     auth: true,
-    body: input,
+    body: {
+      ...input,
+      short_description: input.subtitle,
+      subject: input.subject ?? input.category_id,
+      price_type:
+        input.price_type ??
+        (typeof input.price_cents === "number" && input.price_cents > 0 ? "paid" : undefined),
+      price: typeof input.price_cents === "number" ? input.price_cents / 100 : undefined,
+      thumbnail_url: input.cover_url,
+    },
   });
 }
 
@@ -85,7 +104,16 @@ export function deleteCourse(courseId: string) {
 }
 
 // Modules
-export function createModule(courseId: string, input: { title: string; position?: number }) {
+export function createModule(
+  courseId: string,
+  input: {
+    title: string;
+    description?: string;
+    position?: number;
+    is_free?: boolean;
+    is_published?: boolean;
+  },
+) {
   return apiRequest<Module>(`/v1/teacher/courses/${encodeURIComponent(courseId)}/modules`, {
     method: "POST",
     auth: true,
@@ -95,7 +123,13 @@ export function createModule(courseId: string, input: { title: string; position?
 
 export function updateModule(
   moduleId: string,
-  input: Partial<{ title: string; position: number }>,
+  input: Partial<{
+    title: string;
+    description: string;
+    position: number;
+    is_free: boolean;
+    is_published: boolean;
+  }>,
 ) {
   return apiRequest<Module>(`/v1/teacher/modules/${encodeURIComponent(moduleId)}`, {
     method: "PATCH",
@@ -141,10 +175,12 @@ export function deleteChapter(chapterId: string) {
 // Lessons
 export type LessonInput = {
   title: string;
+  description?: string;
   type?: "video" | "text" | "attachment";
   video_id?: string | null;
   duration_seconds?: number;
   is_free_preview?: boolean;
+  is_free?: boolean;
   is_downloadable?: boolean;
   body_html?: string;
   position?: number;
@@ -221,6 +257,39 @@ export function reorderContent(input: {
     method: "PATCH",
     auth: true,
     body: input,
+  });
+}
+
+export type CourseNoteInput = {
+  module_id?: string;
+  lesson_id?: string;
+  title: string;
+  content: string;
+  file_url?: string;
+  is_free?: boolean;
+  is_published?: boolean;
+};
+
+export function createCourseNote(courseId: string, input: CourseNoteInput) {
+  return apiRequest<CourseNote>(`/v1/teacher/courses/${encodeURIComponent(courseId)}/notes`, {
+    method: "POST",
+    auth: true,
+    body: input,
+  });
+}
+
+export function updateCourseNote(noteId: string, input: CourseNoteInput) {
+  return apiRequest<CourseNote>(`/v1/teacher/notes/${encodeURIComponent(noteId)}`, {
+    method: "PATCH",
+    auth: true,
+    body: input,
+  });
+}
+
+export function deleteCourseNote(noteId: string) {
+  return apiRequest<{ ok: true }>(`/v1/teacher/notes/${encodeURIComponent(noteId)}`, {
+    method: "DELETE",
+    auth: true,
   });
 }
 

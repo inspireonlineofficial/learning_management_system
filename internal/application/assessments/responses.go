@@ -17,6 +17,8 @@ type QuizResponse struct {
 	PassingScorePercent        float64    `json:"passing_score_percent"`
 	ShuffleQuestions           bool       `json:"shuffle_questions"`
 	ShowAnswersAfterSubmission bool       `json:"show_answers_after_submission"`
+	IsFree                     bool       `json:"is_free"`
+	IsPublished                bool       `json:"is_published"`
 	CreatedAt                  time.Time  `json:"created_at"`
 	UpdatedAt                  time.Time  `json:"updated_at"`
 }
@@ -163,6 +165,8 @@ type StudentQuizSummaryResponse struct {
 	TimeLimitSeconds    int                   `json:"time_limit_seconds"`
 	MaxAttempts         int                   `json:"max_attempts"`
 	PassingScorePercent float64               `json:"passing_score_percent"`
+	IsFree              bool                  `json:"is_free"`
+	IsLocked            bool                  `json:"is_locked"`
 	AttemptsUsed        int                   `json:"attempts_used"`
 	LatestAttempt       *StudentAttemptResult `json:"latest_attempt,omitempty"`
 }

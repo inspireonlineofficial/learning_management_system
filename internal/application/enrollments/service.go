@@ -114,7 +114,7 @@ func (s *service) EnrollFree(ctx context.Context, cmd EnrollFreeCommand) (*Enrol
 
 	// Reject paid courses with NOT_FREE_COURSE error
 	if course.PriceType != courses.PriceTypeFree {
-		return nil, apperrors.NewSimpleValidationError("NOT_FREE_COURSE", "this course requires payment, please use the checkout flow")
+		return nil, apperrors.NewSimpleValidationError("NOT_FREE_COURSE", "this course requires enrollment approval before access")
 	}
 
 	// Check if already enrolled (idempotency check)
@@ -337,12 +337,12 @@ func (s *service) GetStreamingSignedURL(ctx context.Context, cmd GetStreamingSig
 		return nil, apperrors.NewNotFoundError("USER_NOT_FOUND", "user not found")
 	}
 
-	// Check access: either is_free_preview OR active enrollment
+	// Check access: either free/free-preview content OR active enrollment.
 	var hasAccess bool
 	var courseID uuid.UUID
 
-	if lesson.IsFreePreview {
-		// Free preview lessons are accessible to any authenticated user
+	if lesson.IsFreePreview || lesson.IsFree {
+		// Free lessons are accessible to any authenticated user.
 		hasAccess = true
 
 		// Get course ID from lesson's chapter
