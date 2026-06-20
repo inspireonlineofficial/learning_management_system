@@ -4,6 +4,8 @@ import (
 	"context"
 	"io"
 	"log"
+	"regexp"
+	"strings"
 	"time"
 
 	"lms-backend/internal/domain/courses"
@@ -123,6 +125,14 @@ func NewServiceWithUploadDeps(
 
 // CreateCourse creates a new course in draft status
 func (s *service) CreateCourse(ctx context.Context, cmd CreateCourseCommand) (*CourseResponse, error) {
+	cmd.Title = strings.TrimSpace(cmd.Title)
+	cmd.Slug = normalizeCourseSlug(cmd.Slug, cmd.Title)
+	cmd.ShortDescription = strings.TrimSpace(cmd.ShortDescription)
+	cmd.Description = strings.TrimSpace(cmd.Description)
+	cmd.Subject = strings.TrimSpace(cmd.Subject)
+	cmd.Level = normalizeCourseLevel(cmd.Level)
+	cmd.PriceType = normalizeCreateCoursePriceType(cmd.PriceType, cmd.Price)
+
 	normalizedPriceType, normalizedPrice, normalizedCurrency, err := validateCoursePricing("", cmd.PriceType, cmd.Price, cmd.Currency, 0)
 	if err != nil {
 		return nil, err
@@ -152,6 +162,43 @@ func (s *service) CreateCourse(ctx context.Context, cmd CreateCourseCommand) (*C
 	}
 
 	return s.toCourseResponse(course), nil
+}
+
+var nonSlugChars = regexp.MustCompile(`[^a-z0-9]+`)
+
+func normalizeCourseSlug(raw, title string) string {
+	slug := strings.ToLower(strings.TrimSpace(raw))
+	generated := slug == ""
+	if slug == "" {
+		slug = strings.ToLower(strings.TrimSpace(title))
+	}
+	slug = strings.Trim(nonSlugChars.ReplaceAllString(slug, "-"), "-")
+	if slug == "" {
+		slug = "course"
+	}
+	if !generated {
+		return slug
+	}
+	return slug + "-" + uuid.NewString()[:8]
+}
+
+func normalizeCourseLevel(raw string) string {
+	level := strings.TrimSpace(raw)
+	if level == "" {
+		return string(courses.CourseLevelBeginner)
+	}
+	return level
+}
+
+func normalizeCreateCoursePriceType(raw string, price float64) string {
+	priceType := strings.TrimSpace(raw)
+	if priceType != "" {
+		return priceType
+	}
+	if price > 0 {
+		return string(courses.PriceTypePaid)
+	}
+	return string(courses.PriceTypeFree)
 }
 
 // UpdateCourse updates an existing course

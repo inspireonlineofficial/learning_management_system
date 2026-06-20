@@ -46,7 +46,12 @@ export function createCourse(input: CourseInput) {
   return apiRequest<CourseDetail>("/v1/teacher/courses", {
     method: "POST",
     auth: true,
-    body: input,
+    body: {
+      ...input,
+      short_description: input.subtitle,
+      price_type: input.price_cents && input.price_cents > 0 ? "paid" : "free",
+      price: input.price_cents ? input.price_cents / 100 : 0,
+    },
   });
 }
 

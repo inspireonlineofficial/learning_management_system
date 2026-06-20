@@ -34,12 +34,40 @@ function Page() {
 
   const total = grouped.reduce((n, g) => n + g.items.length, 0);
   const loading = results.some((r) => r.isLoading);
+  const firstCourse = courseList[0];
 
   return (
     <AppShell eyebrow="Assignments" title="Assignments">
-      <p className="max-w-2xl text-brand/65 mb-8 text-sm">
-        All assignments across your courses. Open one to view and grade submissions.
-      </p>
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <p className="max-w-2xl text-brand/65 text-sm">
+          All assignments across your courses. Open one to view and grade submissions.
+        </p>
+        {firstCourse && (
+          <Link
+            to="/teacher/courses/$courseId/assignments/new"
+            params={{ courseId: firstCourse.id }}
+            className="inline-flex w-fit bg-brand px-4 py-2 text-xs text-white"
+          >
+            New assignment
+          </Link>
+        )}
+      </div>
+
+      {!loading && courseList.length > 1 && (
+        <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {courseList.map((course) => (
+            <Link
+              key={course.id}
+              to="/teacher/courses/$courseId/assignments/new"
+              params={{ courseId: course.id }}
+              className="border border-brand/10 bg-white/50 p-4 hover:bg-brand/[0.03]"
+            >
+              <span className="eyebrow text-brand/45">Create for</span>
+              <span className="mt-2 block truncate font-medium text-brand">{course.title}</span>
+            </Link>
+          ))}
+        </div>
+      )}
 
       {loading && (
         <div className="space-y-3">
@@ -49,7 +77,31 @@ function Page() {
         </div>
       )}
 
-      {!loading && total === 0 && <EmptyState title="No assignments yet" />}
+      {!loading && total === 0 && (
+        <EmptyState
+          title="No assignments yet"
+          description={
+            courseList.length > 0
+              ? "Create the first assignment from one of your courses."
+              : "Create a course before adding assignments."
+          }
+          action={
+            firstCourse ? (
+              <Link
+                to="/teacher/courses/$courseId/assignments/new"
+                params={{ courseId: firstCourse.id }}
+                className="bg-brand px-4 py-2 text-xs text-white"
+              >
+                Create assignment
+              </Link>
+            ) : (
+              <Link to="/teacher/courses/new" className="bg-brand px-4 py-2 text-xs text-white">
+                Create course
+              </Link>
+            )
+          }
+        />
+      )}
 
       {!loading &&
         grouped.map((g) => (

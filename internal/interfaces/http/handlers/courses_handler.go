@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"lms-backend/internal/application/courses"
 	domainCourses "lms-backend/internal/domain/courses"
@@ -266,6 +267,7 @@ func (h *CoursesHandler) CreateCourse(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Title            string  `json:"title"`
 		Slug             string  `json:"slug"`
+		Subtitle         string  `json:"subtitle"`
 		ShortDescription string  `json:"short_description"`
 		Description      string  `json:"description"`
 		Subject          string  `json:"subject"`
@@ -286,7 +288,7 @@ func (h *CoursesHandler) CreateCourse(w http.ResponseWriter, r *http.Request) {
 		TeacherID:        userID,
 		Title:            req.Title,
 		Slug:             req.Slug,
-		ShortDescription: req.ShortDescription,
+		ShortDescription: firstNonEmpty(req.ShortDescription, req.Subtitle),
 		Description:      req.Description,
 		Subject:          req.Subject,
 		Level:            req.Level,
@@ -306,6 +308,15 @@ func (h *CoursesHandler) CreateCourse(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(course)
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return value
+		}
+	}
+	return ""
 }
 
 // UpdateCourse handles PATCH /v1/teacher/courses/{courseId}
