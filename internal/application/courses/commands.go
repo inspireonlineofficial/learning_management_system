@@ -66,18 +66,24 @@ type RejectCourseCommand struct {
 
 // CreateModuleCommand represents the command to create a module
 type CreateModuleCommand struct {
-	CourseID  uuid.UUID
-	TeacherID uuid.UUID
-	Title     string
-	Position  int
+	CourseID    uuid.UUID
+	TeacherID   uuid.UUID
+	Title       string
+	Description string
+	Position    int
+	IsFree      bool
+	IsPublished bool
 }
 
 // UpdateModuleCommand represents the command to update a module
 type UpdateModuleCommand struct {
-	ModuleID  uuid.UUID
-	TeacherID uuid.UUID
-	Title     string
-	Position  int
+	ModuleID    uuid.UUID
+	TeacherID   uuid.UUID
+	Title       string
+	Description string
+	Position    int
+	IsFree      bool
+	IsPublished bool
 }
 
 // DeleteModuleCommand represents the command to delete a module
@@ -113,10 +119,12 @@ type CreateLessonCommand struct {
 	ChapterID       uuid.UUID
 	TeacherID       uuid.UUID
 	Title           string
+	Description     string
 	Type            string
 	VideoID         *uuid.UUID
 	DurationSeconds int
 	IsFreePreview   bool
+	IsFree          bool
 	IsDownloadable  bool
 	Position        int
 	Status          string
@@ -127,10 +135,12 @@ type UpdateLessonCommand struct {
 	LessonID        uuid.UUID
 	TeacherID       uuid.UUID
 	Title           string
+	Description     string
 	Type            string
 	VideoID         *uuid.UUID
 	DurationSeconds int
 	IsFreePreview   bool
+	IsFree          bool
 	IsDownloadable  bool
 	Position        int
 	Status          string

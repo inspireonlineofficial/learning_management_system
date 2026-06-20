@@ -22,12 +22,13 @@ func NewQuestionRepository(db *sql.DB) assessments.QuestionRepository {
 func (r *questionRepository) Create(ctx context.Context, question *assessments.Question) error {
 	query := `
 		INSERT INTO questions (
-			id, quiz_id, body, type, position, explanation, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			id, quiz_id, body, type, content_type, image_url, marks, is_required, position, explanation, created_at, updated_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	`
 
 	_, err := r.db.ExecContext(ctx, query,
 		question.ID, question.QuizID, question.Body, question.Type,
+		question.ContentType, question.ImageURL, question.Marks, question.IsRequired,
 		question.Position, question.Explanation, question.CreatedAt, question.UpdatedAt,
 	)
 
@@ -47,8 +48,8 @@ func (r *questionRepository) CreateBatch(ctx context.Context, questions []*asses
 
 	stmt, err := tx.PrepareContext(ctx, `
 		INSERT INTO questions (
-			id, quiz_id, body, type, position, explanation, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			id, quiz_id, body, type, content_type, image_url, marks, is_required, position, explanation, created_at, updated_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	`)
 	if err != nil {
 		return err
@@ -58,6 +59,7 @@ func (r *questionRepository) CreateBatch(ctx context.Context, questions []*asses
 	for _, question := range questions {
 		_, err := stmt.ExecContext(ctx,
 			question.ID, question.QuizID, question.Body, question.Type,
+			question.ContentType, question.ImageURL, question.Marks, question.IsRequired,
 			question.Position, question.Explanation, question.CreatedAt, question.UpdatedAt,
 		)
 		if err != nil {
@@ -70,7 +72,7 @@ func (r *questionRepository) CreateBatch(ctx context.Context, questions []*asses
 
 func (r *questionRepository) FindByID(ctx context.Context, id uuid.UUID) (*assessments.Question, error) {
 	query := `
-		SELECT id, quiz_id, body, type, position, explanation, created_at, updated_at
+		SELECT id, quiz_id, body, type, content_type, image_url, marks, is_required, position, explanation, created_at, updated_at
 		FROM questions
 		WHERE id = $1
 	`
@@ -79,6 +81,7 @@ func (r *questionRepository) FindByID(ctx context.Context, id uuid.UUID) (*asses
 	var explanation sql.NullString
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&question.ID, &question.QuizID, &question.Body, &question.Type,
+		&question.ContentType, &question.ImageURL, &question.Marks, &question.IsRequired,
 		&question.Position, &explanation, &question.CreatedAt, &question.UpdatedAt,
 	)
 	if explanation.Valid {
@@ -94,7 +97,7 @@ func (r *questionRepository) FindByID(ctx context.Context, id uuid.UUID) (*asses
 
 func (r *questionRepository) FindByQuizID(ctx context.Context, quizID uuid.UUID) ([]*assessments.Question, error) {
 	query := `
-		SELECT id, quiz_id, body, type, position, explanation, created_at, updated_at
+		SELECT id, quiz_id, body, type, content_type, image_url, marks, is_required, position, explanation, created_at, updated_at
 		FROM questions
 		WHERE quiz_id = $1
 		ORDER BY position ASC
@@ -112,6 +115,7 @@ func (r *questionRepository) FindByQuizID(ctx context.Context, quizID uuid.UUID)
 		var explanation sql.NullString
 		err := rows.Scan(
 			&question.ID, &question.QuizID, &question.Body, &question.Type,
+			&question.ContentType, &question.ImageURL, &question.Marks, &question.IsRequired,
 			&question.Position, &explanation, &question.CreatedAt, &question.UpdatedAt,
 		)
 		if err != nil {
@@ -129,13 +133,14 @@ func (r *questionRepository) FindByQuizID(ctx context.Context, quizID uuid.UUID)
 func (r *questionRepository) Update(ctx context.Context, question *assessments.Question) error {
 	query := `
 		UPDATE questions
-		SET body = $2, type = $3, position = $4, explanation = $5, updated_at = $6
+		SET body = $2, type = $3, content_type = $4, image_url = $5, marks = $6,
+			is_required = $7, position = $8, explanation = $9, updated_at = $10
 		WHERE id = $1
 	`
 
 	_, err := r.db.ExecContext(ctx, query,
-		question.ID, question.Body, question.Type, question.Position,
-		question.Explanation, question.UpdatedAt,
+		question.ID, question.Body, question.Type, question.ContentType, question.ImageURL,
+		question.Marks, question.IsRequired, question.Position, question.Explanation, question.UpdatedAt,
 	)
 
 	return err

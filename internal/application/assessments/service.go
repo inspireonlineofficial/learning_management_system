@@ -175,6 +175,10 @@ func (s *service) CreateQuiz(ctx context.Context, cmd CreateQuizCommand) (*QuizR
 			QuizID:      quiz.ID,
 			Body:        qCmd.Body,
 			Type:        assessments.QuestionType(qCmd.Type),
+			ContentType: normalizeContentType(qCmd.ContentType, qCmd.Body, qCmd.ImageURL),
+			ImageURL:    strings.TrimSpace(qCmd.ImageURL),
+			Marks:       normalizeMarks(qCmd.Marks),
+			IsRequired:  qCmd.IsRequired,
 			Position:    qCmd.Position,
 			Explanation: qCmd.Explanation,
 			CreatedAt:   time.Now(),
@@ -190,11 +194,13 @@ func (s *service) CreateQuiz(ctx context.Context, cmd CreateQuizCommand) (*QuizR
 		options := make([]*assessments.QuestionOption, 0, len(qCmd.Options))
 		for _, optCmd := range qCmd.Options {
 			option := &assessments.QuestionOption{
-				ID:         uuid.New(),
-				QuestionID: question.ID,
-				Body:       optCmd.Body,
-				IsCorrect:  optCmd.IsCorrect,
-				Position:   optCmd.Position,
+				ID:          uuid.New(),
+				QuestionID:  question.ID,
+				Body:        optCmd.Body,
+				ContentType: normalizeContentType(optCmd.ContentType, optCmd.Body, optCmd.ImageURL),
+				ImageURL:    strings.TrimSpace(optCmd.ImageURL),
+				IsCorrect:   optCmd.IsCorrect,
+				Position:    optCmd.Position,
 			}
 			options = append(options, option)
 		}
@@ -228,8 +234,8 @@ func validateCreateQuiz(cmd CreateQuizCommand) error {
 	}
 
 	for _, question := range cmd.Questions {
-		if strings.TrimSpace(question.Body) == "" {
-			return apperrors.NewSimpleValidationError("QUESTION_BODY_REQUIRED", "each question must include a prompt")
+		if !hasTextOrImage(question.Body, question.ImageURL) {
+			return apperrors.NewSimpleValidationError("QUESTION_CONTENT_REQUIRED", "each question must include text or an image")
 		}
 		if question.Type != string(assessments.QuestionTypeSingle) &&
 			question.Type != string(assessments.QuestionTypeMultiple) &&
@@ -242,8 +248,8 @@ func validateCreateQuiz(cmd CreateQuizCommand) error {
 
 		correctOptions := 0
 		for _, option := range question.Options {
-			if strings.TrimSpace(option.Body) == "" {
-				return apperrors.NewSimpleValidationError("OPTION_BODY_REQUIRED", "each answer option must include text")
+			if !hasTextOrImage(option.Body, option.ImageURL) {
+				return apperrors.NewSimpleValidationError("OPTION_CONTENT_REQUIRED", "each answer option must include text or an image")
 			}
 			if option.IsCorrect {
 				correctOptions++
@@ -258,6 +264,33 @@ func validateCreateQuiz(cmd CreateQuizCommand) error {
 	}
 
 	return nil
+}
+
+func hasTextOrImage(text, imageURL string) bool {
+	return strings.TrimSpace(text) != "" || strings.TrimSpace(imageURL) != ""
+}
+
+func normalizeContentType(raw, text, imageURL string) string {
+	contentType := strings.TrimSpace(raw)
+	if contentType == "text" || contentType == "image" || contentType == "text_image" {
+		return contentType
+	}
+	hasText := strings.TrimSpace(text) != ""
+	hasImage := strings.TrimSpace(imageURL) != ""
+	if hasText && hasImage {
+		return "text_image"
+	}
+	if hasImage {
+		return "image"
+	}
+	return "text"
+}
+
+func normalizeMarks(raw float64) float64 {
+	if raw > 0 {
+		return raw
+	}
+	return 1
 }
 
 // GetTeacherQuizzes returns all quizzes for a course with answer keys (teacher view)
@@ -379,6 +412,10 @@ func (s *service) UpdateQuiz(ctx context.Context, cmd UpdateQuizCommand) (*QuizT
 			QuizID:      quiz.ID,
 			Body:        qCmd.Body,
 			Type:        assessments.QuestionType(qCmd.Type),
+			ContentType: normalizeContentType(qCmd.ContentType, qCmd.Body, qCmd.ImageURL),
+			ImageURL:    strings.TrimSpace(qCmd.ImageURL),
+			Marks:       normalizeMarks(qCmd.Marks),
+			IsRequired:  qCmd.IsRequired,
 			Position:    qCmd.Position,
 			Explanation: qCmd.Explanation,
 			CreatedAt:   time.Now().UTC(),
@@ -390,11 +427,13 @@ func (s *service) UpdateQuiz(ctx context.Context, cmd UpdateQuizCommand) (*QuizT
 		options := make([]*assessments.QuestionOption, 0, len(qCmd.Options))
 		for _, optCmd := range qCmd.Options {
 			options = append(options, &assessments.QuestionOption{
-				ID:         uuid.New(),
-				QuestionID: question.ID,
-				Body:       optCmd.Body,
-				IsCorrect:  optCmd.IsCorrect,
-				Position:   optCmd.Position,
+				ID:          uuid.New(),
+				QuestionID:  question.ID,
+				Body:        optCmd.Body,
+				ContentType: normalizeContentType(optCmd.ContentType, optCmd.Body, optCmd.ImageURL),
+				ImageURL:    strings.TrimSpace(optCmd.ImageURL),
+				IsCorrect:   optCmd.IsCorrect,
+				Position:    optCmd.Position,
 			})
 		}
 		if len(options) > 0 {
@@ -444,6 +483,10 @@ func (s *service) CreateQuestion(ctx context.Context, cmd CreateStandaloneQuesti
 		QuizID:      quiz.ID,
 		Body:        cmd.Question.Body,
 		Type:        assessments.QuestionType(cmd.Question.Type),
+		ContentType: normalizeContentType(cmd.Question.ContentType, cmd.Question.Body, cmd.Question.ImageURL),
+		ImageURL:    strings.TrimSpace(cmd.Question.ImageURL),
+		Marks:       normalizeMarks(cmd.Question.Marks),
+		IsRequired:  cmd.Question.IsRequired,
 		Position:    cmd.Question.Position,
 		Explanation: cmd.Question.Explanation,
 		CreatedAt:   time.Now().UTC(),
@@ -494,6 +537,10 @@ func (s *service) UpdateQuestion(ctx context.Context, cmd UpdateQuestionCommand)
 
 	question.Body = cmd.Question.Body
 	question.Type = assessments.QuestionType(cmd.Question.Type)
+	question.ContentType = normalizeContentType(cmd.Question.ContentType, cmd.Question.Body, cmd.Question.ImageURL)
+	question.ImageURL = strings.TrimSpace(cmd.Question.ImageURL)
+	question.Marks = normalizeMarks(cmd.Question.Marks)
+	question.IsRequired = cmd.Question.IsRequired
 	question.Position = cmd.Question.Position
 	question.Explanation = cmd.Question.Explanation
 	question.UpdatedAt = time.Now().UTC()
@@ -540,11 +587,13 @@ func (s *service) createQuestionOptions(ctx context.Context, questionID uuid.UUI
 	options := make([]*assessments.QuestionOption, 0, len(optionCommands))
 	for _, optCmd := range optionCommands {
 		options = append(options, &assessments.QuestionOption{
-			ID:         uuid.New(),
-			QuestionID: questionID,
-			Body:       optCmd.Body,
-			IsCorrect:  optCmd.IsCorrect,
-			Position:   optCmd.Position,
+			ID:          uuid.New(),
+			QuestionID:  questionID,
+			Body:        optCmd.Body,
+			ContentType: normalizeContentType(optCmd.ContentType, optCmd.Body, optCmd.ImageURL),
+			ImageURL:    strings.TrimSpace(optCmd.ImageURL),
+			IsCorrect:   optCmd.IsCorrect,
+			Position:    optCmd.Position,
 		})
 	}
 	if len(options) > 0 {
@@ -621,10 +670,12 @@ func (s *service) toQuestionTeacherResponse(question *assessments.Question, opti
 			correctIDs = append(correctIDs, opt.ID)
 		}
 		optionResponses = append(optionResponses, QuestionOptionTeacherResponse{
-			ID:        opt.ID,
-			Body:      opt.Body,
-			IsCorrect: opt.IsCorrect,
-			Position:  opt.Position,
+			ID:          opt.ID,
+			Body:        opt.Body,
+			ContentType: opt.ContentType,
+			ImageURL:    opt.ImageURL,
+			IsCorrect:   opt.IsCorrect,
+			Position:    opt.Position,
 		})
 	}
 
@@ -633,6 +684,10 @@ func (s *service) toQuestionTeacherResponse(question *assessments.Question, opti
 		QuizID:           question.QuizID,
 		Body:             question.Body,
 		Type:             string(question.Type),
+		ContentType:      question.ContentType,
+		ImageURL:         question.ImageURL,
+		Marks:            question.Marks,
+		IsRequired:       question.IsRequired,
 		Position:         question.Position,
 		Explanation:      question.Explanation,
 		CorrectOptionIDs: correctIDs,
@@ -1174,19 +1229,25 @@ func (s *service) toQuestionStudentResponse(question *assessments.Question, opti
 	optionResponses := make([]QuestionOptionStudentResponse, 0, len(options))
 	for _, opt := range options {
 		optionResponses = append(optionResponses, QuestionOptionStudentResponse{
-			ID:       opt.ID,
-			Body:     opt.Body,
-			Position: opt.Position,
+			ID:          opt.ID,
+			Body:        opt.Body,
+			ContentType: opt.ContentType,
+			ImageURL:    opt.ImageURL,
+			Position:    opt.Position,
 		})
 	}
 
 	return QuestionStudentResponse{
-		ID:       question.ID,
-		QuizID:   question.QuizID,
-		Body:     question.Body,
-		Type:     string(question.Type),
-		Position: question.Position,
-		Options:  optionResponses,
+		ID:          question.ID,
+		QuizID:      question.QuizID,
+		Body:        question.Body,
+		Type:        string(question.Type),
+		ContentType: question.ContentType,
+		ImageURL:    question.ImageURL,
+		Marks:       question.Marks,
+		IsRequired:  question.IsRequired,
+		Position:    question.Position,
+		Options:     optionResponses,
 	}
 }
 

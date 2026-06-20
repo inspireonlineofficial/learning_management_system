@@ -16,8 +16,17 @@ export type TeacherQuizInput = {
 export type TeacherQuestionInput = {
   type: QuestionType;
   prompt: string;
+  content_type?: "text" | "image" | "text_image";
+  image_url?: string;
   points?: number;
-  options?: { id?: string; text: string; is_correct?: boolean }[];
+  is_required?: boolean;
+  options?: {
+    id?: string;
+    text: string;
+    content_type?: "text" | "image" | "text_image";
+    image_url?: string;
+    is_correct?: boolean;
+  }[];
   correct_text?: string;
   explanation?: string;
 };
@@ -39,10 +48,21 @@ type BackendTeacherQuestion = {
   id: string;
   body: string;
   type: "single" | "multiple" | "true_false";
+  content_type?: "text" | "image" | "text_image";
+  image_url?: string;
+  marks?: number;
+  is_required?: boolean;
   position: number;
   explanation?: string;
   correct_option_ids?: string[];
-  options?: Array<{ id: string; body: string; is_correct?: boolean; position: number }>;
+  options?: Array<{
+    id: string;
+    body: string;
+    content_type?: "text" | "image" | "text_image";
+    image_url?: string;
+    is_correct?: boolean;
+    position: number;
+  }>;
 };
 
 export function listTeacherQuizzes(
@@ -171,8 +191,20 @@ function toQuestion(question: BackendTeacherQuestion): QuizQuestion {
           ? "single_choice"
           : "true_false",
     prompt: question.body,
-    points: 1,
-    options: question.options?.map((option) => ({ id: option.id, text: option.body })),
+    content_type:
+      question.content_type ??
+      (question.image_url ? (question.body ? "text_image" : "image") : "text"),
+    image_url: question.image_url,
+    points: question.marks ?? 1,
+    is_required: question.is_required ?? true,
+    options: question.options?.map((option) => ({
+      id: option.id,
+      text: option.body,
+      content_type:
+        option.content_type ?? (option.image_url ? (option.body ? "text_image" : "image") : "text"),
+      image_url: option.image_url,
+      is_correct: option.is_correct,
+    })),
     correct_option_ids: question.correct_option_ids,
     explanation: question.explanation,
   };
@@ -191,6 +223,10 @@ function toQuizPayload(input: TeacherQuizInput & { questions?: QuizQuestion[] })
       input.questions && input.questions.length > 0
         ? input.questions.map((question, index) => ({
             body: question.prompt,
+            content_type: question.content_type,
+            image_url: question.image_url,
+            marks: question.points ?? 1,
+            is_required: question.is_required ?? true,
             type:
               question.type === "multi_select"
                 ? "multiple"
@@ -203,6 +239,8 @@ function toQuizPayload(input: TeacherQuizInput & { questions?: QuizQuestion[] })
               question.options && question.options.length > 0
                 ? question.options.map((option, optionIndex) => ({
                     body: option.text,
+                    content_type: option.content_type,
+                    image_url: option.image_url,
                     is_correct:
                       question.correct_option_ids && question.correct_option_ids.length > 0
                         ? question.correct_option_ids.includes(option.id)
@@ -217,6 +255,9 @@ function toQuizPayload(input: TeacherQuizInput & { questions?: QuizQuestion[] })
         : [
             {
               body: "Draft question",
+              content_type: "text",
+              marks: 1,
+              is_required: true,
               type: "true_false",
               position: 1,
               explanation: "",
@@ -234,6 +275,8 @@ function toQuestionPayload(input: Partial<TeacherQuestionInput>) {
     input.options && input.options.length > 0
       ? input.options.map((option, index) => ({
           text: option.text,
+          content_type: option.content_type,
+          image_url: option.image_url,
           is_correct: option.is_correct ?? index === 0,
           position: index + 1,
         }))
@@ -244,6 +287,10 @@ function toQuestionPayload(input: Partial<TeacherQuestionInput>) {
   return {
     type: input.type ?? "true_false",
     prompt: input.prompt ?? "Draft question",
+    content_type: input.content_type,
+    image_url: input.image_url,
+    marks: input.points ?? 1,
+    is_required: input.is_required ?? true,
     position: 1,
     explanation: input.explanation ?? "",
     options,

@@ -33,6 +33,10 @@ type QuestionTeacherResponse struct {
 	QuizID           uuid.UUID                       `json:"quiz_id"`
 	Body             string                          `json:"body"`
 	Type             string                          `json:"type"`
+	ContentType      string                          `json:"content_type"`
+	ImageURL         string                          `json:"image_url"`
+	Marks            float64                         `json:"marks"`
+	IsRequired       bool                            `json:"is_required"`
 	Position         int                             `json:"position"`
 	Explanation      string                          `json:"explanation"`
 	CorrectOptionIDs []uuid.UUID                     `json:"correct_option_ids"`
@@ -41,10 +45,12 @@ type QuestionTeacherResponse struct {
 
 // QuestionOptionTeacherResponse represents a question option for teacher view
 type QuestionOptionTeacherResponse struct {
-	ID        uuid.UUID `json:"id"`
-	Body      string    `json:"body"`
-	IsCorrect bool      `json:"is_correct"`
-	Position  int       `json:"position"`
+	ID          uuid.UUID `json:"id"`
+	Body        string    `json:"body"`
+	ContentType string    `json:"content_type"`
+	ImageURL    string    `json:"image_url"`
+	IsCorrect   bool      `json:"is_correct"`
+	Position    int       `json:"position"`
 }
 
 // QuizAttemptResponse represents a quiz attempt in API responses
@@ -59,19 +65,25 @@ type QuizAttemptResponse struct {
 
 // QuestionStudentResponse represents a question for student view (no answer keys)
 type QuestionStudentResponse struct {
-	ID       uuid.UUID                       `json:"id"`
-	QuizID   uuid.UUID                       `json:"quiz_id"`
-	Body     string                          `json:"body"`
-	Type     string                          `json:"type"`
-	Position int                             `json:"position"`
-	Options  []QuestionOptionStudentResponse `json:"options"`
+	ID          uuid.UUID                       `json:"id"`
+	QuizID      uuid.UUID                       `json:"quiz_id"`
+	Body        string                          `json:"body"`
+	Type        string                          `json:"type"`
+	ContentType string                          `json:"content_type"`
+	ImageURL    string                          `json:"image_url"`
+	Marks       float64                         `json:"marks"`
+	IsRequired  bool                            `json:"is_required"`
+	Position    int                             `json:"position"`
+	Options     []QuestionOptionStudentResponse `json:"options"`
 }
 
 // QuestionOptionStudentResponse represents a question option for student view
 type QuestionOptionStudentResponse struct {
-	ID       uuid.UUID `json:"id"`
-	Body     string    `json:"body"`
-	Position int       `json:"position"`
+	ID          uuid.UUID `json:"id"`
+	Body        string    `json:"body"`
+	ContentType string    `json:"content_type"`
+	ImageURL    string    `json:"image_url"`
+	Position    int       `json:"position"`
 }
 
 // SubmitAttemptResponse represents the result of a quiz submission

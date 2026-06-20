@@ -100,6 +100,13 @@ function QuizResultPage() {
                         {perQuestion?.max ?? question.points}
                       </p>
                       <p className="mt-1 font-serif text-lg">{question.prompt}</p>
+                      {question.image_url && (
+                        <img
+                          src={question.image_url}
+                          alt=""
+                          className="mt-3 max-h-64 w-full max-w-xl object-contain border border-brand/10 bg-white"
+                        />
+                      )}
                       {question.explanation && (
                         <p className="mt-3 text-xs text-brand/60">{question.explanation}</p>
                       )}

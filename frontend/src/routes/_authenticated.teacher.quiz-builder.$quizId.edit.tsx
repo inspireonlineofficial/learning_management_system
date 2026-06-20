@@ -248,8 +248,17 @@ type FullQuestion = {
   id: string;
   type: QuestionType;
   prompt: string;
+  content_type?: "text" | "image" | "text_image";
+  image_url?: string;
   points: number;
-  options?: { id: string; text: string; is_correct?: boolean }[];
+  is_required?: boolean;
+  options?: {
+    id: string;
+    text: string;
+    content_type?: "text" | "image" | "text_image";
+    image_url?: string;
+    is_correct?: boolean;
+  }[];
   correct_text?: string;
   explanation?: string;
 };
@@ -266,9 +275,18 @@ function QuestionCard({
   const [form, setForm] = useState<TeacherQuestionInput>({
     type: question.type,
     prompt: question.prompt,
+    content_type: question.content_type,
+    image_url: question.image_url ?? "",
     points: question.points,
+    is_required: question.is_required ?? true,
     options:
-      question.options?.map((o) => ({ id: o.id, text: o.text, is_correct: !!o.is_correct })) ?? [],
+      question.options?.map((o) => ({
+        id: o.id,
+        text: o.text,
+        content_type: o.content_type,
+        image_url: o.image_url ?? "",
+        is_correct: !!o.is_correct,
+      })) ?? [],
     correct_text: question.correct_text ?? "",
     explanation: question.explanation ?? "",
   });
@@ -291,7 +309,15 @@ function QuestionCard({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const setOption = (i: number, patch: Partial<{ text: string; is_correct: boolean }>) => {
+  const setOption = (
+    i: number,
+    patch: Partial<{
+      text: string;
+      image_url: string;
+      content_type: "text" | "image" | "text_image";
+      is_correct: boolean;
+    }>,
+  ) => {
     const opts = [...(form.options ?? [])];
     opts[i] = { ...opts[i], ...patch };
     if (patch.is_correct && form.type === "single_choice") {
@@ -322,6 +348,15 @@ function QuestionCard({
             className="w-16 px-2 py-1 border border-brand/15 bg-white"
           />
         </label>
+        <label className="text-xs text-brand/65 flex items-center gap-1 mt-2">
+          <input
+            type="checkbox"
+            checked={form.is_required ?? true}
+            onChange={(e) => setForm({ ...form, is_required: e.target.checked })}
+            className="accent-brand"
+          />
+          Required
+        </label>
         <button
           onClick={() => {
             if (confirm("Delete question?")) remove.mutate();
@@ -332,12 +367,35 @@ function QuestionCard({
         </button>
       </div>
 
+      <div className="grid md:grid-cols-[1fr_180px] gap-3 pl-0 md:pl-[96px]">
+        <input
+          value={form.image_url ?? ""}
+          onChange={(e) => setForm({ ...form, image_url: e.target.value })}
+          placeholder="Question image URL"
+          className="px-3 py-2 text-sm border border-brand/15 bg-white"
+        />
+        <select
+          value={form.content_type ?? "text"}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              content_type: e.target.value as "text" | "image" | "text_image",
+            })
+          }
+          className="px-3 py-2 text-sm border border-brand/15 bg-white"
+        >
+          <option value="text">Text</option>
+          <option value="image">Image</option>
+          <option value="text_image">Text + image</option>
+        </select>
+      </div>
+
       {(form.type === "single_choice" ||
         form.type === "multi_select" ||
         form.type === "true_false") && (
         <div className="space-y-2 pl-4">
           {(form.options ?? []).map((opt, i) => (
-            <div key={i} className="flex items-center gap-2">
+            <div key={i} className="grid md:grid-cols-[auto_1fr_1fr_150px_auto] items-center gap-2">
               <input
                 type={
                   form.type === "single_choice" || form.type === "true_false" ? "radio" : "checkbox"
@@ -352,6 +410,27 @@ function QuestionCard({
                 disabled={form.type === "true_false"}
                 className="flex-1 px-3 py-1.5 text-sm border border-brand/15 bg-white disabled:bg-brand/[0.03]"
               />
+              <input
+                value={opt.image_url ?? ""}
+                onChange={(e) => setOption(i, { image_url: e.target.value })}
+                placeholder="Option image URL"
+                disabled={form.type === "true_false"}
+                className="px-3 py-1.5 text-sm border border-brand/15 bg-white disabled:bg-brand/[0.03]"
+              />
+              <select
+                value={opt.content_type ?? "text"}
+                onChange={(e) =>
+                  setOption(i, {
+                    content_type: e.target.value as "text" | "image" | "text_image",
+                  })
+                }
+                disabled={form.type === "true_false"}
+                className="px-2 py-1.5 text-xs border border-brand/15 bg-white disabled:bg-brand/[0.03]"
+              >
+                <option value="text">Text</option>
+                <option value="image">Image</option>
+                <option value="text_image">Text + image</option>
+              </select>
               {form.type !== "true_false" && (
                 <button
                   onClick={() => {

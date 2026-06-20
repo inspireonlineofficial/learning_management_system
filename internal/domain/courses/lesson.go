@@ -28,10 +28,12 @@ type Lesson struct {
 	ID              uuid.UUID
 	ChapterID       uuid.UUID
 	Title           string
+	Description     string
 	Type            LessonType
 	VideoID         *uuid.UUID
 	DurationSeconds int
 	IsFreePreview   bool
+	IsFree          bool
 	IsDownloadable  bool
 	Position        int
 	Status          LessonStatus

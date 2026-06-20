@@ -319,6 +319,13 @@ func firstNonEmpty(values ...string) string {
 	return ""
 }
 
+func boolDefault(value *bool, fallback bool) bool {
+	if value == nil {
+		return fallback
+	}
+	return *value
+}
+
 // UpdateCourse handles PATCH /v1/teacher/courses/{courseId}
 //
 // @Summary      Update a course
@@ -516,8 +523,11 @@ func (h *CoursesHandler) CreateModule(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Title    string `json:"title"`
-		Position int    `json:"position"`
+		Title       string `json:"title"`
+		Description string `json:"description"`
+		Position    int    `json:"position"`
+		IsFree      *bool  `json:"is_free"`
+		IsPublished *bool  `json:"is_published"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -526,10 +536,13 @@ func (h *CoursesHandler) CreateModule(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result, err := h.service.CreateModule(r.Context(), courses.CreateModuleCommand{
-		CourseID:  courseID,
-		TeacherID: userID,
-		Title:     req.Title,
-		Position:  req.Position,
+		CourseID:    courseID,
+		TeacherID:   userID,
+		Title:       req.Title,
+		Description: req.Description,
+		Position:    req.Position,
+		IsFree:      boolDefault(req.IsFree, true),
+		IsPublished: boolDefault(req.IsPublished, true),
 	})
 	if err != nil {
 		writeErrorResponse(w, err)
@@ -556,8 +569,11 @@ func (h *CoursesHandler) UpdateModule(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Title    string `json:"title"`
-		Position int    `json:"position"`
+		Title       string `json:"title"`
+		Description string `json:"description"`
+		Position    int    `json:"position"`
+		IsFree      *bool  `json:"is_free"`
+		IsPublished *bool  `json:"is_published"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -566,10 +582,13 @@ func (h *CoursesHandler) UpdateModule(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result, err := h.service.UpdateModule(r.Context(), courses.UpdateModuleCommand{
-		ModuleID:  moduleID,
-		TeacherID: userID,
-		Title:     req.Title,
-		Position:  req.Position,
+		ModuleID:    moduleID,
+		TeacherID:   userID,
+		Title:       req.Title,
+		Description: req.Description,
+		Position:    req.Position,
+		IsFree:      boolDefault(req.IsFree, true),
+		IsPublished: boolDefault(req.IsPublished, true),
 	})
 	if err != nil {
 		writeErrorResponse(w, err)
@@ -723,10 +742,12 @@ func (h *CoursesHandler) CreateLesson(w http.ResponseWriter, r *http.Request) {
 
 	var req struct {
 		Title           string  `json:"title"`
+		Description     string  `json:"description"`
 		Type            string  `json:"type"`
 		VideoID         *string `json:"video_id"`
 		DurationSeconds int     `json:"duration_seconds"`
 		IsFreePreview   bool    `json:"is_free_preview"`
+		IsFree          *bool   `json:"is_free"`
 		IsDownloadable  bool    `json:"is_downloadable"`
 		Position        int     `json:"position"`
 		Status          string  `json:"status"`
@@ -747,10 +768,12 @@ func (h *CoursesHandler) CreateLesson(w http.ResponseWriter, r *http.Request) {
 		ChapterID:       chapterID,
 		TeacherID:       userID,
 		Title:           req.Title,
+		Description:     req.Description,
 		Type:            req.Type,
 		VideoID:         videoID,
 		DurationSeconds: req.DurationSeconds,
 		IsFreePreview:   req.IsFreePreview,
+		IsFree:          boolDefault(req.IsFree, true),
 		IsDownloadable:  req.IsDownloadable,
 		Position:        req.Position,
 		Status:          req.Status,
@@ -781,10 +804,12 @@ func (h *CoursesHandler) UpdateLesson(w http.ResponseWriter, r *http.Request) {
 
 	var req struct {
 		Title           string  `json:"title"`
+		Description     string  `json:"description"`
 		Type            string  `json:"type"`
 		VideoID         *string `json:"video_id"`
 		DurationSeconds int     `json:"duration_seconds"`
 		IsFreePreview   bool    `json:"is_free_preview"`
+		IsFree          *bool   `json:"is_free"`
 		IsDownloadable  bool    `json:"is_downloadable"`
 		Position        int     `json:"position"`
 		Status          string  `json:"status"`
@@ -805,10 +830,12 @@ func (h *CoursesHandler) UpdateLesson(w http.ResponseWriter, r *http.Request) {
 		LessonID:        lessonID,
 		TeacherID:       userID,
 		Title:           req.Title,
+		Description:     req.Description,
 		Type:            req.Type,
 		VideoID:         videoID,
 		DurationSeconds: req.DurationSeconds,
 		IsFreePreview:   req.IsFreePreview,
+		IsFree:          boolDefault(req.IsFree, true),
 		IsDownloadable:  req.IsDownloadable,
 		Position:        req.Position,
 		Status:          req.Status,
