@@ -2,6 +2,7 @@ package payments
 
 import (
 	"context"
+	"sort"
 	"testing"
 	"time"
 
@@ -295,6 +296,12 @@ func (m *mockRequestRepo) filtered(filter domainpayments.PurchaseRequestFilter) 
 		}
 		requests = append(requests, request)
 	}
+	// Sort newest-first to mirror the real PostgreSQL repository's
+	// `ORDER BY created_at DESC`. Map iteration order is randomized in Go,
+	// so without this the export and pagination tests are non-deterministic.
+	sort.Slice(requests, func(i, j int) bool {
+		return requests[i].CreatedAt.After(requests[j].CreatedAt)
+	})
 	return requests
 }
 
@@ -493,6 +500,7 @@ func TestService_ApproveRejectAndExportPurchaseRequests(t *testing.T) {
 		StudentID: studentID,
 		ItemType:  domainpayments.PurchaseRequestItemTypeCourse,
 		ItemID:    courseID,
+		FileName:  "course-file.pdf",
 		Status:    domainpayments.PurchaseRequestStatusPending,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
