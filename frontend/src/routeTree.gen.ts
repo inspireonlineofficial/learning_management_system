@@ -49,6 +49,7 @@ import { Route as AuthenticatedStudentDownloadsRouteImport } from './routes/_aut
 import { Route as AuthenticatedStudentCalendarRouteImport } from './routes/_authenticated.student.calendar'
 import { Route as AuthenticatedStudentBookshopRouteImport } from './routes/_authenticated.student.bookshop'
 import { Route as AuthenticatedStudentAchievementsRouteImport } from './routes/_authenticated.student.achievements'
+import { Route as AuthenticatedStudentAccessRequestsRouteImport } from './routes/_authenticated.student.access-requests'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated.admin.users'
 import { Route as AuthenticatedAdminSystemRouteImport } from './routes/_authenticated.admin.system'
 import { Route as AuthenticatedAdminSlidesRouteImport } from './routes/_authenticated.admin.slides'
@@ -57,6 +58,7 @@ import { Route as AuthenticatedAdminRbacRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAdminNotificationsRouteImport } from './routes/_authenticated.admin.notifications'
 import { Route as AuthenticatedAdminModerationRouteImport } from './routes/_authenticated.admin.moderation'
 import { Route as AuthenticatedAdminMarketingRouteImport } from './routes/_authenticated.admin.marketing'
+import { Route as AuthenticatedAdminCourseAccessRequestsRouteImport } from './routes/_authenticated.admin.course-access-requests'
 import { Route as AuthenticatedAdminAuditLogsRouteImport } from './routes/_authenticated.admin.audit-logs'
 import { Route as AuthenticatedAdminApprovalsRouteImport } from './routes/_authenticated.admin.approvals'
 import { Route as AuthenticatedTeacherQuizBuilderIndexRouteImport } from './routes/_authenticated.teacher.quiz-builder.index'
@@ -75,6 +77,7 @@ import { Route as AuthenticatedAdminAnalyticsIndexRouteImport } from './routes/_
 import { Route as AuthenticatedTeacherQuizBuilderNewRouteImport } from './routes/_authenticated.teacher.quiz-builder.new'
 import { Route as AuthenticatedTeacherLiveScheduleRouteImport } from './routes/_authenticated.teacher.live.schedule'
 import { Route as AuthenticatedTeacherCoursesNewRouteImport } from './routes/_authenticated.teacher.courses.new'
+import { Route as AuthenticatedTeacherCoursesCreateRouteImport } from './routes/_authenticated.teacher.courses.create'
 import { Route as AuthenticatedStudentProgressCourseIdRouteImport } from './routes/_authenticated.student.progress.$courseId'
 import { Route as AuthenticatedStudentPlayerCourseIdRouteImport } from './routes/_authenticated.student.player.$courseId'
 import { Route as AuthenticatedStudentLiveClassesSessionIdRouteImport } from './routes/_authenticated.student.live-classes.$sessionId'
@@ -89,6 +92,7 @@ import { Route as AuthenticatedStudentAssignmentsAssignmentIdRouteImport } from 
 import { Route as AuthenticatedStudentAssessmentsQuizIdRouteImport } from './routes/_authenticated.student.assessments.$quizId'
 import { Route as AuthenticatedAdminUsersNewRouteImport } from './routes/_authenticated.admin.users.new'
 import { Route as AuthenticatedAdminUsersUserIdRouteImport } from './routes/_authenticated.admin.users.$userId'
+import { Route as AuthenticatedAdminCourseAccessRequestsRequestIdRouteImport } from './routes/_authenticated.admin.course-access-requests.$requestId'
 import { Route as AuthenticatedAdminBookshopRefundsRouteImport } from './routes/_authenticated.admin.bookshop.refunds'
 import { Route as AuthenticatedAdminBookshopOrdersRouteImport } from './routes/_authenticated.admin.bookshop.orders'
 import { Route as AuthenticatedAdminBookshopNewRouteImport } from './routes/_authenticated.admin.bookshop.new'
@@ -104,8 +108,10 @@ import { Route as AuthenticatedTeacherCoursesCourseIdSubmitRouteImport } from '.
 import { Route as AuthenticatedTeacherCoursesCourseIdPreviewRouteImport } from './routes/_authenticated.teacher.courses.$courseId.preview'
 import { Route as AuthenticatedTeacherCoursesCourseIdEditRouteImport } from './routes/_authenticated.teacher.courses.$courseId.edit'
 import { Route as AuthenticatedTeacherCoursesCourseIdContentRouteImport } from './routes/_authenticated.teacher.courses.$courseId.content'
+import { Route as AuthenticatedTeacherCoursesCourseIdBuilderRouteImport } from './routes/_authenticated.teacher.courses.$courseId.builder'
 import { Route as AuthenticatedTeacherAnalyticsStudentsStudentIdRouteImport } from './routes/_authenticated.teacher.analytics.students.$studentId'
 import { Route as AuthenticatedStudentLiveClassesSessionIdRoomRouteImport } from './routes/_authenticated.student.live-classes.$sessionId.room'
+import { Route as AuthenticatedStudentCoursesCourseIdRequestAccessRouteImport } from './routes/_authenticated.student.courses.$courseId.request-access'
 import { Route as AuthenticatedStudentCheckoutItemTypeItemIdRouteImport } from './routes/_authenticated.student.checkout.$itemType.$itemId'
 import { Route as AuthenticatedStudentBookshopReaderBookIdRouteImport } from './routes/_authenticated.student.bookshop.reader.$bookId'
 import { Route as AuthenticatedStudentBookshopOrdersOrderIdRouteImport } from './routes/_authenticated.student.bookshop.orders.$orderId'
@@ -341,6 +347,12 @@ const AuthenticatedStudentAchievementsRoute =
     path: '/achievements',
     getParentRoute: () => AuthenticatedStudentRoute,
   } as any)
+const AuthenticatedStudentAccessRequestsRoute =
+  AuthenticatedStudentAccessRequestsRouteImport.update({
+    id: '/access-requests',
+    path: '/access-requests',
+    getParentRoute: () => AuthenticatedStudentRoute,
+  } as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -385,6 +397,12 @@ const AuthenticatedAdminMarketingRoute =
   AuthenticatedAdminMarketingRouteImport.update({
     id: '/marketing',
     path: '/marketing',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminCourseAccessRequestsRoute =
+  AuthenticatedAdminCourseAccessRequestsRouteImport.update({
+    id: '/course-access-requests',
+    path: '/course-access-requests',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminAuditLogsRoute =
@@ -495,6 +513,12 @@ const AuthenticatedTeacherCoursesNewRoute =
     path: '/courses/new',
     getParentRoute: () => AuthenticatedTeacherRoute,
   } as any)
+const AuthenticatedTeacherCoursesCreateRoute =
+  AuthenticatedTeacherCoursesCreateRouteImport.update({
+    id: '/courses/create',
+    path: '/courses/create',
+    getParentRoute: () => AuthenticatedTeacherRoute,
+  } as any)
 const AuthenticatedStudentProgressCourseIdRoute =
   AuthenticatedStudentProgressCourseIdRouteImport.update({
     id: '/$courseId',
@@ -578,6 +602,12 @@ const AuthenticatedAdminUsersUserIdRoute =
     id: '/$userId',
     path: '/$userId',
     getParentRoute: () => AuthenticatedAdminUsersRoute,
+  } as any)
+const AuthenticatedAdminCourseAccessRequestsRequestIdRoute =
+  AuthenticatedAdminCourseAccessRequestsRequestIdRouteImport.update({
+    id: '/$requestId',
+    path: '/$requestId',
+    getParentRoute: () => AuthenticatedAdminCourseAccessRequestsRoute,
   } as any)
 const AuthenticatedAdminBookshopRefundsRoute =
   AuthenticatedAdminBookshopRefundsRouteImport.update({
@@ -669,6 +699,12 @@ const AuthenticatedTeacherCoursesCourseIdContentRoute =
     path: '/courses/$courseId/content',
     getParentRoute: () => AuthenticatedTeacherRoute,
   } as any)
+const AuthenticatedTeacherCoursesCourseIdBuilderRoute =
+  AuthenticatedTeacherCoursesCourseIdBuilderRouteImport.update({
+    id: '/courses/$courseId/builder',
+    path: '/courses/$courseId/builder',
+    getParentRoute: () => AuthenticatedTeacherRoute,
+  } as any)
 const AuthenticatedTeacherAnalyticsStudentsStudentIdRoute =
   AuthenticatedTeacherAnalyticsStudentsStudentIdRouteImport.update({
     id: '/students/$studentId',
@@ -680,6 +716,12 @@ const AuthenticatedStudentLiveClassesSessionIdRoomRoute =
     id: '/room',
     path: '/room',
     getParentRoute: () => AuthenticatedStudentLiveClassesSessionIdRoute,
+  } as any)
+const AuthenticatedStudentCoursesCourseIdRequestAccessRoute =
+  AuthenticatedStudentCoursesCourseIdRequestAccessRouteImport.update({
+    id: '/courses/$courseId/request-access',
+    path: '/courses/$courseId/request-access',
+    getParentRoute: () => AuthenticatedStudentRoute,
   } as any)
 const AuthenticatedStudentCheckoutItemTypeItemIdRoute =
   AuthenticatedStudentCheckoutItemTypeItemIdRouteImport.update({
@@ -807,6 +849,7 @@ export interface FileRoutesByFullPath {
   '/forum/': typeof ForumIndexRoute
   '/admin/approvals': typeof AuthenticatedAdminApprovalsRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
+  '/admin/course-access-requests': typeof AuthenticatedAdminCourseAccessRequestsRouteWithChildren
   '/admin/marketing': typeof AuthenticatedAdminMarketingRoute
   '/admin/moderation': typeof AuthenticatedAdminModerationRoute
   '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
@@ -815,6 +858,7 @@ export interface FileRoutesByFullPath {
   '/admin/slides': typeof AuthenticatedAdminSlidesRoute
   '/admin/system': typeof AuthenticatedAdminSystemRoute
   '/admin/users': typeof AuthenticatedAdminUsersRouteWithChildren
+  '/student/access-requests': typeof AuthenticatedStudentAccessRequestsRoute
   '/student/achievements': typeof AuthenticatedStudentAchievementsRoute
   '/student/bookshop': typeof AuthenticatedStudentBookshopRouteWithChildren
   '/student/calendar': typeof AuthenticatedStudentCalendarRoute
@@ -837,6 +881,7 @@ export interface FileRoutesByFullPath {
   '/admin/bookshop/new': typeof AuthenticatedAdminBookshopNewRoute
   '/admin/bookshop/orders': typeof AuthenticatedAdminBookshopOrdersRoute
   '/admin/bookshop/refunds': typeof AuthenticatedAdminBookshopRefundsRoute
+  '/admin/course-access-requests/$requestId': typeof AuthenticatedAdminCourseAccessRequestsRequestIdRoute
   '/admin/users/$userId': typeof AuthenticatedAdminUsersUserIdRoute
   '/admin/users/new': typeof AuthenticatedAdminUsersNewRoute
   '/student/assessments/$quizId': typeof AuthenticatedStudentAssessmentsQuizIdRouteWithChildren
@@ -851,6 +896,7 @@ export interface FileRoutesByFullPath {
   '/student/live-classes/$sessionId': typeof AuthenticatedStudentLiveClassesSessionIdRouteWithChildren
   '/student/player/$courseId': typeof AuthenticatedStudentPlayerCourseIdRoute
   '/student/progress/$courseId': typeof AuthenticatedStudentProgressCourseIdRoute
+  '/teacher/courses/create': typeof AuthenticatedTeacherCoursesCreateRoute
   '/teacher/courses/new': typeof AuthenticatedTeacherCoursesNewRoute
   '/teacher/live/schedule': typeof AuthenticatedTeacherLiveScheduleRoute
   '/teacher/quiz-builder/new': typeof AuthenticatedTeacherQuizBuilderNewRoute
@@ -878,8 +924,10 @@ export interface FileRoutesByFullPath {
   '/student/bookshop/orders/$orderId': typeof AuthenticatedStudentBookshopOrdersOrderIdRoute
   '/student/bookshop/reader/$bookId': typeof AuthenticatedStudentBookshopReaderBookIdRoute
   '/student/checkout/$itemType/$itemId': typeof AuthenticatedStudentCheckoutItemTypeItemIdRoute
+  '/student/courses/$courseId/request-access': typeof AuthenticatedStudentCoursesCourseIdRequestAccessRoute
   '/student/live-classes/$sessionId/room': typeof AuthenticatedStudentLiveClassesSessionIdRoomRoute
   '/teacher/analytics/students/$studentId': typeof AuthenticatedTeacherAnalyticsStudentsStudentIdRoute
+  '/teacher/courses/$courseId/builder': typeof AuthenticatedTeacherCoursesCourseIdBuilderRoute
   '/teacher/courses/$courseId/content': typeof AuthenticatedTeacherCoursesCourseIdContentRoute
   '/teacher/courses/$courseId/edit': typeof AuthenticatedTeacherCoursesCourseIdEditRoute
   '/teacher/courses/$courseId/preview': typeof AuthenticatedTeacherCoursesCourseIdPreviewRoute
@@ -918,6 +966,7 @@ export interface FileRoutesByTo {
   '/forum': typeof ForumIndexRoute
   '/admin/approvals': typeof AuthenticatedAdminApprovalsRoute
   '/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
+  '/admin/course-access-requests': typeof AuthenticatedAdminCourseAccessRequestsRouteWithChildren
   '/admin/marketing': typeof AuthenticatedAdminMarketingRoute
   '/admin/moderation': typeof AuthenticatedAdminModerationRoute
   '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
@@ -926,6 +975,7 @@ export interface FileRoutesByTo {
   '/admin/slides': typeof AuthenticatedAdminSlidesRoute
   '/admin/system': typeof AuthenticatedAdminSystemRoute
   '/admin/users': typeof AuthenticatedAdminUsersRouteWithChildren
+  '/student/access-requests': typeof AuthenticatedStudentAccessRequestsRoute
   '/student/achievements': typeof AuthenticatedStudentAchievementsRoute
   '/student/calendar': typeof AuthenticatedStudentCalendarRoute
   '/student/downloads': typeof AuthenticatedStudentDownloadsRoute
@@ -945,6 +995,7 @@ export interface FileRoutesByTo {
   '/admin/bookshop/new': typeof AuthenticatedAdminBookshopNewRoute
   '/admin/bookshop/orders': typeof AuthenticatedAdminBookshopOrdersRoute
   '/admin/bookshop/refunds': typeof AuthenticatedAdminBookshopRefundsRoute
+  '/admin/course-access-requests/$requestId': typeof AuthenticatedAdminCourseAccessRequestsRequestIdRoute
   '/admin/users/$userId': typeof AuthenticatedAdminUsersUserIdRoute
   '/admin/users/new': typeof AuthenticatedAdminUsersNewRoute
   '/student/assignments/$assignmentId': typeof AuthenticatedStudentAssignmentsAssignmentIdRouteWithChildren
@@ -957,6 +1008,7 @@ export interface FileRoutesByTo {
   '/student/live-classes/$sessionId': typeof AuthenticatedStudentLiveClassesSessionIdRouteWithChildren
   '/student/player/$courseId': typeof AuthenticatedStudentPlayerCourseIdRoute
   '/student/progress/$courseId': typeof AuthenticatedStudentProgressCourseIdRoute
+  '/teacher/courses/create': typeof AuthenticatedTeacherCoursesCreateRoute
   '/teacher/courses/new': typeof AuthenticatedTeacherCoursesNewRoute
   '/teacher/live/schedule': typeof AuthenticatedTeacherLiveScheduleRoute
   '/teacher/quiz-builder/new': typeof AuthenticatedTeacherQuizBuilderNewRoute
@@ -984,8 +1036,10 @@ export interface FileRoutesByTo {
   '/student/bookshop/orders/$orderId': typeof AuthenticatedStudentBookshopOrdersOrderIdRoute
   '/student/bookshop/reader/$bookId': typeof AuthenticatedStudentBookshopReaderBookIdRoute
   '/student/checkout/$itemType/$itemId': typeof AuthenticatedStudentCheckoutItemTypeItemIdRoute
+  '/student/courses/$courseId/request-access': typeof AuthenticatedStudentCoursesCourseIdRequestAccessRoute
   '/student/live-classes/$sessionId/room': typeof AuthenticatedStudentLiveClassesSessionIdRoomRoute
   '/teacher/analytics/students/$studentId': typeof AuthenticatedTeacherAnalyticsStudentsStudentIdRoute
+  '/teacher/courses/$courseId/builder': typeof AuthenticatedTeacherCoursesCourseIdBuilderRoute
   '/teacher/courses/$courseId/content': typeof AuthenticatedTeacherCoursesCourseIdContentRoute
   '/teacher/courses/$courseId/edit': typeof AuthenticatedTeacherCoursesCourseIdEditRoute
   '/teacher/courses/$courseId/preview': typeof AuthenticatedTeacherCoursesCourseIdPreviewRoute
@@ -1029,6 +1083,7 @@ export interface FileRoutesById {
   '/forum/': typeof ForumIndexRoute
   '/_authenticated/admin/approvals': typeof AuthenticatedAdminApprovalsRoute
   '/_authenticated/admin/audit-logs': typeof AuthenticatedAdminAuditLogsRoute
+  '/_authenticated/admin/course-access-requests': typeof AuthenticatedAdminCourseAccessRequestsRouteWithChildren
   '/_authenticated/admin/marketing': typeof AuthenticatedAdminMarketingRoute
   '/_authenticated/admin/moderation': typeof AuthenticatedAdminModerationRoute
   '/_authenticated/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
@@ -1037,6 +1092,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/slides': typeof AuthenticatedAdminSlidesRoute
   '/_authenticated/admin/system': typeof AuthenticatedAdminSystemRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRouteWithChildren
+  '/_authenticated/student/access-requests': typeof AuthenticatedStudentAccessRequestsRoute
   '/_authenticated/student/achievements': typeof AuthenticatedStudentAchievementsRoute
   '/_authenticated/student/bookshop': typeof AuthenticatedStudentBookshopRouteWithChildren
   '/_authenticated/student/calendar': typeof AuthenticatedStudentCalendarRoute
@@ -1059,6 +1115,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/bookshop/new': typeof AuthenticatedAdminBookshopNewRoute
   '/_authenticated/admin/bookshop/orders': typeof AuthenticatedAdminBookshopOrdersRoute
   '/_authenticated/admin/bookshop/refunds': typeof AuthenticatedAdminBookshopRefundsRoute
+  '/_authenticated/admin/course-access-requests/$requestId': typeof AuthenticatedAdminCourseAccessRequestsRequestIdRoute
   '/_authenticated/admin/users/$userId': typeof AuthenticatedAdminUsersUserIdRoute
   '/_authenticated/admin/users/new': typeof AuthenticatedAdminUsersNewRoute
   '/_authenticated/student/assessments/$quizId': typeof AuthenticatedStudentAssessmentsQuizIdRouteWithChildren
@@ -1073,6 +1130,7 @@ export interface FileRoutesById {
   '/_authenticated/student/live-classes/$sessionId': typeof AuthenticatedStudentLiveClassesSessionIdRouteWithChildren
   '/_authenticated/student/player/$courseId': typeof AuthenticatedStudentPlayerCourseIdRoute
   '/_authenticated/student/progress/$courseId': typeof AuthenticatedStudentProgressCourseIdRoute
+  '/_authenticated/teacher/courses/create': typeof AuthenticatedTeacherCoursesCreateRoute
   '/_authenticated/teacher/courses/new': typeof AuthenticatedTeacherCoursesNewRoute
   '/_authenticated/teacher/live/schedule': typeof AuthenticatedTeacherLiveScheduleRoute
   '/_authenticated/teacher/quiz-builder/new': typeof AuthenticatedTeacherQuizBuilderNewRoute
@@ -1100,8 +1158,10 @@ export interface FileRoutesById {
   '/_authenticated/student/bookshop/orders/$orderId': typeof AuthenticatedStudentBookshopOrdersOrderIdRoute
   '/_authenticated/student/bookshop/reader/$bookId': typeof AuthenticatedStudentBookshopReaderBookIdRoute
   '/_authenticated/student/checkout/$itemType/$itemId': typeof AuthenticatedStudentCheckoutItemTypeItemIdRoute
+  '/_authenticated/student/courses/$courseId/request-access': typeof AuthenticatedStudentCoursesCourseIdRequestAccessRoute
   '/_authenticated/student/live-classes/$sessionId/room': typeof AuthenticatedStudentLiveClassesSessionIdRoomRoute
   '/_authenticated/teacher/analytics/students/$studentId': typeof AuthenticatedTeacherAnalyticsStudentsStudentIdRoute
+  '/_authenticated/teacher/courses/$courseId/builder': typeof AuthenticatedTeacherCoursesCourseIdBuilderRoute
   '/_authenticated/teacher/courses/$courseId/content': typeof AuthenticatedTeacherCoursesCourseIdContentRoute
   '/_authenticated/teacher/courses/$courseId/edit': typeof AuthenticatedTeacherCoursesCourseIdEditRoute
   '/_authenticated/teacher/courses/$courseId/preview': typeof AuthenticatedTeacherCoursesCourseIdPreviewRoute
@@ -1145,6 +1205,7 @@ export interface FileRouteTypes {
     | '/forum/'
     | '/admin/approvals'
     | '/admin/audit-logs'
+    | '/admin/course-access-requests'
     | '/admin/marketing'
     | '/admin/moderation'
     | '/admin/notifications'
@@ -1153,6 +1214,7 @@ export interface FileRouteTypes {
     | '/admin/slides'
     | '/admin/system'
     | '/admin/users'
+    | '/student/access-requests'
     | '/student/achievements'
     | '/student/bookshop'
     | '/student/calendar'
@@ -1175,6 +1237,7 @@ export interface FileRouteTypes {
     | '/admin/bookshop/new'
     | '/admin/bookshop/orders'
     | '/admin/bookshop/refunds'
+    | '/admin/course-access-requests/$requestId'
     | '/admin/users/$userId'
     | '/admin/users/new'
     | '/student/assessments/$quizId'
@@ -1189,6 +1252,7 @@ export interface FileRouteTypes {
     | '/student/live-classes/$sessionId'
     | '/student/player/$courseId'
     | '/student/progress/$courseId'
+    | '/teacher/courses/create'
     | '/teacher/courses/new'
     | '/teacher/live/schedule'
     | '/teacher/quiz-builder/new'
@@ -1216,8 +1280,10 @@ export interface FileRouteTypes {
     | '/student/bookshop/orders/$orderId'
     | '/student/bookshop/reader/$bookId'
     | '/student/checkout/$itemType/$itemId'
+    | '/student/courses/$courseId/request-access'
     | '/student/live-classes/$sessionId/room'
     | '/teacher/analytics/students/$studentId'
+    | '/teacher/courses/$courseId/builder'
     | '/teacher/courses/$courseId/content'
     | '/teacher/courses/$courseId/edit'
     | '/teacher/courses/$courseId/preview'
@@ -1256,6 +1322,7 @@ export interface FileRouteTypes {
     | '/forum'
     | '/admin/approvals'
     | '/admin/audit-logs'
+    | '/admin/course-access-requests'
     | '/admin/marketing'
     | '/admin/moderation'
     | '/admin/notifications'
@@ -1264,6 +1331,7 @@ export interface FileRouteTypes {
     | '/admin/slides'
     | '/admin/system'
     | '/admin/users'
+    | '/student/access-requests'
     | '/student/achievements'
     | '/student/calendar'
     | '/student/downloads'
@@ -1283,6 +1351,7 @@ export interface FileRouteTypes {
     | '/admin/bookshop/new'
     | '/admin/bookshop/orders'
     | '/admin/bookshop/refunds'
+    | '/admin/course-access-requests/$requestId'
     | '/admin/users/$userId'
     | '/admin/users/new'
     | '/student/assignments/$assignmentId'
@@ -1295,6 +1364,7 @@ export interface FileRouteTypes {
     | '/student/live-classes/$sessionId'
     | '/student/player/$courseId'
     | '/student/progress/$courseId'
+    | '/teacher/courses/create'
     | '/teacher/courses/new'
     | '/teacher/live/schedule'
     | '/teacher/quiz-builder/new'
@@ -1322,8 +1392,10 @@ export interface FileRouteTypes {
     | '/student/bookshop/orders/$orderId'
     | '/student/bookshop/reader/$bookId'
     | '/student/checkout/$itemType/$itemId'
+    | '/student/courses/$courseId/request-access'
     | '/student/live-classes/$sessionId/room'
     | '/teacher/analytics/students/$studentId'
+    | '/teacher/courses/$courseId/builder'
     | '/teacher/courses/$courseId/content'
     | '/teacher/courses/$courseId/edit'
     | '/teacher/courses/$courseId/preview'
@@ -1366,6 +1438,7 @@ export interface FileRouteTypes {
     | '/forum/'
     | '/_authenticated/admin/approvals'
     | '/_authenticated/admin/audit-logs'
+    | '/_authenticated/admin/course-access-requests'
     | '/_authenticated/admin/marketing'
     | '/_authenticated/admin/moderation'
     | '/_authenticated/admin/notifications'
@@ -1374,6 +1447,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/slides'
     | '/_authenticated/admin/system'
     | '/_authenticated/admin/users'
+    | '/_authenticated/student/access-requests'
     | '/_authenticated/student/achievements'
     | '/_authenticated/student/bookshop'
     | '/_authenticated/student/calendar'
@@ -1396,6 +1470,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/bookshop/new'
     | '/_authenticated/admin/bookshop/orders'
     | '/_authenticated/admin/bookshop/refunds'
+    | '/_authenticated/admin/course-access-requests/$requestId'
     | '/_authenticated/admin/users/$userId'
     | '/_authenticated/admin/users/new'
     | '/_authenticated/student/assessments/$quizId'
@@ -1410,6 +1485,7 @@ export interface FileRouteTypes {
     | '/_authenticated/student/live-classes/$sessionId'
     | '/_authenticated/student/player/$courseId'
     | '/_authenticated/student/progress/$courseId'
+    | '/_authenticated/teacher/courses/create'
     | '/_authenticated/teacher/courses/new'
     | '/_authenticated/teacher/live/schedule'
     | '/_authenticated/teacher/quiz-builder/new'
@@ -1437,8 +1513,10 @@ export interface FileRouteTypes {
     | '/_authenticated/student/bookshop/orders/$orderId'
     | '/_authenticated/student/bookshop/reader/$bookId'
     | '/_authenticated/student/checkout/$itemType/$itemId'
+    | '/_authenticated/student/courses/$courseId/request-access'
     | '/_authenticated/student/live-classes/$sessionId/room'
     | '/_authenticated/teacher/analytics/students/$studentId'
+    | '/_authenticated/teacher/courses/$courseId/builder'
     | '/_authenticated/teacher/courses/$courseId/content'
     | '/_authenticated/teacher/courses/$courseId/edit'
     | '/_authenticated/teacher/courses/$courseId/preview'
@@ -1761,6 +1839,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudentAchievementsRouteImport
       parentRoute: typeof AuthenticatedStudentRoute
     }
+    '/_authenticated/student/access-requests': {
+      id: '/_authenticated/student/access-requests'
+      path: '/access-requests'
+      fullPath: '/student/access-requests'
+      preLoaderRoute: typeof AuthenticatedStudentAccessRequestsRouteImport
+      parentRoute: typeof AuthenticatedStudentRoute
+    }
     '/_authenticated/admin/users': {
       id: '/_authenticated/admin/users'
       path: '/users'
@@ -1815,6 +1900,13 @@ declare module '@tanstack/react-router' {
       path: '/marketing'
       fullPath: '/admin/marketing'
       preLoaderRoute: typeof AuthenticatedAdminMarketingRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/course-access-requests': {
+      id: '/_authenticated/admin/course-access-requests'
+      path: '/course-access-requests'
+      fullPath: '/admin/course-access-requests'
+      preLoaderRoute: typeof AuthenticatedAdminCourseAccessRequestsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/audit-logs': {
@@ -1943,6 +2035,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTeacherCoursesNewRouteImport
       parentRoute: typeof AuthenticatedTeacherRoute
     }
+    '/_authenticated/teacher/courses/create': {
+      id: '/_authenticated/teacher/courses/create'
+      path: '/courses/create'
+      fullPath: '/teacher/courses/create'
+      preLoaderRoute: typeof AuthenticatedTeacherCoursesCreateRouteImport
+      parentRoute: typeof AuthenticatedTeacherRoute
+    }
     '/_authenticated/student/progress/$courseId': {
       id: '/_authenticated/student/progress/$courseId'
       path: '/$courseId'
@@ -2040,6 +2139,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/users/$userId'
       preLoaderRoute: typeof AuthenticatedAdminUsersUserIdRouteImport
       parentRoute: typeof AuthenticatedAdminUsersRoute
+    }
+    '/_authenticated/admin/course-access-requests/$requestId': {
+      id: '/_authenticated/admin/course-access-requests/$requestId'
+      path: '/$requestId'
+      fullPath: '/admin/course-access-requests/$requestId'
+      preLoaderRoute: typeof AuthenticatedAdminCourseAccessRequestsRequestIdRouteImport
+      parentRoute: typeof AuthenticatedAdminCourseAccessRequestsRoute
     }
     '/_authenticated/admin/bookshop/refunds': {
       id: '/_authenticated/admin/bookshop/refunds'
@@ -2146,6 +2252,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTeacherCoursesCourseIdContentRouteImport
       parentRoute: typeof AuthenticatedTeacherRoute
     }
+    '/_authenticated/teacher/courses/$courseId/builder': {
+      id: '/_authenticated/teacher/courses/$courseId/builder'
+      path: '/courses/$courseId/builder'
+      fullPath: '/teacher/courses/$courseId/builder'
+      preLoaderRoute: typeof AuthenticatedTeacherCoursesCourseIdBuilderRouteImport
+      parentRoute: typeof AuthenticatedTeacherRoute
+    }
     '/_authenticated/teacher/analytics/students/$studentId': {
       id: '/_authenticated/teacher/analytics/students/$studentId'
       path: '/students/$studentId'
@@ -2159,6 +2272,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/student/live-classes/$sessionId/room'
       preLoaderRoute: typeof AuthenticatedStudentLiveClassesSessionIdRoomRouteImport
       parentRoute: typeof AuthenticatedStudentLiveClassesSessionIdRoute
+    }
+    '/_authenticated/student/courses/$courseId/request-access': {
+      id: '/_authenticated/student/courses/$courseId/request-access'
+      path: '/courses/$courseId/request-access'
+      fullPath: '/student/courses/$courseId/request-access'
+      preLoaderRoute: typeof AuthenticatedStudentCoursesCourseIdRequestAccessRouteImport
+      parentRoute: typeof AuthenticatedStudentRoute
     }
     '/_authenticated/student/checkout/$itemType/$itemId': {
       id: '/_authenticated/student/checkout/$itemType/$itemId'
@@ -2275,6 +2395,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedAdminCourseAccessRequestsRouteChildren {
+  AuthenticatedAdminCourseAccessRequestsRequestIdRoute: typeof AuthenticatedAdminCourseAccessRequestsRequestIdRoute
+}
+
+const AuthenticatedAdminCourseAccessRequestsRouteChildren: AuthenticatedAdminCourseAccessRequestsRouteChildren =
+  {
+    AuthenticatedAdminCourseAccessRequestsRequestIdRoute:
+      AuthenticatedAdminCourseAccessRequestsRequestIdRoute,
+  }
+
+const AuthenticatedAdminCourseAccessRequestsRouteWithChildren =
+  AuthenticatedAdminCourseAccessRequestsRoute._addFileChildren(
+    AuthenticatedAdminCourseAccessRequestsRouteChildren,
+  )
+
 interface AuthenticatedAdminUsersRouteChildren {
   AuthenticatedAdminUsersUserIdRoute: typeof AuthenticatedAdminUsersUserIdRoute
   AuthenticatedAdminUsersNewRoute: typeof AuthenticatedAdminUsersNewRoute
@@ -2294,6 +2429,7 @@ const AuthenticatedAdminUsersRouteWithChildren =
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminApprovalsRoute: typeof AuthenticatedAdminApprovalsRoute
   AuthenticatedAdminAuditLogsRoute: typeof AuthenticatedAdminAuditLogsRoute
+  AuthenticatedAdminCourseAccessRequestsRoute: typeof AuthenticatedAdminCourseAccessRequestsRouteWithChildren
   AuthenticatedAdminMarketingRoute: typeof AuthenticatedAdminMarketingRoute
   AuthenticatedAdminModerationRoute: typeof AuthenticatedAdminModerationRoute
   AuthenticatedAdminNotificationsRoute: typeof AuthenticatedAdminNotificationsRoute
@@ -2320,6 +2456,8 @@ interface AuthenticatedAdminRouteChildren {
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminApprovalsRoute: AuthenticatedAdminApprovalsRoute,
   AuthenticatedAdminAuditLogsRoute: AuthenticatedAdminAuditLogsRoute,
+  AuthenticatedAdminCourseAccessRequestsRoute:
+    AuthenticatedAdminCourseAccessRequestsRouteWithChildren,
   AuthenticatedAdminMarketingRoute: AuthenticatedAdminMarketingRoute,
   AuthenticatedAdminModerationRoute: AuthenticatedAdminModerationRoute,
   AuthenticatedAdminNotificationsRoute: AuthenticatedAdminNotificationsRoute,
@@ -2509,6 +2647,7 @@ const AuthenticatedStudentAssignmentsAssignmentIdRouteWithChildren =
   )
 
 interface AuthenticatedStudentRouteChildren {
+  AuthenticatedStudentAccessRequestsRoute: typeof AuthenticatedStudentAccessRequestsRoute
   AuthenticatedStudentAchievementsRoute: typeof AuthenticatedStudentAchievementsRoute
   AuthenticatedStudentBookshopRoute: typeof AuthenticatedStudentBookshopRouteWithChildren
   AuthenticatedStudentCalendarRoute: typeof AuthenticatedStudentCalendarRoute
@@ -2533,9 +2672,12 @@ interface AuthenticatedStudentRouteChildren {
   AuthenticatedStudentCertificatesIndexRoute: typeof AuthenticatedStudentCertificatesIndexRoute
   AuthenticatedStudentAssessmentsResultAttemptIdRoute: typeof AuthenticatedStudentAssessmentsResultAttemptIdRoute
   AuthenticatedStudentCheckoutItemTypeItemIdRoute: typeof AuthenticatedStudentCheckoutItemTypeItemIdRoute
+  AuthenticatedStudentCoursesCourseIdRequestAccessRoute: typeof AuthenticatedStudentCoursesCourseIdRequestAccessRoute
 }
 
 const AuthenticatedStudentRouteChildren: AuthenticatedStudentRouteChildren = {
+  AuthenticatedStudentAccessRequestsRoute:
+    AuthenticatedStudentAccessRequestsRoute,
   AuthenticatedStudentAchievementsRoute: AuthenticatedStudentAchievementsRoute,
   AuthenticatedStudentBookshopRoute:
     AuthenticatedStudentBookshopRouteWithChildren,
@@ -2574,6 +2716,8 @@ const AuthenticatedStudentRouteChildren: AuthenticatedStudentRouteChildren = {
     AuthenticatedStudentAssessmentsResultAttemptIdRoute,
   AuthenticatedStudentCheckoutItemTypeItemIdRoute:
     AuthenticatedStudentCheckoutItemTypeItemIdRoute,
+  AuthenticatedStudentCoursesCourseIdRequestAccessRoute:
+    AuthenticatedStudentCoursesCourseIdRequestAccessRoute,
 }
 
 const AuthenticatedStudentRouteWithChildren =
@@ -2599,6 +2743,7 @@ interface AuthenticatedTeacherRouteChildren {
   AuthenticatedTeacherNotificationsRoute: typeof AuthenticatedTeacherNotificationsRoute
   AuthenticatedTeacherSettingsRoute: typeof AuthenticatedTeacherSettingsRoute
   AuthenticatedTeacherIndexRoute: typeof AuthenticatedTeacherIndexRoute
+  AuthenticatedTeacherCoursesCreateRoute: typeof AuthenticatedTeacherCoursesCreateRoute
   AuthenticatedTeacherCoursesNewRoute: typeof AuthenticatedTeacherCoursesNewRoute
   AuthenticatedTeacherLiveScheduleRoute: typeof AuthenticatedTeacherLiveScheduleRoute
   AuthenticatedTeacherQuizBuilderNewRoute: typeof AuthenticatedTeacherQuizBuilderNewRoute
@@ -2606,6 +2751,7 @@ interface AuthenticatedTeacherRouteChildren {
   AuthenticatedTeacherCoursesIndexRoute: typeof AuthenticatedTeacherCoursesIndexRoute
   AuthenticatedTeacherLiveIndexRoute: typeof AuthenticatedTeacherLiveIndexRoute
   AuthenticatedTeacherQuizBuilderIndexRoute: typeof AuthenticatedTeacherQuizBuilderIndexRoute
+  AuthenticatedTeacherCoursesCourseIdBuilderRoute: typeof AuthenticatedTeacherCoursesCourseIdBuilderRoute
   AuthenticatedTeacherCoursesCourseIdContentRoute: typeof AuthenticatedTeacherCoursesCourseIdContentRoute
   AuthenticatedTeacherCoursesCourseIdEditRoute: typeof AuthenticatedTeacherCoursesCourseIdEditRoute
   AuthenticatedTeacherCoursesCourseIdPreviewRoute: typeof AuthenticatedTeacherCoursesCourseIdPreviewRoute
@@ -2626,6 +2772,8 @@ const AuthenticatedTeacherRouteChildren: AuthenticatedTeacherRouteChildren = {
     AuthenticatedTeacherNotificationsRoute,
   AuthenticatedTeacherSettingsRoute: AuthenticatedTeacherSettingsRoute,
   AuthenticatedTeacherIndexRoute: AuthenticatedTeacherIndexRoute,
+  AuthenticatedTeacherCoursesCreateRoute:
+    AuthenticatedTeacherCoursesCreateRoute,
   AuthenticatedTeacherCoursesNewRoute: AuthenticatedTeacherCoursesNewRoute,
   AuthenticatedTeacherLiveScheduleRoute: AuthenticatedTeacherLiveScheduleRoute,
   AuthenticatedTeacherQuizBuilderNewRoute:
@@ -2636,6 +2784,8 @@ const AuthenticatedTeacherRouteChildren: AuthenticatedTeacherRouteChildren = {
   AuthenticatedTeacherLiveIndexRoute: AuthenticatedTeacherLiveIndexRoute,
   AuthenticatedTeacherQuizBuilderIndexRoute:
     AuthenticatedTeacherQuizBuilderIndexRoute,
+  AuthenticatedTeacherCoursesCourseIdBuilderRoute:
+    AuthenticatedTeacherCoursesCourseIdBuilderRoute,
   AuthenticatedTeacherCoursesCourseIdContentRoute:
     AuthenticatedTeacherCoursesCourseIdContentRoute,
   AuthenticatedTeacherCoursesCourseIdEditRoute:

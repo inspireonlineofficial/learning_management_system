@@ -33,11 +33,15 @@ import {
 } from "@/lib/api/teacher";
 
 export const Route = createFileRoute("/_authenticated/teacher/courses/$courseId/edit")({
-  component: CourseEditor,
+  component: EditCoursePage,
 });
 
-function CourseEditor() {
+function EditCoursePage() {
   const { courseId } = Route.useParams();
+  return <CourseEditor courseId={courseId} />;
+}
+
+export function CourseEditor({ courseId }: { courseId: string }) {
   const qc = useQueryClient();
   const [tab, setTab] = useState<"content" | "details" | "students">("content");
 

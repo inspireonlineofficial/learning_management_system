@@ -7,17 +7,17 @@ import { AppShell } from "@/components/layout/app-shell";
 import { createCourse } from "@/lib/api/teacher";
 
 export const Route = createFileRoute("/_authenticated/teacher/courses/new")({
-  component: Page,
+  component: CreateCoursePage,
 });
 
-function Page() {
+export function CreateCoursePage() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ title: "", subtitle: "", level: "beginner" as const });
   const mut = useMutation({
     mutationFn: () => createCourse(form),
     onSuccess: (c: any) => {
       toast.success("Course created");
-      navigate({ to: "/teacher/courses/$courseId/edit", params: { courseId: c.id } });
+      navigate({ to: "/teacher/courses/$courseId/builder", params: { courseId: c.id } });
     },
     onError: (e: Error) => toast.error(e.message),
   });
