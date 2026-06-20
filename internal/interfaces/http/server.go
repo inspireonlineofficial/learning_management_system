@@ -187,10 +187,7 @@ func (s *Server) RegisterRoutes() {
 	// OAuth endpoints (public)
 	s.mux.HandleFunc("/v1/auth/oauth/google", s.authHandler.OAuthRedirect)
 	s.mux.HandleFunc("/v1/auth/oauth/google/callback", s.authHandler.OAuthCallback)
-	s.mux.HandleFunc("/v1/auth/oauth/github", s.authHandler.OAuthRedirect)
-	s.mux.HandleFunc("/v1/auth/oauth/github/callback", s.authHandler.OAuthCallback)
-	s.mux.HandleFunc("/v1/auth/oauth/microsoft", s.authHandler.OAuthRedirect)
-	s.mux.HandleFunc("/v1/auth/oauth/microsoft/callback", s.authHandler.OAuthCallback)
+
 
 	// Authenticated user endpoints (require JWT)
 	s.mux.HandleFunc("/v1/auth/me", s.withAuth(func(w http.ResponseWriter, r *http.Request) {
@@ -211,8 +208,7 @@ func (s *Server) RegisterRoutes() {
 	s.mux.HandleFunc("/v1/auth/me/oauth/connect", s.withAuth(s.authHandler.ConnectProvider))
 	s.mux.HandleFunc("/v1/auth/me/oauth/providers", s.withAuth(s.authHandler.ListProviders))
 	s.mux.HandleFunc("/v1/auth/me/oauth/google", s.withAuth(s.authHandler.DisconnectProvider))
-	s.mux.HandleFunc("/v1/auth/me/oauth/github", s.withAuth(s.authHandler.DisconnectProvider))
-	s.mux.HandleFunc("/v1/auth/me/oauth/microsoft", s.withAuth(s.authHandler.DisconnectProvider))
+
 
 	// Student onboarding endpoints (require JWT + student role)
 	s.mux.HandleFunc("/v1/onboarding/student-profile", s.withAuthAndRole("student", s.usersHandler.SubmitStudentProfile, s.usersHandler.GetStudentProfile))

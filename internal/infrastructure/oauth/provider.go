@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 // UserInfo represents the user information returned by OAuth providers
@@ -63,11 +64,10 @@ func (p *GoogleProvider) ExchangeCode(ctx context.Context, code string) (accessT
 	data.Set("redirect_uri", p.redirectURL)
 	data.Set("grant_type", "authorization_code")
 
-	req, err := http.NewRequestWithContext(ctx, "POST", "https://oauth2.googleapis.com/token", nil)
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://oauth2.googleapis.com/token", strings.NewReader(data.Encode()))
 	if err != nil {
 		return "", "", fmt.Errorf("failed to create request: %w", err)
 	}
-	req.URL.RawQuery = data.Encode()
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := http.DefaultClient.Do(req)
@@ -131,262 +131,6 @@ func (p *GoogleProvider) GetUserInfo(ctx context.Context, accessToken string) (*
 	}, nil
 }
 
-// GitHubProvider implements OAuth 2.0 for GitHub
-type GitHubProvider struct {
-	clientID     string
-	clientSecret string
-	redirectURL  string
-}
-
-// NewGitHubProvider creates a new GitHub OAuth provider
-func NewGitHubProvider(clientID, clientSecret, redirectURL string) *GitHubProvider {
-	return &GitHubProvider{
-		clientID:     clientID,
-		clientSecret: clientSecret,
-		redirectURL:  redirectURL,
-	}
-}
-
-// GetAuthURL returns the GitHub OAuth authorization URL
-func (p *GitHubProvider) GetAuthURL(state string) string {
-	params := url.Values{}
-	params.Set("client_id", p.clientID)
-	params.Set("redirect_uri", p.redirectURL)
-	params.Set("scope", "user:email")
-	params.Set("state", state)
-
-	return "https://github.com/login/oauth/authorize?" + params.Encode()
-}
-
-// ExchangeCode exchanges the authorization code for tokens
-func (p *GitHubProvider) ExchangeCode(ctx context.Context, code string) (accessToken, refreshToken string, err error) {
-	data := url.Values{}
-	data.Set("code", code)
-	data.Set("client_id", p.clientID)
-	data.Set("client_secret", p.clientSecret)
-	data.Set("redirect_uri", p.redirectURL)
-
-	req, err := http.NewRequestWithContext(ctx, "POST", "https://github.com/login/oauth/access_token", nil)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to create request: %w", err)
-	}
-	req.URL.RawQuery = data.Encode()
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to exchange code: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return "", "", fmt.Errorf("token exchange failed: %s", string(body))
-	}
-
-	var result struct {
-		AccessToken string `json:"access_token"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", "", fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	return result.AccessToken, "", nil // GitHub doesn't provide refresh tokens in this flow
-}
-
-// GetUserInfo retrieves user information from GitHub
-func (p *GitHubProvider) GetUserInfo(ctx context.Context, accessToken string) (*UserInfo, error) {
-	// Get user profile
-	req, err := http.NewRequestWithContext(ctx, "GET", "https://api.github.com/user", nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-	req.Header.Set("Authorization", "Bearer "+accessToken)
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user info: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("failed to get user info: %s", string(body))
-	}
-
-	var user struct {
-		ID        int64  `json:"id"`
-		Login     string `json:"login"`
-		Name      string `json:"name"`
-		AvatarURL string `json:"avatar_url"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
-		return nil, fmt.Errorf("failed to decode user info: %w", err)
-	}
-
-	// Get primary email
-	emailReq, err := http.NewRequestWithContext(ctx, "GET", "https://api.github.com/user/emails", nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create email request: %w", err)
-	}
-	emailReq.Header.Set("Authorization", "Bearer "+accessToken)
-	emailReq.Header.Set("Accept", "application/json")
-
-	emailResp, err := http.DefaultClient.Do(emailReq)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get emails: %w", err)
-	}
-	defer emailResp.Body.Close()
-
-	var emails []struct {
-		Email    string `json:"email"`
-		Primary  bool   `json:"primary"`
-		Verified bool   `json:"verified"`
-	}
-
-	if err := json.NewDecoder(emailResp.Body).Decode(&emails); err != nil {
-		return nil, fmt.Errorf("failed to decode emails: %w", err)
-	}
-
-	var primaryEmail string
-	for _, e := range emails {
-		if e.Primary && e.Verified {
-			primaryEmail = e.Email
-			break
-		}
-	}
-
-	if primaryEmail == "" && len(emails) > 0 {
-		primaryEmail = emails[0].Email
-	}
-
-	name := user.Name
-	if name == "" {
-		name = user.Login
-	}
-
-	return &UserInfo{
-		ProviderUserID: fmt.Sprintf("%d", user.ID),
-		Email:          primaryEmail,
-		Name:           name,
-		AvatarURL:      user.AvatarURL,
-	}, nil
-}
-
-// MicrosoftProvider implements OAuth 2.0 for Microsoft
-type MicrosoftProvider struct {
-	clientID     string
-	clientSecret string
-	redirectURL  string
-}
-
-// NewMicrosoftProvider creates a new Microsoft OAuth provider
-func NewMicrosoftProvider(clientID, clientSecret, redirectURL string) *MicrosoftProvider {
-	return &MicrosoftProvider{
-		clientID:     clientID,
-		clientSecret: clientSecret,
-		redirectURL:  redirectURL,
-	}
-}
-
-// GetAuthURL returns the Microsoft OAuth authorization URL
-func (p *MicrosoftProvider) GetAuthURL(state string) string {
-	params := url.Values{}
-	params.Set("client_id", p.clientID)
-	params.Set("redirect_uri", p.redirectURL)
-	params.Set("response_type", "code")
-	params.Set("scope", "openid email profile")
-	params.Set("state", state)
-	params.Set("response_mode", "query")
-
-	return "https://login.microsoftonline.com/common/oauth2/v2.0/authorize?" + params.Encode()
-}
-
-// ExchangeCode exchanges the authorization code for tokens
-func (p *MicrosoftProvider) ExchangeCode(ctx context.Context, code string) (accessToken, refreshToken string, err error) {
-	data := url.Values{}
-	data.Set("code", code)
-	data.Set("client_id", p.clientID)
-	data.Set("client_secret", p.clientSecret)
-	data.Set("redirect_uri", p.redirectURL)
-	data.Set("grant_type", "authorization_code")
-
-	req, err := http.NewRequestWithContext(ctx, "POST", "https://login.microsoftonline.com/common/oauth2/v2.0/token", nil)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to create request: %w", err)
-	}
-	req.URL.RawQuery = data.Encode()
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to exchange code: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return "", "", fmt.Errorf("token exchange failed: %s", string(body))
-	}
-
-	var result struct {
-		AccessToken  string `json:"access_token"`
-		RefreshToken string `json:"refresh_token"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return "", "", fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	return result.AccessToken, result.RefreshToken, nil
-}
-
-// GetUserInfo retrieves user information from Microsoft
-func (p *MicrosoftProvider) GetUserInfo(ctx context.Context, accessToken string) (*UserInfo, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", "https://graph.microsoft.com/v1.0/me", nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-	req.Header.Set("Authorization", "Bearer "+accessToken)
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user info: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("failed to get user info: %s", string(body))
-	}
-
-	var result struct {
-		ID                string `json:"id"`
-		DisplayName       string `json:"displayName"`
-		Mail              string `json:"mail"`
-		UserPrincipalName string `json:"userPrincipalName"`
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("failed to decode user info: %w", err)
-	}
-
-	email := result.Mail
-	if email == "" {
-		email = result.UserPrincipalName
-	}
-
-	return &UserInfo{
-		ProviderUserID: result.ID,
-		Email:          email,
-		Name:           result.DisplayName,
-		AvatarURL:      "",
-	}, nil
-}
-
 // ProviderFactory creates OAuth providers based on configuration
 type ProviderFactory struct {
 	providers map[string]Provider
@@ -395,8 +139,6 @@ type ProviderFactory struct {
 // NewProviderFactory creates a new provider factory
 func NewProviderFactory(
 	googleClientID, googleClientSecret, googleRedirectURL string,
-	githubClientID, githubClientSecret, githubRedirectURL string,
-	microsoftClientID, microsoftClientSecret, microsoftRedirectURL string,
 ) *ProviderFactory {
 	factory := &ProviderFactory{
 		providers: make(map[string]Provider),
@@ -405,16 +147,6 @@ func NewProviderFactory(
 	// Google is required
 	if googleClientID != "" && googleClientSecret != "" {
 		factory.providers["google"] = NewGoogleProvider(googleClientID, googleClientSecret, googleRedirectURL)
-	}
-
-	// GitHub is optional
-	if githubClientID != "" && githubClientSecret != "" {
-		factory.providers["github"] = NewGitHubProvider(githubClientID, githubClientSecret, githubRedirectURL)
-	}
-
-	// Microsoft is optional
-	if microsoftClientID != "" && microsoftClientSecret != "" {
-		factory.providers["microsoft"] = NewMicrosoftProvider(microsoftClientID, microsoftClientSecret, microsoftRedirectURL)
 	}
 
 	return factory

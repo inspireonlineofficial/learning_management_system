@@ -169,12 +169,6 @@ func main() {
 	if cfg.GoogleClientID != "" {
 		oauthProviders["google"] = oauth.NewGoogleProvider(cfg.GoogleClientID, cfg.GoogleClientSecret, cfg.GoogleRedirectURL)
 	}
-	if cfg.GitHubClientID != "" {
-		oauthProviders["github"] = oauth.NewGitHubProvider(cfg.GitHubClientID, cfg.GitHubClientSecret, cfg.GitHubRedirectURL)
-	}
-	if cfg.MicrosoftClientID != "" {
-		oauthProviders["microsoft"] = oauth.NewMicrosoftProvider(cfg.MicrosoftClientID, cfg.MicrosoftClientSecret, cfg.MicrosoftRedirectURL)
-	}
 	logger.Info(ctx, "OAuth providers initialized", "count", len(oauthProviders))
 
 	// Initialize OAuth factory
