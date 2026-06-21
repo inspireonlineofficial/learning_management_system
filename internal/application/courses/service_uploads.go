@@ -34,7 +34,7 @@ func (s *service) UploadVideo(ctx context.Context, cmd UploadVideoCommand) (*Vid
 		"video/mp4":       true,
 		"video/webm":      true,
 		"video/quicktime": true,
-	})
+	}, true)
 	if err != nil {
 		logger.Error(ctx, "Video upload rejected", "course_id", cmd.CourseID, "uploader_id", cmd.UploaderID, "file_name", cmd.FileName, "file_size", cmd.FileSize, "mime_type", cmd.MimeType, "error", err)
 		return nil, err
@@ -96,7 +96,7 @@ func (s *service) UploadFile(ctx context.Context, cmd UploadFileCommand) (*FileU
 		"image/png":       true,
 		"image/webp":      true,
 		"text/plain":      true,
-	})
+	}, false)
 	if err != nil {
 		logger.Error(ctx, "Lesson file upload rejected", "uploader_id", cmd.UploaderID, "file_name", cmd.FileName, "file_size", cmd.FileSize, "mime_type", cmd.MimeType, "error", err)
 		return nil, err
@@ -122,21 +122,45 @@ func (s *service) UploadFile(ctx context.Context, cmd UploadFileCommand) (*FileU
 	}, nil
 }
 
-func validateUpload(size, maxSize int64, declared string, magic []byte, allowed map[string]bool) (string, error) {
+func validateUpload(size, maxSize int64, declared string, magic []byte, allowed map[string]bool, allowDeclaredFallback bool) (string, error) {
 	if size <= 0 || size > maxSize {
 		return "", apperrors.NewSimpleValidationError("INVALID_FILE_SIZE", fmt.Sprintf("file must be greater than 0 and at most %d bytes", maxSize))
 	}
 	detected := http.DetectContentType(magic)
-	if strings.EqualFold(detected, "application/x-msdownload") || strings.Contains(detected, "executable") {
+	if hasExecutableMagic(magic) || strings.EqualFold(detected, "application/x-msdownload") || strings.Contains(detected, "executable") {
 		return "", apperrors.NewSimpleValidationError("UNSAFE_FILE_TYPE", "executable uploads are not allowed")
 	}
-	if !allowed[detected] {
+
+	contentType := detected
+	declared = strings.ToLower(strings.TrimSpace(strings.Split(declared, ";")[0]))
+	if allowDeclaredFallback && detected == "application/octet-stream" && allowed[declared] {
+		contentType = declared
+	}
+
+	if !allowed[contentType] {
 		return "", apperrors.NewSimpleValidationError("INVALID_FILE_TYPE", "file type is not allowed")
 	}
-	if declared != "" && declared != "application/octet-stream" && !strings.HasPrefix(declared, detected) {
+	if declared != "" && declared != "application/octet-stream" && declared != contentType {
 		return "", apperrors.NewSimpleValidationError("CONTENT_TYPE_MISMATCH", "declared content type does not match file contents")
 	}
-	return detected, nil
+	return contentType, nil
+}
+
+func hasExecutableMagic(magic []byte) bool {
+	if len(magic) >= 2 && magic[0] == 'M' && magic[1] == 'Z' {
+		return true
+	}
+	if len(magic) >= 4 && magic[0] == 0x7f && magic[1] == 'E' && magic[2] == 'L' && magic[3] == 'F' {
+		return true
+	}
+	if len(magic) >= 4 {
+		prefix := string(magic[:4])
+		return prefix == "\xfe\xed\xfa\xce" ||
+			prefix == "\xfe\xed\xfa\xcf" ||
+			prefix == "\xcf\xfa\xed\xfe" ||
+			prefix == "\xce\xfa\xed\xfe"
+	}
+	return false
 }
 
 func generatedUploadKey(prefix, fileName string) string {
