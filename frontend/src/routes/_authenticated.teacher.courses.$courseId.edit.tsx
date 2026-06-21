@@ -1347,17 +1347,19 @@ function LessonRow({
             <button
               onClick={() => setAddingNote((value) => !value)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs border border-brand/15 hover:bg-brand/[0.03]"
+              title={`Add a note to ${lesson.title}`}
             >
               <FileText className="h-3.5 w-3.5" />
-              Add note
+              Add note to this lesson
             </button>
             <button
               onClick={() => createLessonQuiz.mutate()}
               disabled={createLessonQuiz.isPending}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs border border-brand/15 hover:bg-brand/[0.03] disabled:opacity-50"
+              title={`Create a quiz for ${lesson.title}`}
             >
               <Plus className="h-3.5 w-3.5" />
-              {createLessonQuiz.isPending ? "Creating quiz..." : "Add quiz"}
+              {createLessonQuiz.isPending ? "Creating quiz..." : "Add quiz to this lesson"}
             </button>
           </div>
           {addingNote && (

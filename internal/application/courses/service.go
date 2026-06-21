@@ -495,6 +495,7 @@ func (s *service) buildCourseDetailResponse(ctx context.Context, course *courses
 					Description:     lesson.Description,
 					Type:            string(lesson.Type),
 					DurationSeconds: lesson.DurationSeconds,
+					HasVideo:        lesson.VideoID != nil,
 					IsFreePreview:   lesson.IsFreePreview,
 					IsFree:          lesson.IsFree,
 					IsDownloadable:  lesson.IsDownloadable,

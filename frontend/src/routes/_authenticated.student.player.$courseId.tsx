@@ -46,7 +46,10 @@ function PlayerPage() {
     queryFn: () => getCourseProgress(courseId),
   });
 
-  const modules = progress?.modules ?? course?.modules ?? [];
+  const modules = useMemo(
+    () => progress?.modules ?? course?.modules ?? [],
+    [course?.modules, progress?.modules],
+  );
   const allLessons = useMemo(() => modules.flatMap((m) => m.lessons), [modules]);
   const completedSet = useMemo(
     () => new Set(progress?.completed_lessons ?? []),
@@ -65,6 +68,13 @@ function PlayerPage() {
     setActiveLessonId(initial);
   }, [activeLessonId, allLessons, completedSet, progress?.current_lesson_id]);
 
+  const activeLessonSummary = useMemo(
+    () => allLessons.find((item) => item.id === activeLessonId) ?? null,
+    [activeLessonId, allLessons],
+  );
+  const activeLessonHasVideo =
+    activeLessonSummary?.type === "video" && activeLessonSummary.has_video !== false;
+
   const {
     data: lesson,
     isLoading: lessonLoading,
@@ -73,8 +83,18 @@ function PlayerPage() {
     refetch: refetchLesson,
   } = useQuery({
     queryKey: ["lesson", courseId, activeLessonId],
-    queryFn: () => getLesson(courseId, activeLessonId!),
-    enabled: Boolean(activeLessonId),
+    queryFn: async () => {
+      const content = await getLesson(courseId, activeLessonId!);
+      return {
+        ...activeLessonSummary,
+        ...content,
+        title: activeLessonSummary?.title ?? content.title,
+        type: activeLessonSummary?.type ?? content.type,
+        duration_minutes: activeLessonSummary?.duration_minutes ?? content.duration_minutes,
+        duration_seconds: activeLessonSummary?.duration_seconds ?? content.duration_seconds,
+      };
+    },
+    enabled: Boolean(activeLessonId && activeLessonHasVideo),
   });
 
   const {
@@ -103,10 +123,7 @@ function PlayerPage() {
   });
 
   const activeCompleted = activeLessonId ? completedSet.has(activeLessonId) : false;
-  const activeLessonSummary = useMemo(
-    () => allLessons.find((item) => item.id === activeLessonId) ?? null,
-    [activeLessonId, allLessons],
-  );
+  const displayLesson = lesson ?? activeLessonSummary;
   const courseTitle = course?.title ?? "Loading…";
   const pct = progress?.progress_percent ?? 0;
   const activeNotes = (course?.notes ?? []).filter(
@@ -267,13 +284,13 @@ function PlayerPage() {
           <div className="min-h-[60vh] grid place-items-center px-6">
             <p className="text-sm text-brand/55">Select a lesson to begin.</p>
           </div>
-        ) : lessonLoading ? (
+        ) : activeLessonHasVideo && lessonLoading ? (
           <div className="px-6 md:px-10 lg:px-16 py-10 animate-pulse">
             <div className="aspect-video bg-brand/10" />
             <div className="mt-8 h-8 w-2/3 bg-brand/10" />
             <div className="mt-4 h-4 w-1/2 bg-brand/10" />
           </div>
-        ) : lessonError ? (
+        ) : activeLessonHasVideo && lessonError ? (
           <article className="max-w-4xl mx-auto px-6 md:px-10 lg:px-16 py-10">
             <div className="aspect-video bg-brand/10 text-brand/45 grid place-items-center">
               <PlayCircle className="h-12 w-12 opacity-60" />
@@ -315,43 +332,61 @@ function PlayerPage() {
               )}
             </QueryErrorPanel>
           </article>
-        ) : !lesson ? (
+        ) : !displayLesson ? (
           <div className="min-h-[60vh] grid place-items-center px-6">
             <p className="text-sm text-brand/55">No lesson selected.</p>
           </div>
         ) : (
           <article className="max-w-4xl mx-auto px-6 md:px-10 lg:px-16 py-10">
             {/* Player surface */}
-            {lesson.video_url ? (
+            {lesson?.video_url ? (
               <div className="aspect-video bg-black overflow-hidden">
-                <video key={lesson.id} src={lesson.video_url} controls className="h-full w-full" />
+                <video
+                  key={lesson.id}
+                  src={lesson.video_url}
+                  controls
+                  preload="metadata"
+                  playsInline
+                  className="h-full w-full"
+                />
               </div>
             ) : (
-              <div className="aspect-video bg-brand text-white grid place-items-center">
-                <PlayCircle className="h-12 w-12 opacity-60" />
+              <div className="aspect-video bg-brand/10 text-brand/45 grid place-items-center">
+                <div className="text-center px-6">
+                  <PlayCircle className="h-12 w-12 opacity-60 mx-auto" />
+                  <p className="mt-4 text-sm">
+                    {displayLesson.type === "video"
+                      ? "No video is attached to this lesson yet."
+                      : "This lesson does not use a video player."}
+                  </p>
+                </div>
               </div>
             )}
 
             <header className="mt-8">
               <p className="eyebrow text-accent">Lesson</p>
-              <h1 className="mt-3 font-serif text-3xl lg:text-4xl text-balance">{lesson.title}</h1>
-              {typeof lesson.duration_minutes === "number" && (
-                <p className="mt-2 text-sm text-brand/55">{lesson.duration_minutes} minutes</p>
+              <h1 className="mt-3 font-serif text-3xl lg:text-4xl text-balance">
+                {displayLesson.title}
+              </h1>
+              {typeof displayLesson.duration_minutes === "number" && (
+                <p className="mt-2 text-sm text-brand/55">
+                  {displayLesson.duration_minutes} minutes
+                </p>
               )}
             </header>
 
-            {lesson.body_html && (
+            {displayLesson.body_html && (
               <div
                 className="mt-8 prose prose-sm max-w-none text-brand/80 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: lesson.body_html }}
+                dangerouslySetInnerHTML={{ __html: displayLesson.body_html }}
               />
             )}
 
-            {lesson.resources && lesson.resources.length > 0 && (
+            {displayLesson.resources && displayLesson.resources.length > 0 && (
               <section className="mt-10 border-t border-brand/10 pt-8">
                 <h2 className="font-serif text-xl mb-4">Resources</h2>
                 <ul className="space-y-2 text-sm">
-                  {lesson.resources.map((r) => (
+                  {displayLesson.resources.map((r) => (
                     <li key={r.id}>
                       <a
                         href={r.url}
@@ -442,7 +477,7 @@ function PlayerPage() {
                 {activeCompleted ? "Completed" : "Mark this lesson complete to advance."}
               </p>
               <div className="flex items-center gap-3">
-                {lesson.video_url &&
+                {lesson?.video_url &&
                   (downloaded ? (
                     <button
                       onClick={handleRemoveDownload}
