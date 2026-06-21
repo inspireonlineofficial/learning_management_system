@@ -45,7 +45,7 @@ func (s *service) UploadVideo(ctx context.Context, cmd UploadVideoCommand) (*Vid
 		CourseID:   cmd.CourseID,
 		UploaderID: cmd.UploaderID,
 		RustFSKey:  generatedUploadKey("videos", cmd.FileName),
-		Status:     courses.VideoStatusProcessing,
+		Status:     courses.VideoStatusReady,
 		CreatedAt:  time.Now(),
 		UpdatedAt:  time.Now(),
 	}
