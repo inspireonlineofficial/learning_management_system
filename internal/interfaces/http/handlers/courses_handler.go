@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -1378,6 +1377,10 @@ func (h *CoursesHandler) UploadVideo(w http.ResponseWriter, r *http.Request) {
 		writeErrorResponse(w, err)
 		return
 	}
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_FILE", "could not prepare file for upload"))
+		return
+	}
 
 	cmd := courses.UploadVideoCommand{
 		CourseID:   courseID,
@@ -1386,7 +1389,7 @@ func (h *CoursesHandler) UploadVideo(w http.ResponseWriter, r *http.Request) {
 		FileSize:   header.Size,
 		MimeType:   header.Header.Get("Content-Type"),
 		MagicBytes: magic,
-		Reader:     io.MultiReader(newBytesReader(magic), file),
+		Reader:     file,
 	}
 
 	result, err := h.service.UploadVideo(r.Context(), cmd)
@@ -1467,6 +1470,10 @@ func (h *CoursesHandler) UploadFile(w http.ResponseWriter, r *http.Request) {
 		writeErrorResponse(w, err)
 		return
 	}
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_FILE", "could not prepare file for upload"))
+		return
+	}
 
 	cmd := courses.UploadFileCommand{
 		UploaderID: userID,
@@ -1474,7 +1481,7 @@ func (h *CoursesHandler) UploadFile(w http.ResponseWriter, r *http.Request) {
 		FileSize:   header.Size,
 		MimeType:   header.Header.Get("Content-Type"),
 		MagicBytes: magic,
-		Reader:     io.MultiReader(newBytesReader(magic), file),
+		Reader:     file,
 	}
 
 	result, err := h.service.UploadFile(r.Context(), cmd)
@@ -1500,10 +1507,6 @@ func readMagic(r io.Reader) ([]byte, error) {
 		return nil, apperrors.NewSimpleValidationError("INVALID_FILE", "could not read file")
 	}
 	return buf[:n], nil
-}
-
-func newBytesReader(b []byte) io.Reader {
-	return bytes.NewReader(b)
 }
 
 func parseOptionalUUID(value *string) (*uuid.UUID, error) {
