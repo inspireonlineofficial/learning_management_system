@@ -29,12 +29,12 @@ type Client struct {
 
 // NewClient creates a new RustFS client
 func NewClient(endpoint, accessKey, secretKey, region string) (*Client, error) {
-	endpoint = normalizeEndpoint(endpoint)
+	endpointConfig := resolveEndpointConfig(endpoint, region)
 	sess, err := session.NewSession(&aws.Config{
-		Endpoint:         aws.String(endpoint),
-		Region:           aws.String(region),
+		Endpoint:         aws.String(endpointConfig.endpoint),
+		Region:           aws.String(endpointConfig.region),
 		Credentials:      credentials.NewStaticCredentials(accessKey, secretKey, ""),
-		S3ForcePathStyle: aws.Bool(true), // Required for S3-compatible services
+		S3ForcePathStyle: aws.Bool(endpointConfig.forcePathStyle),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create session: %w", err)
@@ -62,6 +62,28 @@ func (c *Client) PutObject(ctx context.Context, bucket, key string, r io.Reader,
 
 var digitalOceanRegionHostPattern = regexp.MustCompile(`^[a-z]{3}[0-9]\.digitaloceanspaces\.com$`)
 
+type endpointConfig struct {
+	endpoint       string
+	region         string
+	forcePathStyle bool
+}
+
+func resolveEndpointConfig(endpoint, region string) endpointConfig {
+	endpoint = normalizeEndpoint(endpoint)
+	if isDigitalOceanSpacesEndpoint(endpoint) {
+		return endpointConfig{
+			endpoint:       endpoint,
+			region:         "us-east-1",
+			forcePathStyle: false,
+		}
+	}
+	return endpointConfig{
+		endpoint:       endpoint,
+		region:         region,
+		forcePathStyle: true,
+	}
+}
+
 func normalizeEndpoint(endpoint string) string {
 	parsed, err := url.Parse(endpoint)
 	if err != nil || parsed.Host == "" {
@@ -84,6 +106,14 @@ func normalizeEndpoint(endpoint string) string {
 	}
 	parsed.Host = host
 	return parsed.String()
+}
+
+func isDigitalOceanSpacesEndpoint(endpoint string) bool {
+	parsed, err := url.Parse(endpoint)
+	if err != nil || parsed.Host == "" {
+		return false
+	}
+	return digitalOceanRegionHostPattern.MatchString(parsed.Hostname())
 }
 
 // PresignGetURL generates a presigned URL for downloading an object
