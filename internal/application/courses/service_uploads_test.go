@@ -59,7 +59,7 @@ func TestValidateUploadRejectsExecutablesBeforeDeclaredFallback(t *testing.T) {
 func TestValidateUploadAcceptsEquivalentImageMimeTypes(t *testing.T) {
 	// JPG image magic bytes start with 0xFF 0xD8 0xFF
 	jpgMagic := []byte{0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 'J', 'F', 'I', 'F'}
-	
+
 	// Test image/jpg declared for image/jpeg detected
 	contentType, err := validateUpload(
 		1024,
@@ -93,4 +93,3 @@ func TestValidateUploadAcceptsEquivalentImageMimeTypes(t *testing.T) {
 		t.Fatalf("expected equivalent image/pjpeg to pass, got %v", err)
 	}
 }
-
