@@ -45,7 +45,7 @@ export const Route = createFileRoute("/courses/$courseId")({
 
 function CourseDetailPage() {
   const { courseId } = Route.useParams();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, isHydrated, user } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [previewLesson, setPreviewLesson] = useState<{
@@ -155,6 +155,7 @@ function CourseDetailPage() {
   }
 
   const totalLessons = course.modules?.reduce((n, m) => n + m.lessons.length, 0) ?? 0;
+  const canEnrollAsStudent = isHydrated && isAuthenticated && user?.role === "student";
 
   return (
     <div className="min-h-screen bg-surface text-brand font-sans">
@@ -376,7 +377,7 @@ function CourseDetailPage() {
                 >
                   Continue learning
                 </Link>
-              ) : isAuthenticated ? (
+              ) : canEnrollAsStudent ? (
                 course.price && course.price > 0 ? (
                   <Link
                     to="/student/courses/$courseId/request-access"
@@ -400,7 +401,9 @@ function CourseDetailPage() {
                   search={{ return: `/courses/${courseId}` } as never}
                   className="mt-6 block text-center bg-brand text-white py-4 text-sm font-medium hover:bg-brand/90 transition-colors"
                 >
-                  Sign in to enroll
+                  {isHydrated && isAuthenticated
+                    ? "Sign in as student to enroll"
+                    : "Sign in to enroll"}
                 </Link>
               )}
               <ul className="mt-6 space-y-2 text-xs text-brand/60">
