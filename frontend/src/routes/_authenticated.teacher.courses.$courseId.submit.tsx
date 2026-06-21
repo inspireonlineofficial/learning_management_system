@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { apiRequest } from "@/lib/api/client";
-import { getTeacherCourse, publishCourse } from "@/lib/api/teacher";
+import { getTeacherCourse } from "@/lib/api/teacher";
 
 export const Route = createFileRoute("/_authenticated/teacher/courses/$courseId/submit")({
   component: Page,
@@ -34,29 +34,12 @@ function Page() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const publish = useMutation({
-    mutationFn: () => publishCourse(courseId),
-    onSuccess: () => {
-      toast.success("Course published");
-      qc.invalidateQueries({ queryKey: ["teacher-course", courseId] });
-      navigate({ to: "/teacher/courses" });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
+  const readiness = getCoursePublishReadiness(course);
   const modules = (course as any)?.modules ?? [];
-  const lessonCount = modules.reduce((n: number, m: any) => n + (m.lessons?.length ?? 0), 0);
-  const checks = [
-    { label: "Title set", ok: !!course?.title },
-    {
-      label: "Subtitle / description",
-      ok: !!(course as any)?.subtitle || !!(course as any)?.description,
-    },
-    { label: "Cover image", ok: !!(course as any)?.cover_url },
-    { label: "At least 1 module", ok: modules.length > 0 },
-    { label: "At least 3 lessons", ok: lessonCount >= 3 },
-  ];
-  const ready = checks.every((c) => c.ok);
+  const lessons = getCourseLessons(course);
+  const publishedLessons = lessons.filter((lesson: any) => lesson.status === "published");
+  const checks = readiness.checks;
+  const ready = readiness.ready;
   const status = (course as any)?.status as string | undefined;
 
   return (
@@ -72,8 +55,8 @@ function Page() {
       <div className="grid lg:grid-cols-[1fr_320px] gap-10 max-w-4xl">
         <div>
           <p className="text-sm text-brand/65 leading-relaxed mb-8">
-            Once submitted, an admin will review your course and either approve it or request
-            changes. Make sure your readiness checklist looks complete first.
+            Submit this course for admin review when the required items are complete. After an admin
+            approves it, students can see it in the public course catalog.
           </p>
 
           <h3 className="font-serif text-xl mb-4">Readiness checklist</h3>
@@ -98,16 +81,11 @@ function Page() {
             >
               {submit.isPending ? "Submitting…" : "Submit for review"}
             </button>
-            <button
-              onClick={() => publish.mutate()}
-              disabled={!ready || publish.isPending || status === "published"}
-              className="border border-brand/15 px-6 py-3 text-sm hover:bg-brand/[0.03] disabled:opacity-50"
-            >
-              {publish.isPending ? "Publishing…" : "Publish directly"}
-            </button>
           </div>
           {!ready && (
-            <p className="mt-3 text-xs text-amber-700">Complete the checklist before submitting.</p>
+            <p className="mt-3 text-xs text-amber-700">
+              Complete the missing checklist items in the editor before submitting.
+            </p>
           )}
         </div>
 
@@ -115,10 +93,37 @@ function Page() {
           <p className="eyebrow text-brand/45">Current status</p>
           <p className="mt-2 font-serif text-2xl capitalize">{status ?? "draft"}</p>
           <p className="mt-4 text-xs text-brand/55">
-            {modules.length} modules · {lessonCount} lessons
+            {modules.length} modules · {lessons.length} lessons · {publishedLessons.length}{" "}
+            published lessons
           </p>
         </aside>
       </div>
     </AppShell>
   );
+}
+
+function getCourseLessons(course: any) {
+  return ((course as any)?.modules ?? []).flatMap((module: any) =>
+    (module.chapters ?? []).flatMap((chapter: any) => chapter.lessons ?? []),
+  );
+}
+
+function getCoursePublishReadiness(course: any) {
+  const modules = (course as any)?.modules ?? [];
+  const lessons = getCourseLessons(course);
+  const publishedLessons = lessons.filter((lesson: any) => lesson.status === "published");
+  const checks = [
+    { label: "Title set", ok: Boolean((course as any)?.title?.trim?.() || (course as any)?.title) },
+    {
+      label: "Subtitle / description",
+      ok: Boolean((course as any)?.subtitle?.trim?.() || (course as any)?.description?.trim?.()),
+    },
+    { label: "At least 1 module", ok: modules.length > 0 },
+    { label: "At least 1 published lesson", ok: publishedLessons.length > 0 },
+  ];
+
+  return {
+    checks,
+    ready: checks.every((check) => check.ok),
+  };
 }

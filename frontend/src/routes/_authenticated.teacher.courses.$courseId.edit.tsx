@@ -1,12 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
+  AlertCircle,
   ArrowLeft,
   ChevronDown,
   ChevronRight,
+  CheckCircle2,
   FileText,
   Plus,
   Save,
+  Send,
   Trash2,
   Upload,
   Users,
@@ -75,6 +78,7 @@ export function CourseEditor({ courseId }: { courseId: string }) {
   }
 
   const c = course.data;
+  const publishReadiness = getCoursePublishReadiness(c);
 
   return (
     <AppShell>
@@ -88,11 +92,59 @@ export function CourseEditor({ courseId }: { courseId: string }) {
 
       <div className="flex items-center justify-between mb-2 flex-wrap gap-3">
         <h1 className="font-serif text-4xl lg:text-5xl text-balance">{c.title}</h1>
-        <span className="px-3 py-1 text-[11px] font-medium border border-brand/15 capitalize text-brand/60">
-          {c.status}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="px-3 py-1 text-[11px] font-medium border border-brand/15 capitalize text-brand/60">
+            {c.status}
+          </span>
+          <Link
+            to="/teacher/courses/$courseId/submit"
+            params={{ courseId }}
+            className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium ${
+              c.status === "published"
+                ? "border border-brand/15 text-brand/45 pointer-events-none"
+                : "bg-brand text-white hover:bg-brand/90"
+            }`}
+          >
+            <Send className="h-4 w-4" />
+            {c.status === "published" ? "Published" : "Submit for review"}
+          </Link>
+        </div>
       </div>
       {c.subtitle && <p className="text-brand/65 mb-6">{c.subtitle}</p>}
+
+      {c.status !== "published" && (
+        <section className="mb-8 border border-brand/10 bg-white/50 px-4 py-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <p className="eyebrow text-brand/45">Publish readiness</p>
+              <p className="mt-1 text-sm text-brand/65">
+                {publishReadiness.ready
+                  ? "This course is ready to submit for admin review."
+                  : "Complete the missing items, then submit for admin review."}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {publishReadiness.checks.map((check) => (
+                <span
+                  key={check.label}
+                  className={`inline-flex items-center gap-1.5 border px-2.5 py-1 text-xs ${
+                    check.ok
+                      ? "border-emerald-200 text-emerald-700 bg-emerald-50"
+                      : "border-amber-200 text-amber-700 bg-amber-50"
+                  }`}
+                >
+                  {check.ok ? (
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                  ) : (
+                    <AlertCircle className="h-3.5 w-3.5" />
+                  )}
+                  {check.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <div className="flex gap-2 border-b border-brand/10 mb-8">
         {(["content", "notes", "details", "students"] as const).map((t) => (
@@ -129,6 +181,28 @@ export function CourseEditor({ courseId }: { courseId: string }) {
       {tab === "students" && <StudentsPanel courseId={courseId} />}
     </AppShell>
   );
+}
+
+function getCoursePublishReadiness(course: any) {
+  const modules = course?.modules ?? [];
+  const lessons = modules.flatMap((module: any) =>
+    (module.chapters ?? []).flatMap((chapter: any) => chapter.lessons ?? []),
+  );
+  const publishedLessons = lessons.filter((lesson: any) => lesson.status === "published");
+  const checks = [
+    { label: "Title", ok: Boolean(course?.title?.trim?.() || course?.title) },
+    {
+      label: "Description",
+      ok: Boolean(course?.subtitle?.trim?.() || course?.description?.trim?.()),
+    },
+    { label: "Module", ok: modules.length > 0 },
+    { label: "Published lesson", ok: publishedLessons.length > 0 },
+  ];
+
+  return {
+    checks,
+    ready: checks.every((check) => check.ok),
+  };
 }
 
 function ContentEditor({
