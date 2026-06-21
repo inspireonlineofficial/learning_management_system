@@ -975,6 +975,7 @@ function LessonRow({
   onDrop?: () => void;
 }) {
   const navigate = useNavigate();
+  const isPublished = lesson.status === "published";
   const [editing, setEditing] = useState(false);
   const [addingNote, setAddingNote] = useState(false);
   const [draft, setDraft] = useState({
@@ -1082,6 +1083,27 @@ function LessonRow({
     mutationFn: () => deleteLesson(lesson.id),
     onSuccess: () => {
       toast.success("Lesson deleted");
+      onChange();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const toggleStatus = useMutation({
+    mutationFn: (nextStatus: "draft" | "published") =>
+      updateLesson(lesson.id, {
+        title: lesson.title,
+        description: lesson.description ?? "",
+        type: (lesson.type as "video" | "text" | "attachment") ?? "video",
+        video_id: lesson.video_id,
+        duration_seconds: lesson.duration_seconds ?? 0,
+        is_free_preview: lesson.is_free_preview ?? false,
+        is_free: lesson.is_free ?? true,
+        is_downloadable: lesson.is_downloadable ?? false,
+        position: index + 1,
+        status: nextStatus,
+      }),
+    onSuccess: (_, nextStatus) => {
+      toast.success(nextStatus === "published" ? "Lesson published" : "Lesson moved to draft");
       onChange();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -1262,7 +1284,23 @@ function LessonRow({
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <button onClick={() => setEditing(true)} className="text-left flex-1">
-              <p className="font-medium text-sm">{lesson.title}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-medium text-sm">{lesson.title}</p>
+                <span
+                  className={`inline-flex items-center gap-1 border px-2 py-0.5 text-[11px] uppercase tracking-wider ${
+                    isPublished
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-amber-200 bg-amber-50 text-amber-700"
+                  }`}
+                >
+                  {isPublished ? (
+                    <CheckCircle2 className="h-3 w-3" />
+                  ) : (
+                    <AlertCircle className="h-3 w-3" />
+                  )}
+                  {isPublished ? "Published" : "Draft"}
+                </span>
+              </div>
               <p className="mt-1 text-[11px] text-brand/45 uppercase tracking-wider">
                 {lesson.type ?? "video"}
                 {lesson.is_free_preview ? " · preview" : ""}
@@ -1273,15 +1311,37 @@ function LessonRow({
                   : ""}
               </p>
             </button>
-            <button
-              onClick={() => {
-                if (confirm("Delete lesson?")) remove.mutate();
-              }}
-              className="inline-flex items-center gap-1.5 px-2 py-1 text-xs text-brand/50 hover:text-destructive"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Remove
-            </button>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <button
+                onClick={() => toggleStatus.mutate(isPublished ? "draft" : "published")}
+                disabled={toggleStatus.isPending}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs border disabled:opacity-50 ${
+                  isPublished
+                    ? "border-brand/15 text-brand/60 hover:bg-brand/[0.03]"
+                    : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                }`}
+              >
+                {isPublished ? (
+                  <AlertCircle className="h-3.5 w-3.5" />
+                ) : (
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                )}
+                {toggleStatus.isPending
+                  ? "Saving..."
+                  : isPublished
+                    ? "Move to draft"
+                    : "Publish lesson"}
+              </button>
+              <button
+                onClick={() => {
+                  if (confirm("Delete lesson?")) remove.mutate();
+                }}
+                className="inline-flex items-center gap-1.5 px-2 py-1 text-xs text-brand/50 hover:text-destructive"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Remove
+              </button>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 border-t border-brand/10 pt-3">
             <button
