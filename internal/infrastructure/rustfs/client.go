@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/url"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -26,6 +29,7 @@ type Client struct {
 
 // NewClient creates a new RustFS client
 func NewClient(endpoint, accessKey, secretKey, region string) (*Client, error) {
+	endpoint = normalizeEndpoint(endpoint)
 	sess, err := session.NewSession(&aws.Config{
 		Endpoint:         aws.String(endpoint),
 		Region:           aws.String(region),
@@ -54,6 +58,32 @@ func (c *Client) PutObject(ctx context.Context, bucket, key string, r io.Reader,
 		return fmt.Errorf("failed to put object: %w", err)
 	}
 	return nil
+}
+
+var digitalOceanRegionHostPattern = regexp.MustCompile(`^[a-z]{3}[0-9]\.digitaloceanspaces\.com$`)
+
+func normalizeEndpoint(endpoint string) string {
+	parsed, err := url.Parse(endpoint)
+	if err != nil || parsed.Host == "" {
+		return endpoint
+	}
+
+	parts := strings.Split(parsed.Hostname(), ".")
+	if len(parts) < 4 {
+		return endpoint
+	}
+
+	regionHost := strings.Join(parts[1:], ".")
+	if !digitalOceanRegionHostPattern.MatchString(regionHost) {
+		return endpoint
+	}
+
+	host := regionHost
+	if port := parsed.Port(); port != "" {
+		host += ":" + port
+	}
+	parsed.Host = host
+	return parsed.String()
 }
 
 // PresignGetURL generates a presigned URL for downloading an object
