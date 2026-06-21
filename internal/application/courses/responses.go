@@ -77,6 +77,7 @@ type LessonResponse struct {
 	Description      string     `json:"description"`
 	Type             string     `json:"type"`
 	DurationSeconds  int        `json:"duration_seconds"`
+	HasVideo         bool       `json:"has_video"`
 	IsFreePreview    bool       `json:"is_free_preview"`
 	IsFree           bool       `json:"is_free"`
 	IsDownloadable   bool       `json:"is_downloadable"`

@@ -31,6 +31,7 @@ export type Lesson = {
   chapter_id?: string;
   duration_minutes?: number;
   duration_seconds?: number;
+  has_video?: boolean;
   type?: "video" | "text" | "attachment" | string;
   is_preview?: boolean;
   is_free_preview?: boolean;
