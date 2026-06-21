@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { AppShell, SectionHeading, StatCard } from "@/components/layout/app-shell";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { getStudentAnalytics } from "@/lib/api/analytics";
 
 export const Route = createFileRoute("/_authenticated/admin/analytics/students/$studentId")({
@@ -36,9 +37,11 @@ function Page() {
 
       {isLoading && <div className="h-44 border border-brand/10 bg-white/40 animate-pulse" />}
       {isError && (
-        <p className="text-sm text-destructive">
-          {(error as Error)?.message ?? "Failed to load student analytics."}
-        </p>
+        <QueryErrorPanel
+          error={error}
+          variant="compact"
+          message={(error as Error)?.message ?? "Failed to load student analytics."}
+        />
       )}
 
       {data && (

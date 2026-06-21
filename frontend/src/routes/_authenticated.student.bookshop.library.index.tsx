@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { BookOpen } from "lucide-react";
 
 import { AppShell, EmptyState, SectionHeading } from "@/components/layout/app-shell";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { listMyLibrary } from "@/lib/api/bookshop";
 
 export const Route = createFileRoute("/_authenticated/student/bookshop/library/")({
@@ -10,7 +11,7 @@ export const Route = createFileRoute("/_authenticated/student/bookshop/library/"
 });
 
 function LibraryPage() {
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["library"],
     queryFn: () => listMyLibrary({ limit: 60 }),
   });
@@ -18,10 +19,7 @@ function LibraryPage() {
   return (
     <AppShell eyebrow="Bookshop" title="My library.">
       {isError ? (
-        <div className="border border-destructive/20 bg-destructive/5 p-6 text-sm">
-          <p className="font-medium text-destructive">Couldn't load library</p>
-          <p className="mt-1 text-brand/60">{(error as Error)?.message}</p>
-        </div>
+        <QueryErrorPanel error={error} title="Couldn't load library" onRetry={() => refetch()} />
       ) : isLoading ? (
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {Array.from({ length: 6 }).map((_, i) => (

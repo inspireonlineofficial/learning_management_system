@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { AppShell, EmptyState } from "@/components/layout/app-shell";
 import { ListTable } from "@/components/layout/data-page";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { apiRequest } from "@/lib/api/client";
 
 type AdminCourse = {
@@ -82,16 +83,12 @@ function Page() {
       )}
 
       {courses.isError && (
-        <div className="mt-10 border border-destructive/20 bg-destructive/5 p-6 text-sm">
-          <p className="font-medium text-destructive">Couldn't load courses</p>
-          <p className="mt-1 text-brand/60">{(courses.error as Error).message}</p>
-          <button
-            onClick={() => courses.refetch()}
-            className="mt-3 bg-brand px-4 py-2 text-xs text-white"
-          >
-            Try again
-          </button>
-        </div>
+        <QueryErrorPanel
+          error={courses.error}
+          title="Couldn't load courses"
+          onRetry={() => courses.refetch()}
+          className="mt-10"
+        />
       )}
 
       {courses.data && !courses.isLoading && !courses.isError && (

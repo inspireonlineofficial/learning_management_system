@@ -4,6 +4,7 @@ import { BookOpen, Search } from "lucide-react";
 import { useState } from "react";
 
 import { BrandLogo } from "@/components/layout/brand-logo";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { useAuth } from "@/context/auth-context";
 import { formatPrice, listBooks, type BookSummary } from "@/lib/api/bookshop";
 
@@ -84,10 +85,11 @@ function BookshopIndex() {
 
       <main className="max-w-7xl mx-auto px-6 lg:px-10 py-12">
         {books.isError ? (
-          <div className="border border-destructive/20 bg-destructive/5 p-6 text-sm">
-            <p className="font-medium text-destructive">Couldn't load books</p>
-            <p className="mt-1 text-brand/60">{(books.error as Error)?.message}</p>
-          </div>
+          <QueryErrorPanel
+            error={books.error}
+            title="Couldn't load books"
+            onRetry={() => books.refetch()}
+          />
         ) : books.isLoading ? (
           <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {Array.from({ length: 8 }).map((_, i) => (

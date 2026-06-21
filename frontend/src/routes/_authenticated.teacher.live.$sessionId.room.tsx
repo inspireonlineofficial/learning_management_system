@@ -4,6 +4,7 @@ import { PhoneOff } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/layout/app-shell";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { endLiveSession, hostJoinSession } from "@/lib/api/live";
 
 export const Route = createFileRoute("/_authenticated/teacher/live/$sessionId/room")({
@@ -32,7 +33,14 @@ function Page() {
 
   return (
     <AppShell eyebrow="Live room" title="Host session">
-      {isError && <p className="text-sm text-destructive mb-4">{(error as Error)?.message}</p>}
+      {isError && (
+        <QueryErrorPanel
+          error={error}
+          variant="compact"
+          message={(error as Error)?.message}
+          className="mb-4"
+        />
+      )}
 
       <div className="max-w-2xl border border-brand/10 bg-white/60 p-8 space-y-6">
         <div>

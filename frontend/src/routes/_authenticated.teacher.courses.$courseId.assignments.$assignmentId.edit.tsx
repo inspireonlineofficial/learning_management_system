@@ -4,6 +4,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/layout/app-shell";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import {
   getTeacherAssignment,
   updateTeacherAssignment,
@@ -82,9 +83,11 @@ function EditAssignmentPage() {
         <div className="h-72 max-w-3xl border border-brand/10 bg-white/40 animate-pulse" />
       )}
       {assignment.isError && (
-        <p className="text-sm text-destructive">
-          {(assignment.error as Error)?.message ?? "Failed to load assignment."}
-        </p>
+        <QueryErrorPanel
+          error={assignment.error}
+          variant="compact"
+          message={(assignment.error as Error)?.message ?? "Failed to load assignment."}
+        />
       )}
 
       {assignment.data && (

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CalendarPlus, Radio, Users } from "lucide-react";
 
 import { AppShell, EmptyState, SectionHeading } from "@/components/layout/app-shell";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { listTeacherLiveSessions, type LiveSessionSummary } from "@/lib/api/live";
 
 type Scope = "upcoming" | "live" | "past";
@@ -47,13 +48,7 @@ function Page() {
       </div>
 
       {isError ? (
-        <div className="border border-destructive/20 bg-destructive/5 p-6 text-sm">
-          <p className="font-medium text-destructive">Couldn't load sessions</p>
-          <p className="mt-1 text-brand/60">{(error as Error)?.message}</p>
-          <button onClick={() => refetch()} className="mt-3 px-4 py-2 bg-brand text-white text-xs">
-            Try again
-          </button>
-        </div>
+        <QueryErrorPanel error={error} title="Couldn't load sessions" onRetry={() => refetch()} />
       ) : isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
