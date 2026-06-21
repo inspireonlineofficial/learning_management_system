@@ -13,6 +13,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { ApiError } from "@/lib/api/client";
 import {
   createCourseComment,
   deleteCourseComment,
@@ -102,6 +103,10 @@ function PlayerPage() {
   });
 
   const activeCompleted = activeLessonId ? completedSet.has(activeLessonId) : false;
+  const activeLessonSummary = useMemo(
+    () => allLessons.find((item) => item.id === activeLessonId) ?? null,
+    [activeLessonId, allLessons],
+  );
   const courseTitle = course?.title ?? "Loading…";
   const pct = progress?.progress_percent ?? 0;
   const activeNotes = (course?.notes ?? []).filter(
@@ -262,17 +267,31 @@ function PlayerPage() {
           <div className="min-h-[60vh] grid place-items-center px-6">
             <p className="text-sm text-brand/55">Select a lesson to begin.</p>
           </div>
-        ) : lessonLoading || (lessonError && !videoPolling) ? (
+        ) : lessonLoading ? (
           <div className="px-6 md:px-10 lg:px-16 py-10 animate-pulse">
             <div className="aspect-video bg-brand/10" />
             <div className="mt-8 h-8 w-2/3 bg-brand/10" />
             <div className="mt-4 h-4 w-1/2 bg-brand/10" />
           </div>
         ) : lessonError ? (
-          <div className="px-6 md:px-10 lg:px-16 py-10">
+          <article className="max-w-4xl mx-auto px-6 md:px-10 lg:px-16 py-10">
+            <div className="aspect-video bg-brand/10 text-brand/45 grid place-items-center">
+              <PlayCircle className="h-12 w-12 opacity-60" />
+            </div>
+            <header className="mt-8">
+              <p className="eyebrow text-accent">Lesson</p>
+              <h1 className="mt-3 font-serif text-3xl lg:text-4xl text-balance">
+                {activeLessonSummary?.title ?? "Lesson"}
+              </h1>
+              {typeof activeLessonSummary?.duration_minutes === "number" && (
+                <p className="mt-2 text-sm text-brand/55">
+                  {activeLessonSummary.duration_minutes} minutes
+                </p>
+              )}
+            </header>
             <QueryErrorPanel
               error={lessonErrorObj}
-              title="Couldn't load this lesson"
+              title={lessonErrorTitle(lessonErrorObj)}
               onRetry={
                 videoPolling
                   ? cancelVideoPolling
@@ -295,7 +314,7 @@ function PlayerPage() {
                 </p>
               )}
             </QueryErrorPanel>
-          </div>
+          </article>
         ) : !lesson ? (
           <div className="min-h-[60vh] grid place-items-center px-6">
             <p className="text-sm text-brand/55">No lesson selected.</p>
@@ -463,6 +482,13 @@ function PlayerPage() {
       </main>
     </div>
   );
+}
+
+function lessonErrorTitle(error: unknown) {
+  if (!(error instanceof ApiError)) return "Couldn't load this lesson";
+  if (error.code === "VIDEO_NOT_READY") return "Video is still processing";
+  if (error.code === "NO_VIDEO") return "No video is attached to this lesson";
+  return "Couldn't load this lesson";
 }
 
 function LessonDiscussion({
