@@ -2,6 +2,7 @@ import { useQuery, type QueryKey } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 
 import { AppShell, EmptyState, SectionHeading } from "@/components/layout/app-shell";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 
 export function DataPage<T>({
   eyebrow,
@@ -41,13 +42,12 @@ export function DataPage<T>({
       )}
 
       {isError && (
-        <div className="mt-10 border border-destructive/20 bg-destructive/5 p-6 text-sm">
-          <p className="font-medium text-destructive">Couldn't load data</p>
-          <p className="mt-1 text-brand/60">{(error as Error)?.message}</p>
-          <button onClick={() => refetch()} className="mt-3 px-4 py-2 bg-brand text-white text-xs">
-            Try again
-          </button>
-        </div>
+        <QueryErrorPanel
+          error={error}
+          title="Couldn't load data"
+          onRetry={() => refetch()}
+          className="mt-10"
+        />
       )}
 
       {data != null && !isLoading && !isError && (

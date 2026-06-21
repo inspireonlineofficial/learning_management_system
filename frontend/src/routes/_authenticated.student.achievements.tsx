@@ -4,6 +4,7 @@ import { Award, Flame, Sparkles, Trophy } from "lucide-react";
 import { useState } from "react";
 
 import { AppShell, EmptyState, SectionHeading, StatCard } from "@/components/layout/app-shell";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import {
   getGamificationOverview,
   listAchievements,
@@ -38,9 +39,12 @@ function AchievementsPage() {
   return (
     <AppShell eyebrow="Progress" title="Honours & milestones.">
       {overview.isError ? (
-        <div className="border border-destructive/20 bg-destructive/5 p-6 text-sm mb-8">
-          <p className="font-medium text-destructive">Couldn't load progress</p>
-        </div>
+        <QueryErrorPanel
+          error={overview.error}
+          title="Couldn't load progress"
+          onRetry={() => overview.refetch()}
+          className="mb-8"
+        />
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
           <StatCard

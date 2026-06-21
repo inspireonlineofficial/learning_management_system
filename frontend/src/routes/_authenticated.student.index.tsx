@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Award, Calendar, Flame } from "lucide-react";
 
 import { AppShell, EmptyState, SectionHeading, StatCard } from "@/components/layout/app-shell";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { useAuth } from "@/context/auth-context";
 import { getStudentDashboard } from "@/lib/api/student";
 
@@ -25,13 +26,11 @@ function DashboardPage() {
   return (
     <AppShell eyebrow={`Welcome back, ${firstName}`} title="Your study hall.">
       {isError && (
-        <div className="border border-destructive/20 bg-destructive/5 p-6 text-sm">
-          <p className="font-medium text-destructive">Couldn't load your dashboard</p>
-          <p className="mt-1 text-brand/60">{(error as Error)?.message}</p>
-          <button onClick={() => refetch()} className="mt-3 px-4 py-2 bg-brand text-white text-xs">
-            Try again
-          </button>
-        </div>
+        <QueryErrorPanel
+          error={error}
+          title="Couldn't load your dashboard"
+          onRetry={() => refetch()}
+        />
       )}
 
       {/* Stats */}

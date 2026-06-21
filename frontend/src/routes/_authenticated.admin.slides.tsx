@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/layout/app-shell";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { SlideCarousel } from "@/components/marketing/ad-carousel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -110,9 +111,11 @@ function SlidesAdminPage() {
 
           {slidesQuery.isLoading && <p className="text-sm text-brand/55">Loading slides…</p>}
           {slidesQuery.isError && (
-            <p className="text-sm text-destructive">
-              {(slidesQuery.error as Error)?.message ?? "Couldn't load slides"}
-            </p>
+            <QueryErrorPanel
+              error={slidesQuery.error}
+              variant="compact"
+              message={(slidesQuery.error as Error)?.message ?? "Couldn't load slides"}
+            />
           )}
 
           {!slidesQuery.isLoading && slides.length === 0 && (

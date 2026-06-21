@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 
 import { AppShell } from "@/components/layout/app-shell";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { getQuizAttempt } from "@/lib/api/quizzes";
 
 export const Route = createFileRoute("/_authenticated/student/assessments/result/$attemptId")({
@@ -27,7 +28,14 @@ function QuizResultRedirectPage() {
 
   return (
     <AppShell eyebrow="Result" title={isLoading ? "Loading your result..." : "Result unavailable"}>
-      {isError && <p className="text-sm text-brand/55">{(error as Error)?.message}</p>}
+      {isError && (
+        <QueryErrorPanel
+          error={error}
+          variant="compact"
+          message={(error as Error)?.message}
+          className="text-brand/55"
+        />
+      )}
     </AppShell>
   );
 }

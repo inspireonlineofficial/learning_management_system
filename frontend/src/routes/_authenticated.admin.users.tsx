@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell, EmptyState } from "@/components/layout/app-shell";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { useAuth } from "@/context/auth-context";
 import {
   impersonateUser,
@@ -110,10 +111,11 @@ function AdminUsersPage() {
       </div>
 
       {users.isError ? (
-        <div className="border border-destructive/20 bg-destructive/5 p-6 text-sm">
-          <p className="font-medium text-destructive">Couldn't load users</p>
-          <p className="mt-1 text-brand/60">{(users.error as Error)?.message}</p>
-        </div>
+        <QueryErrorPanel
+          error={users.error}
+          title="Couldn't load users"
+          onRetry={() => users.refetch()}
+        />
       ) : users.isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 8 }).map((_, i) => (

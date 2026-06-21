@@ -4,6 +4,7 @@ import { Crown, Trophy, User } from "lucide-react";
 import { useState } from "react";
 
 import { AppShell, EmptyState } from "@/components/layout/app-shell";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import {
   getLeaderboard,
   type LeaderboardEntry,
@@ -41,13 +42,11 @@ function LeaderboardPage() {
       </div>
 
       {isError ? (
-        <div className="border border-destructive/20 bg-destructive/5 p-6 text-sm">
-          <p className="font-medium text-destructive">Couldn't load leaderboard</p>
-          <p className="mt-1 text-brand/60">{(error as Error)?.message}</p>
-          <button onClick={() => refetch()} className="mt-3 px-4 py-2 bg-brand text-white text-xs">
-            Try again
-          </button>
-        </div>
+        <QueryErrorPanel
+          error={error}
+          title="Couldn't load leaderboard"
+          onRetry={() => refetch()}
+        />
       ) : isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 8 }).map((_, i) => (

@@ -4,6 +4,7 @@ import { ShoppingBag } from "lucide-react";
 import { useEffect } from "react";
 
 import { AppShell, EmptyState } from "@/components/layout/app-shell";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { formatPrice, getCart } from "@/lib/api/bookshop";
 
 export const Route = createFileRoute("/_authenticated/student/bookshop/cart")({
@@ -18,6 +19,7 @@ function CartPage() {
     isLoading,
     isError,
     error,
+    refetch,
   } = useQuery({
     queryKey: ["cart"],
     queryFn: () => getCart(),
@@ -36,10 +38,7 @@ function CartPage() {
   return (
     <AppShell eyebrow="Bookshop" title="Your cart.">
       {isError ? (
-        <div className="border border-destructive/20 bg-destructive/5 p-6 text-sm">
-          <p className="font-medium text-destructive">Couldn't load cart</p>
-          <p className="mt-1 text-brand/60">{(error as Error)?.message}</p>
-        </div>
+        <QueryErrorPanel error={error} title="Couldn't load cart" onRetry={() => refetch()} />
       ) : isLoading ? (
         <div className="h-40 bg-brand/5 animate-pulse" />
       ) : !cart || cart.items.length === 0 ? (

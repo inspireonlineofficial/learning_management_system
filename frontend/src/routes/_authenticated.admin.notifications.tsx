@@ -5,6 +5,7 @@ import { Bell, Send } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/layout/app-shell";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { NotificationInbox } from "@/components/notifications/notification-inbox";
 import {
   broadcastNotification,
@@ -208,10 +209,12 @@ function Page() {
             ))}
           </div>
         ) : templates.isError ? (
-          <div className="mt-6 border border-destructive/20 bg-destructive/5 p-6 text-sm">
-            <p className="font-medium text-destructive">Couldn't load templates</p>
-            <p className="mt-1 text-brand/60">{(templates.error as Error).message}</p>
-          </div>
+          <QueryErrorPanel
+            error={templates.error}
+            title="Couldn't load templates"
+            onRetry={() => templates.refetch()}
+            className="mt-6"
+          />
         ) : (
           <div className="mt-6 grid gap-3">
             {templates.data?.items.map((template) => (

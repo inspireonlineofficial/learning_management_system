@@ -15,6 +15,7 @@ import {
 
 import { AppShell } from "@/components/layout/app-shell";
 import { DetailGrid } from "@/components/layout/data-page";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { useAuth } from "@/context/auth-context";
 import { startImpersonation } from "@/lib/session";
 import {
@@ -118,7 +119,11 @@ function Page() {
       </Link>
 
       {isError && (
-        <p className="text-sm text-destructive">{(error as Error)?.message ?? "Failed to load."}</p>
+        <QueryErrorPanel
+          error={error}
+          variant="compact"
+          message={(error as Error)?.message ?? "Failed to load."}
+        />
       )}
       {isLoading && <div className="h-40 border border-brand/10 bg-white/40 animate-pulse" />}
 
@@ -305,7 +310,8 @@ function EnrollmentsTab({ userId }: { userId: string }) {
   });
 
   if (isLoading) return <div className="h-40 border border-brand/10 bg-white/40 animate-pulse" />;
-  if (isError) return <p className="text-sm text-destructive">{(error as Error)?.message}</p>;
+  if (isError)
+    return <QueryErrorPanel error={error} variant="compact" message={(error as Error)?.message} />;
   if (!data || data.length === 0)
     return <p className="text-sm text-brand/55">No enrollments yet.</p>;
 
@@ -352,7 +358,8 @@ function ActivityTab({ userId }: { userId: string }) {
   });
 
   if (isLoading) return <div className="h-40 border border-brand/10 bg-white/40 animate-pulse" />;
-  if (isError) return <p className="text-sm text-destructive">{(error as Error)?.message}</p>;
+  if (isError)
+    return <QueryErrorPanel error={error} variant="compact" message={(error as Error)?.message} />;
   if (!data || data.length === 0)
     return <p className="text-sm text-brand/55">No recent activity.</p>;
 

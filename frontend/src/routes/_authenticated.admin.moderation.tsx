@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell, EmptyState } from "@/components/layout/app-shell";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { decideModeration, listModerationQueue, type ModerationItem } from "@/lib/api/moderation";
 import {
   listPendingPosts,
@@ -148,16 +149,11 @@ function Page() {
           )}
 
           {moderationQuery.isError && (
-            <div className="border border-destructive/20 bg-destructive/5 p-6 text-sm">
-              <p className="font-medium text-destructive">Couldn't load data</p>
-              <p className="mt-1 text-brand/60">{(moderationQuery.error as Error)?.message}</p>
-              <button
-                onClick={() => moderationQuery.refetch()}
-                className="mt-3 px-4 py-2 bg-brand text-white text-xs"
-              >
-                Try again
-              </button>
-            </div>
+            <QueryErrorPanel
+              error={moderationQuery.error}
+              title="Couldn't load data"
+              onRetry={() => moderationQuery.refetch()}
+            />
           )}
 
           {moderationQuery.data &&
@@ -228,10 +224,11 @@ function Page() {
           )}
 
           {pendingPostsQuery.isError && (
-            <div className="border border-destructive/20 bg-destructive/5 p-6 text-sm">
-              <p className="font-medium text-destructive">Couldn't load pending posts</p>
-              <p className="mt-1 text-brand/60">{(pendingPostsQuery.error as Error)?.message}</p>
-            </div>
+            <QueryErrorPanel
+              error={pendingPostsQuery.error}
+              title="Couldn't load pending posts"
+              onRetry={() => pendingPostsQuery.refetch()}
+            />
           )}
 
           {!pendingPostsQuery.isLoading &&

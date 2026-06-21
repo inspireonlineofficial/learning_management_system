@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 
 import { AppShell, EmptyState, SectionHeading } from "@/components/layout/app-shell";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { formatPrice, listAdminBooks } from "@/lib/api/bookshop";
 
 export const Route = createFileRoute("/_authenticated/admin/bookshop/")({
@@ -58,10 +59,11 @@ function BookshopAdminPage() {
           ))}
         </div>
       ) : books.isError ? (
-        <div className="border border-destructive/20 bg-destructive/5 p-6 text-sm">
-          <p className="font-medium text-destructive">Couldn't load inventory</p>
-          <p className="mt-1 text-brand/60">{(books.error as Error).message}</p>
-        </div>
+        <QueryErrorPanel
+          error={books.error}
+          title="Couldn't load inventory"
+          onRetry={() => books.refetch()}
+        />
       ) : !books.data || books.data.data.length === 0 ? (
         <EmptyState title="No books yet" />
       ) : (

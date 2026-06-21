@@ -4,6 +4,7 @@ import { ClipboardList, FileText } from "lucide-react";
 import { useState } from "react";
 
 import { AppShell, EmptyState, SectionHeading } from "@/components/layout/app-shell";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { listMyAssignments } from "@/lib/api/assignments";
 import { listMyQuizzes } from "@/lib/api/quizzes";
 
@@ -36,7 +37,8 @@ function QuizzesPanel() {
     queryFn: () => listMyQuizzes({ limit: 50 }),
   });
 
-  if (isError) return <ErrorBox message={(error as Error)?.message} onRetry={() => refetch()} />;
+  if (isError)
+    return <QueryErrorPanel error={error} title="Couldn't load" onRetry={() => refetch()} />;
   if (isLoading) return <ListSkeleton />;
   if (!data || data.data.length === 0)
     return (
@@ -81,7 +83,8 @@ function AssignmentsPanel() {
     queryFn: () => listMyAssignments({ limit: 50 }),
   });
 
-  if (isError) return <ErrorBox message={(error as Error)?.message} onRetry={() => refetch()} />;
+  if (isError)
+    return <QueryErrorPanel error={error} title="Couldn't load" onRetry={() => refetch()} />;
   if (isLoading) return <ListSkeleton />;
   if (!data || data.data.length === 0)
     return (
@@ -174,18 +177,6 @@ function ListSkeleton() {
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="h-20 border border-brand/10 bg-white/30 animate-pulse" />
       ))}
-    </div>
-  );
-}
-
-function ErrorBox({ message, onRetry }: { message?: string; onRetry: () => void }) {
-  return (
-    <div className="border border-destructive/20 bg-destructive/5 p-6 text-sm">
-      <p className="font-medium text-destructive">Couldn't load</p>
-      <p className="mt-1 text-brand/60">{message}</p>
-      <button onClick={onRetry} className="mt-3 px-4 py-2 bg-brand text-white text-xs">
-        Try again
-      </button>
     </div>
   );
 }

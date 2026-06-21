@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { BookOpen, CheckCircle2 } from "lucide-react";
 
 import { AppShell, EmptyState, StatCard } from "@/components/layout/app-shell";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { listMyEnrollments } from "@/lib/api/student";
 
 export const Route = createFileRoute("/_authenticated/student/progress")({
@@ -31,9 +32,11 @@ function StudentProgressPage() {
       </div>
 
       {isError && (
-        <p className="mt-8 border border-destructive/20 bg-destructive/5 p-6 text-sm text-destructive">
-          {(error as Error)?.message ?? "Could not load progress."}
-        </p>
+        <QueryErrorPanel
+          error={error}
+          message={(error as Error)?.message ?? "Could not load progress."}
+          className="mt-8"
+        />
       )}
 
       {isLoading ? (

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell, StatCard } from "@/components/layout/app-shell";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { apiRequest } from "@/lib/api/client";
 import {
   getPlatformSettings,
@@ -116,7 +117,8 @@ function GeneralTab() {
   });
 
   if (isLoading) return <div className="h-48 border border-brand/10 bg-white/30 animate-pulse" />;
-  if (isError) return <p className="text-sm text-destructive">{(error as Error)?.message}</p>;
+  if (isError)
+    return <QueryErrorPanel error={error} variant="compact" message={(error as Error)?.message} />;
   if (!form) return null;
 
   const set = <K extends keyof PlatformSettings>(k: K, v: PlatformSettings[K]) =>
@@ -218,7 +220,8 @@ function PointsTab() {
   });
 
   if (isLoading) return <div className="h-48 border border-brand/10 bg-white/30 animate-pulse" />;
-  if (isError) return <p className="text-sm text-destructive">{(error as Error)?.message}</p>;
+  if (isError)
+    return <QueryErrorPanel error={error} variant="compact" message={(error as Error)?.message} />;
   if (!form) return null;
 
   const set = <K extends keyof PointsConfig>(k: K, v: PointsConfig[K]) =>

@@ -20,8 +20,10 @@ import {
   updateCourseComment,
   type CourseComment,
 } from "@/lib/api/courses";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { useAuth } from "@/context/auth-context";
 import { completeLesson, getCourseProgress, getLesson } from "@/lib/api/student";
+import { useVideoReadyPolling } from "@/hooks/use-video-ready-polling";
 import { downloadLesson, isLessonDownloaded, removeOfflineLesson } from "@/lib/offline-lessons";
 
 export const Route = createFileRoute("/_authenticated/student/player/$courseId")({
@@ -62,10 +64,26 @@ function PlayerPage() {
     setActiveLessonId(initial);
   }, [activeLessonId, allLessons, completedSet, progress?.current_lesson_id]);
 
-  const { data: lesson, isLoading: lessonLoading } = useQuery({
+  const {
+    data: lesson,
+    isLoading: lessonLoading,
+    isError: lessonError,
+    error: lessonErrorObj,
+    refetch: refetchLesson,
+  } = useQuery({
     queryKey: ["lesson", courseId, activeLessonId],
     queryFn: () => getLesson(courseId, activeLessonId!),
     enabled: Boolean(activeLessonId),
+  });
+
+  const {
+    retrying: videoPolling,
+    secondsUntilNextRetry,
+    cancel: cancelVideoPolling,
+  } = useVideoReadyPolling({
+    error: lessonErrorObj,
+    enabled: Boolean(activeLessonId),
+    refetch: () => refetchLesson(),
   });
 
   const completeMutation = useMutation({
@@ -244,11 +262,43 @@ function PlayerPage() {
           <div className="min-h-[60vh] grid place-items-center px-6">
             <p className="text-sm text-brand/55">Select a lesson to begin.</p>
           </div>
-        ) : lessonLoading || !lesson ? (
+        ) : lessonLoading || (lessonError && !videoPolling) ? (
           <div className="px-6 md:px-10 lg:px-16 py-10 animate-pulse">
             <div className="aspect-video bg-brand/10" />
             <div className="mt-8 h-8 w-2/3 bg-brand/10" />
             <div className="mt-4 h-4 w-1/2 bg-brand/10" />
+          </div>
+        ) : lessonError ? (
+          <div className="px-6 md:px-10 lg:px-16 py-10">
+            <QueryErrorPanel
+              error={lessonErrorObj}
+              title="Couldn't load this lesson"
+              onRetry={
+                videoPolling
+                  ? cancelVideoPolling
+                  : () => {
+                      refetchLesson();
+                    }
+              }
+              retryLabel={videoPolling ? "Stop auto-retry" : "Try again"}
+            >
+              {videoPolling && (
+                <p className="mt-3 text-xs text-brand/55">
+                  Auto-retrying every 15 seconds (next try in {secondsUntilNextRetry}s).{" "}
+                  <button
+                    type="button"
+                    onClick={cancelVideoPolling}
+                    className="underline underline-offset-2"
+                  >
+                    Stop
+                  </button>
+                </p>
+              )}
+            </QueryErrorPanel>
+          </div>
+        ) : !lesson ? (
+          <div className="min-h-[60vh] grid place-items-center px-6">
+            <p className="text-sm text-brand/55">No lesson selected.</p>
           </div>
         ) : (
           <article className="max-w-4xl mx-auto px-6 md:px-10 lg:px-16 py-10">
