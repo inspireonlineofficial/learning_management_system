@@ -1,10 +1,16 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { DataPage } from "@/components/layout/data-page";
-import { approve, listApprovals, reject, type ApprovalItem } from "@/lib/api/approvals";
+import {
+  approve as approvePurchaseApproval,
+  listApprovals,
+  reject as rejectPurchaseApproval,
+  type ApprovalItem,
+} from "@/lib/api/approvals";
+import { apiRequest } from "@/lib/api/client";
 
 export const Route = createFileRoute("/_authenticated/admin/approvals")({
   component: Page,
@@ -31,7 +37,8 @@ function Page() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["approvals"] });
 
   const ap = useMutation({
-    mutationFn: ({ id, note }: { id: string; note?: string }) => approve(id, note),
+    mutationFn: ({ item, note }: { item: ApprovalItem; note?: string }) =>
+      approveApprovalItem(item, note),
     onSuccess: () => {
       toast.success("Approved");
       invalidate();
@@ -40,7 +47,8 @@ function Page() {
     onError: (e: Error) => toast.error(e.message),
   });
   const rj = useMutation({
-    mutationFn: ({ id, note }: { id: string; note?: string }) => reject(id, note),
+    mutationFn: ({ item, note }: { item: ApprovalItem; note?: string }) =>
+      rejectApprovalItem(item, note),
     onSuccess: () => {
       toast.success("Rejected");
       invalidate();
@@ -56,7 +64,7 @@ function Page() {
 
   function confirm() {
     if (!decision) return;
-    const payload = { id: decision.item.id, note: note.trim() || undefined };
+    const payload = { item: decision.item, note: note.trim() || undefined };
     if (decision.action === "approve") ap.mutate(payload);
     else rj.mutate(payload);
   }
@@ -67,7 +75,7 @@ function Page() {
         eyebrow="Approvals"
         title="Pending approvals"
         queryKey={["approvals"]}
-        queryFn={listApprovals}
+        queryFn={listAllPendingApprovals}
         empty={{ title: "Nothing pending" }}
         toolbar={
           <div className="flex flex-wrap gap-2">
@@ -106,6 +114,15 @@ function Page() {
                     <p className="mt-1 text-xs text-brand/45">
                       By {it.requester.full_name} · {new Date(it.created_at).toLocaleString()}
                     </p>
+                    {it.kind === "course_publish" && (
+                      <Link
+                        to="/admin/courses/$courseId/review"
+                        params={{ courseId: it.id }}
+                        className="mt-3 inline-flex text-xs font-medium text-accent hover:underline"
+                      >
+                        Open course review
+                      </Link>
+                    )}
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
                     <button
@@ -195,4 +212,73 @@ function kindLabel(k: ApprovalItem["kind"]) {
       role_change: "Role change",
     } as const
   )[k];
+}
+
+type AdminCourse = {
+  id: string;
+  title: string;
+  teacher_id: string;
+  status: string;
+  updated_at?: string;
+  submitted_at?: string;
+};
+
+type AdminCoursesResponse = {
+  courses?: AdminCourse[];
+  data?: AdminCourse[];
+  items?: AdminCourse[];
+};
+
+async function listAllPendingApprovals() {
+  const [existing, pendingCourses] = await Promise.all([
+    listApprovals(),
+    apiRequest<AdminCoursesResponse>("/v1/admin/courses", {
+      auth: true,
+      query: { status: "pending", limit: 100 },
+    }),
+  ]);
+
+  const courseApprovals: ApprovalItem[] = (
+    pendingCourses.courses ??
+    pendingCourses.data ??
+    pendingCourses.items ??
+    []
+  ).map((course) => ({
+    id: course.id,
+    kind: "course_publish",
+    requester: {
+      id: course.teacher_id,
+      full_name: `Teacher ${course.teacher_id.slice(0, 8)}`,
+    },
+    payload_summary: course.title,
+    created_at: course.submitted_at ?? course.updated_at ?? new Date().toISOString(),
+  }));
+
+  return {
+    items: [...courseApprovals, ...(existing.items ?? [])].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    ),
+  };
+}
+
+function approveApprovalItem(item: ApprovalItem, note?: string) {
+  if (item.kind === "course_publish") {
+    return reviewCourse(item.id, "approve", note);
+  }
+  return approvePurchaseApproval(item.id, note);
+}
+
+function rejectApprovalItem(item: ApprovalItem, note?: string) {
+  if (item.kind === "course_publish") {
+    return reviewCourse(item.id, "reject", note);
+  }
+  return rejectPurchaseApproval(item.id, note);
+}
+
+function reviewCourse(courseId: string, action: "approve" | "reject", comment?: string) {
+  return apiRequest<{ ok: true }>(`/v1/admin/courses/${encodeURIComponent(courseId)}/review`, {
+    method: "POST",
+    auth: true,
+    body: { action, comment },
+  });
 }
