@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/layout/app-shell";
 import { DetailGrid } from "@/components/layout/data-page";
 import { apiRequest } from "@/lib/api/client";
-import { getCourse } from "@/lib/api/courses";
+import type { CourseDetail, Lesson, Module } from "@/lib/api/courses";
 
 export const Route = createFileRoute("/_authenticated/admin/courses/$courseId/review")({
   component: Page,
@@ -21,7 +21,10 @@ function Page() {
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["admin-course-review", courseId],
-    queryFn: () => getCourse(courseId),
+    queryFn: () =>
+      apiRequest<CourseDetail>(`/v1/admin/courses/${encodeURIComponent(courseId)}`, {
+        auth: true,
+      }),
   });
 
   const decide = useMutation({
@@ -57,9 +60,9 @@ function Page() {
   }
 
   const modules = data.modules ?? [];
-  const totalLessons = modules.reduce((s, m) => s + m.lessons.length, 0);
+  const totalLessons = modules.reduce((s, m) => s + getModuleLessons(m).length, 0);
   const previewCount = modules.reduce(
-    (s, m) => s + m.lessons.filter((l) => l.is_preview).length,
+    (s, m) => s + getModuleLessons(m).filter((l) => l.is_preview || l.is_free_preview).length,
     0,
   );
 
@@ -147,15 +150,16 @@ function Page() {
                       {String(mi + 1).padStart(2, "0")} · {m.title}
                     </span>
                     <span className="text-xs text-brand/55">
-                      {m.lessons.length} lesson{m.lessons.length === 1 ? "" : "s"}
+                      {getModuleLessons(m).length} lesson
+                      {getModuleLessons(m).length === 1 ? "" : "s"}
                     </span>
                   </div>
                   <ul className="divide-y divide-brand/5">
-                    {m.lessons.map((l) => (
+                    {getModuleLessons(m).map((l) => (
                       <li key={l.id} className="px-5 py-2.5 flex justify-between text-sm">
                         <span className="truncate">
                           {l.title}
-                          {l.is_preview && (
+                          {(l.is_preview || l.is_free_preview) && (
                             <span className="ml-2 text-[10px] eyebrow text-accent">preview</span>
                           )}
                         </span>
@@ -262,4 +266,10 @@ function Page() {
       )}
     </>
   );
+}
+
+function getModuleLessons(module: Module): Lesson[] {
+  const directLessons = module.lessons ?? [];
+  const chapterLessons = (module.chapters ?? []).flatMap((chapter) => chapter.lessons ?? []);
+  return directLessons.length > 0 ? directLessons : chapterLessons;
 }
