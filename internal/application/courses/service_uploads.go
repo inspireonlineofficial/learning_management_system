@@ -141,7 +141,11 @@ func validateUpload(size, maxSize int64, declared string, magic []byte, allowed 
 		return "", apperrors.NewSimpleValidationError("INVALID_FILE_TYPE", "file type is not allowed")
 	}
 	if declared != "" && declared != "application/octet-stream" && declared != contentType {
-		return "", apperrors.NewSimpleValidationError("CONTENT_TYPE_MISMATCH", "declared content type does not match file contents")
+		isEquivalent := (contentType == "image/jpeg" && (declared == "image/jpg" || declared == "image/pjpeg")) ||
+			(contentType == "image/png" && declared == "image/x-png")
+		if !isEquivalent {
+			return "", apperrors.NewSimpleValidationError("CONTENT_TYPE_MISMATCH", "declared content type does not match file contents")
+		}
 	}
 	return contentType, nil
 }

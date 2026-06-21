@@ -55,3 +55,42 @@ func TestValidateUploadRejectsExecutablesBeforeDeclaredFallback(t *testing.T) {
 		t.Fatal("expected executable magic to be rejected")
 	}
 }
+
+func TestValidateUploadAcceptsEquivalentImageMimeTypes(t *testing.T) {
+	// JPG image magic bytes start with 0xFF 0xD8 0xFF
+	jpgMagic := []byte{0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 'J', 'F', 'I', 'F'}
+	
+	// Test image/jpg declared for image/jpeg detected
+	contentType, err := validateUpload(
+		1024,
+		maxFileUploadBytes,
+		"image/jpg",
+		jpgMagic,
+		map[string]bool{
+			"image/jpeg": true,
+		},
+		false,
+	)
+	if err != nil {
+		t.Fatalf("expected equivalent image/jpg to pass, got %v", err)
+	}
+	if contentType != "image/jpeg" {
+		t.Fatalf("expected image/jpeg, got %q", contentType)
+	}
+
+	// Test image/pjpeg declared for image/jpeg detected
+	contentType, err = validateUpload(
+		1024,
+		maxFileUploadBytes,
+		"image/pjpeg",
+		jpgMagic,
+		map[string]bool{
+			"image/jpeg": true,
+		},
+		false,
+	)
+	if err != nil {
+		t.Fatalf("expected equivalent image/pjpeg to pass, got %v", err)
+	}
+}
+
