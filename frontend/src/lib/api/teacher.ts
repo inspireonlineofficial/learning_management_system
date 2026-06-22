@@ -226,6 +226,54 @@ export function uploadLessonVideo(courseId: string, file: File) {
   });
 }
 
+/**
+ * Resumable multipart upload. Survives page refresh: per-part state is
+ * persisted to IndexedDB, and the server only marks the video as "ready"
+ * after the final CompleteMultipartUpload call lands. Use for any upload
+ * over 50 MB; the part count climbs quickly and serial PUT retries are
+ * noticeably slower.
+ */
+export async function uploadLessonVideoMultipart(
+  courseId: string,
+  file: File,
+  onProgress?: (loaded: number, total: number, completedParts: number, totalParts: number) => void,
+  signal?: AbortSignal,
+  existingVideoId?: string,
+): Promise<{ video_id: string }> {
+  const { uploadMultipart } = await import("@/lib/multipart-upload");
+  return uploadMultipart({
+    courseId,
+    file,
+    signal,
+    existingVideoId,
+    onProgress: onProgress
+      ? ({ loaded, total, completedParts, totalParts }) => onProgress(loaded, total, completedParts, totalParts)
+      : undefined,
+  });
+}
+
+/**
+ * Direct-to-RustFS upload. The bytes travel browser -> storage directly so
+ * the Go API process never sees the file body. Use this for anything over
+ * ~10 MB; below that the legacy `uploadLessonVideo` is fine.
+ */
+export async function uploadLessonVideoDirect(
+  courseId: string,
+  file: File,
+  onProgress?: (loaded: number, total: number) => void,
+  signal?: AbortSignal,
+): Promise<{ video_id: string }> {
+  const { uploadVideoDirect } = await import("@/lib/video-upload");
+  return uploadVideoDirect({
+    courseId,
+    file,
+    signal,
+    onProgress: onProgress
+      ? ({ loaded, total }) => onProgress(loaded, total)
+      : undefined,
+  });
+}
+
 export function getVideoUploadStatus(videoId: string) {
   return apiRequest<UploadedVideo>(`/v1/uploads/video/${encodeURIComponent(videoId)}/status`, {
     auth: true,

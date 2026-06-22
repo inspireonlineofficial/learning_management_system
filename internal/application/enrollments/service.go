@@ -9,6 +9,7 @@ import (
 	"lms-backend/internal/domain/auth"
 	"lms-backend/internal/domain/courses"
 	"lms-backend/internal/domain/enrollments"
+	"lms-backend/internal/infrastructure/rustfs"
 	"lms-backend/pkg/apperrors"
 
 	"github.com/google/uuid"
@@ -51,6 +52,7 @@ type SigningKeyStore interface {
 // StorageClient defines the interface for object storage operations
 type StorageClient interface {
 	PresignGetURL(ctx context.Context, bucket, key string, ttl time.Duration) (string, error)
+	PresignGetURLWithOptions(ctx context.Context, bucket, key string, ttl time.Duration, opts rustfs.PresignOptions) (string, error)
 }
 
 type CertificateIssuer interface {
@@ -397,7 +399,15 @@ func (s *service) GetStreamingSignedURL(ctx context.Context, cmd GetStreamingSig
 
 	// Generate presigned URL with 2-hour TTL (Requirement 13.4)
 	ttl := 2 * time.Hour
-	signedURL, err := s.storageClient.PresignGetURL(ctx, s.videoBucket, video.RustFSKey, ttl)
+	// Cache the response for the full presign window so the browser can reuse
+	// byte-range responses when the user scrubs/seeks. We also force the
+	// content-type so the storage layer always returns a known MIME even if the
+	// stored object was uploaded as application/octet-stream.
+	signedURL, err := s.storageClient.PresignGetURLWithOptions(ctx, s.videoBucket, video.RustFSKey, ttl, rustfs.PresignOptions{
+		ResponseContentType:        "video/mp4",
+		ResponseContentDisposition: "inline",
+		ResponseCacheControl:       "public, max-age=7200, immutable",
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate presigned URL: %w", err)
 	}
@@ -406,10 +416,38 @@ func (s *service) GetStreamingSignedURL(ctx context.Context, cmd GetStreamingSig
 	// The presigned URL is scoped to the user ID via the signing key store
 	// (though in this implementation, we're using the standard S3 presigning)
 
-	return &StreamingSignedURLResponse{
-		SignedURL: signedURL,
-		ExpiresAt: time.Now().Add(ttl),
-	}, nil
+	resp := &StreamingSignedURLResponse{
+		SignedURL:   signedURL,
+		ExpiresAt:   time.Now().Add(ttl),
+		ContentType: "video/mp4",
+	}
+	// If the video has been transcoded to HLS, expose the master manifest URL.
+	// The player prefers HLS for adaptive bitrate; the MP4 URL stays as a
+	// fallback for browsers without Media Source Extensions.
+	if video.HLSManifestKey != "" {
+		hlsURL, herr := s.storageClient.PresignGetURLWithOptions(ctx, s.videoBucket, video.HLSManifestKey, ttl, rustfs.PresignOptions{
+			ResponseContentType:        "application/vnd.apple.mpegurl",
+			ResponseContentDisposition: "inline",
+			ResponseCacheControl:       "public, max-age=7200, immutable",
+		})
+		if herr == nil {
+			resp.HLSURL = hlsURL
+			resp.HasHLS = true
+		}
+	}
+	// Generate a poster URL alongside the video URL so the player can show
+	// a real preview frame instead of a black box while it buffers.
+	if video.ThumbnailRustFSKey != "" {
+		posterURL, perr := s.storageClient.PresignGetURLWithOptions(ctx, s.videoBucket, video.ThumbnailRustFSKey, ttl, rustfs.PresignOptions{
+			ResponseContentType:        "image/jpeg",
+			ResponseContentDisposition: "inline",
+			ResponseCacheControl:       "public, max-age=7200, immutable",
+		})
+		if perr == nil {
+			resp.PosterURL = posterURL
+		}
+	}
+	return resp, nil
 }
 
 func (s *service) toEnrollmentResponse(ctx context.Context, enrollment *enrollments.Enrollment) *EnrollmentResponse {

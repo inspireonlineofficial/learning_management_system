@@ -12,7 +12,7 @@ import (
 
 // JobHandler processes a specific job type
 type JobHandler interface {
-	Handle(ctx context.Context, job *notifications.Job) error
+	Handle(ctx context.Context, job notifications.Job) error
 }
 
 // Worker consumes jobs from Redis queue
@@ -96,7 +96,7 @@ func (w *Worker) processJob(ctx context.Context, job *notifications.Job) error {
 
 	logger.Info(ctx, "Processing job", "job_type", job.Type)
 
-	if err := handler.Handle(ctx, job); err != nil {
+	if err := handler.Handle(ctx, *job); err != nil {
 		return fmt.Errorf("handler failed: %w", err)
 	}
 

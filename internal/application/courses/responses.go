@@ -107,8 +107,43 @@ type NoteResponse struct {
 
 // VideoStatusResponse represents video processing status
 type VideoStatusResponse struct {
-	VideoID uuid.UUID `json:"video_id"`
-	Status  string    `json:"status"` // "processing", "ready", "failed"
+	VideoID  uuid.UUID `json:"video_id"`
+	Status   string    `json:"status"` // "processing", "ready", "failed"
+	PollURL  string    `json:"poll_url,omitempty"`
+	Duration int       `json:"duration_seconds,omitempty"`
+}
+
+// DirectUploadResponse is what the client gets back from InitDirectUpload.
+// UploadURL is a presigned PUT URL the browser uses to upload bytes directly
+// to RustFS without streaming them through the Go API process.
+type DirectUploadResponse struct {
+	VideoID   uuid.UUID `json:"video_id"`
+	UploadURL string    `json:"upload_url"`
+	RustFSKey string    `json:"rustfs_key"`
+	PollURL   string    `json:"poll_url"`
+}
+
+// MultipartInitResponse is what the client gets back from
+// InitMultipartUpload. The browser persists these to IndexedDB so a page
+// refresh can resume from the last completed part. UploadID is the S3
+// upload id and is opaque to the client; it must be replayed on every
+// part request and the final completion call.
+type MultipartInitResponse struct {
+	VideoID     uuid.UUID `json:"video_id"`
+	UploadID    string    `json:"upload_id"`
+	RustFSKey   string    `json:"rustfs_key"`
+	ChunkSize   int64     `json:"chunk_size"`
+	TotalChunks int       `json:"total_chunks"`
+	PollURL     string    `json:"poll_url"`
+	ExpiresAt   time.Time `json:"expires_at"`
+}
+
+// PresignUploadPartResponse is the presigned URL the browser uses to PUT a
+// single chunk. The URL embeds the upload id and part number; it is valid
+// for 1 hour, which is plenty for any single chunk.
+type PresignUploadPartResponse struct {
+	URL       string    `json:"url"`
+	ExpiresAt time.Time `json:"expires_at"`
 }
 
 // FileUploadResponse represents file upload result

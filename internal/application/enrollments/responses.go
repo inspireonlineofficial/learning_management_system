@@ -45,8 +45,15 @@ type LessonProgressResponse struct {
 	LastWatchedAt   *time.Time `json:"last_watched_at,omitempty"`
 }
 
-// StreamingSignedURLResponse represents a presigned URL for video streaming
+// StreamingSignedURLResponse represents a presigned URL for video streaming.
+// When the video has been transcoded to HLS, HLSURL is set and the player
+// should prefer it over SignedURL for adaptive bitrate. SignedURL always
+// points at the original progressive MP4 so untranscoded videos still play.
 type StreamingSignedURLResponse struct {
-	SignedURL string    `json:"signed_url"`
-	ExpiresAt time.Time `json:"expires_at"`
+	SignedURL   string    `json:"signed_url"`
+	HLSURL      string    `json:"hls_url,omitempty"`
+	ExpiresAt   time.Time `json:"expires_at"`
+	PosterURL   string    `json:"poster_url,omitempty"`
+	ContentType string    `json:"content_type,omitempty"`
+	HasHLS      bool      `json:"has_hls"`
 }

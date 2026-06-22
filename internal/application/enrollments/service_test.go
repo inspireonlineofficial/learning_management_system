@@ -8,6 +8,7 @@ import (
 	"lms-backend/internal/domain/auth"
 	"lms-backend/internal/domain/courses"
 	"lms-backend/internal/domain/enrollments"
+	"lms-backend/internal/infrastructure/rustfs"
 	"lms-backend/pkg/apperrors"
 
 	"github.com/google/uuid"
@@ -319,6 +320,11 @@ func (m *mockVideoRepo) Update(ctx context.Context, video *courses.Video) error 
 	return nil
 }
 
+func (m *mockVideoRepo) Delete(ctx context.Context, id uuid.UUID) error {
+	delete(m.videos, id)
+	return nil
+}
+
 type mockStorageClient struct {
 	presignedURLs map[string]string
 }
@@ -333,6 +339,10 @@ func (m *mockStorageClient) PresignGetURL(ctx context.Context, bucket, key strin
 	url := "https://example.com/presigned/" + key + "?expires=" + ttl.String()
 	m.presignedURLs[key] = url
 	return url, nil
+}
+
+func (m *mockStorageClient) PresignGetURLWithOptions(ctx context.Context, bucket, key string, ttl time.Duration, opts rustfs.PresignOptions) (string, error) {
+	return m.PresignGetURL(ctx, bucket, key, ttl)
 }
 
 // Test EnrollFree use case

@@ -102,16 +102,22 @@ export async function getCourseProgress(courseId: string) {
 
 export type LessonContent = Lesson & {
   video_url?: string | null;
+  hls_url?: string | null;
+  has_hls?: boolean;
+  poster_url?: string | null;
   body_html?: string | null;
   resources?: { id: string; title: string; url: string }[];
 };
 
 export function getLesson(courseId: string, lessonId: string) {
   void courseId;
-  return apiRequest<{ signed_url: string }>(
-    `/v1/stream/lessons/${encodeURIComponent(lessonId)}/signed-url`,
-    { auth: true },
-  ).then(
+  return apiRequest<{
+    signed_url: string;
+    hls_url?: string;
+    has_hls?: boolean;
+    poster_url?: string;
+    content_type?: string;
+  }>(`/v1/stream/lessons/${encodeURIComponent(lessonId)}/signed-url`, { auth: true }).then(
     (result) =>
       ({
         id: lessonId,
@@ -119,6 +125,9 @@ export function getLesson(courseId: string, lessonId: string) {
         type: "video",
         duration_minutes: 0,
         video_url: result.signed_url,
+        hls_url: result.hls_url,
+        has_hls: result.has_hls,
+        poster_url: result.poster_url,
       }) as LessonContent,
   );
 }
