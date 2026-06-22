@@ -16,7 +16,9 @@ function StudentProgressPage() {
     queryFn: () => listMyEnrollments({ limit: 100 }),
   });
 
-  const courses = data?.data ?? [];
+  // Hide enrollments whose course was soft-deleted; otherwise this page
+  // crashes on the first null deref (item.course.id at the link params).
+  const courses = (data?.data ?? []).filter((item) => item.course != null);
   const average =
     courses.length > 0
       ? Math.round(courses.reduce((sum, item) => sum + item.progress_percent, 0) / courses.length)
@@ -60,40 +62,43 @@ function StudentProgressPage() {
         </div>
       ) : (
         <div className="mt-10 grid lg:grid-cols-2 gap-5">
-          {courses.map((item) => (
-            <Link
-              key={item.id}
-              to="/student/progress/$courseId"
-              params={{ courseId: item.course.id }}
-              className="border border-brand/10 bg-white/50 p-5 hover:bg-white transition-colors"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  {item.course.category?.name && (
-                    <p className="eyebrow text-accent mb-2">{item.course.category.name}</p>
-                  )}
-                  <h2 className="font-serif text-xl">{item.course.title}</h2>
-                  {item.next_lesson?.title && (
-                    <p className="mt-2 text-xs text-brand/55">
-                      Next: <span className="text-brand/75">{item.next_lesson.title}</span>
-                    </p>
+          {courses.map((item) => {
+            const course = item.course!;
+            return (
+              <Link
+                key={item.id}
+                to="/student/progress/$courseId"
+                params={{ courseId: course.id }}
+                className="border border-brand/10 bg-white/50 p-5 hover:bg-white transition-colors"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    {course.category?.name && (
+                      <p className="eyebrow text-accent mb-2">{course.category.name}</p>
+                    )}
+                    <h2 className="font-serif text-xl">{course.title}</h2>
+                    {item.next_lesson?.title && (
+                      <p className="mt-2 text-xs text-brand/55">
+                        Next: <span className="text-brand/75">{item.next_lesson.title}</span>
+                      </p>
+                    )}
+                  </div>
+                  {item.progress_percent >= 100 && (
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
                   )}
                 </div>
-                {item.progress_percent >= 100 && (
-                  <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
-                )}
-              </div>
-              <div className="mt-6 h-2 bg-brand/10">
-                <div
-                  className="h-full bg-accent"
-                  style={{ width: `${Math.min(100, item.progress_percent)}%` }}
-                />
-              </div>
-              <p className="mt-2 text-xs text-brand/50">
-                {Math.round(item.progress_percent)}% complete
-              </p>
-            </Link>
-          ))}
+                <div className="mt-6 h-2 bg-brand/10">
+                  <div
+                    className="h-full bg-accent"
+                    style={{ width: `${Math.min(100, item.progress_percent)}%` }}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-brand/50">
+                  {Math.round(item.progress_percent)}% complete
+                </p>
+              </Link>
+            );
+          })}
         </div>
       )}
     </AppShell>

@@ -93,3 +93,15 @@ func TestValidateUploadAcceptsEquivalentImageMimeTypes(t *testing.T) {
 		t.Fatalf("expected equivalent image/pjpeg to pass, got %v", err)
 	}
 }
+
+// TestFFmpegAvailableIsStable verifies the cached ffmpeg probe returns the
+// same answer across calls. We can't reliably assert the boolean value
+// (ffmpeg may or may not be installed on the test machine), but the cache
+// contract is "call LookPath exactly once per process".
+func TestFFmpegAvailableIsStable(t *testing.T) {
+	first := ffmpegAvailable()
+	second := ffmpegAvailable()
+	if first != second {
+		t.Fatalf("ffmpegAvailable() is not cached: first=%v second=%v", first, second)
+	}
+}

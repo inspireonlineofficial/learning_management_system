@@ -19,7 +19,9 @@ function DashboardPage() {
   });
 
   const firstName = user?.full_name?.split(" ")[0] ?? "Scholar";
-  const continueLearning = data?.continue_learning ?? [];
+  // continue_learning rows may reference courses that were soft-deleted
+  // after the student enrolled. Hide those so the dashboard does not crash.
+  const continueLearning = (data?.continue_learning ?? []).filter((e) => e.course != null);
   const upcomingLive = data?.upcoming_live ?? [];
   const recentAchievements = data?.recent_achievements ?? [];
 
@@ -78,35 +80,38 @@ function DashboardPage() {
           </div>
         ) : continueLearning.length > 0 ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {continueLearning.map((e) => (
-              <Link
-                key={e.id}
-                to="/student/player/$courseId"
-                params={{ courseId: e.course.id }}
-                className="group block border border-brand/10 bg-white/50 hover:bg-white p-5 transition-colors"
-              >
-                {e.course.category?.name && (
-                  <p className="eyebrow text-accent mb-2">{e.course.category.name}</p>
-                )}
-                <p className="font-serif text-lg leading-snug">{e.course.title}</p>
-                {e.next_lesson?.title && (
-                  <p className="mt-3 text-xs text-brand/55">
-                    Next · <span className="text-brand/75">{e.next_lesson.title}</span>
-                  </p>
-                )}
-                <div className="mt-5">
-                  <div className="h-1 bg-brand/10">
-                    <div
-                      className="h-full bg-accent transition-all"
-                      style={{ width: `${Math.min(100, e.progress_percent)}%` }}
-                    />
+            {continueLearning.map((e) => {
+              const course = e.course!;
+              return (
+                <Link
+                  key={e.id}
+                  to="/student/player/$courseId"
+                  params={{ courseId: course.id }}
+                  className="group block border border-brand/10 bg-white/50 hover:bg-white p-5 transition-colors"
+                >
+                  {course.category?.name && (
+                    <p className="eyebrow text-accent mb-2">{course.category.name}</p>
+                  )}
+                  <p className="font-serif text-lg leading-snug">{course.title}</p>
+                  {e.next_lesson?.title && (
+                    <p className="mt-3 text-xs text-brand/55">
+                      Next · <span className="text-brand/75">{e.next_lesson.title}</span>
+                    </p>
+                  )}
+                  <div className="mt-5">
+                    <div className="h-1 bg-brand/10">
+                      <div
+                        className="h-full bg-accent transition-all"
+                        style={{ width: `${Math.min(100, e.progress_percent)}%` }}
+                      />
+                    </div>
+                    <p className="mt-2 text-[11px] text-brand/45">
+                      {Math.round(e.progress_percent)}% complete
+                    </p>
                   </div>
-                  <p className="mt-2 text-[11px] text-brand/45">
-                    {Math.round(e.progress_percent)}% complete
-                  </p>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         ) : (
           <EmptyState
