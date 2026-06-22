@@ -23,7 +23,11 @@ export type CertificateVerification = {
 export const listCertificates = () =>
   listMyEnrollments({ status: "completed" }).then(async (enrollments) => {
     const items = await Promise.all(
-      enrollments.data.map((enrollment) => getCertificate(enrollment.course.id).catch(() => null)),
+      enrollments.data
+        // Skip enrollments whose course was soft-deleted — those rows have
+        // no certificate to fetch and the ID is gone from the public catalog.
+        .filter((enrollment) => enrollment.course != null)
+        .map((enrollment) => getCertificate(enrollment.course!.id).catch(() => null)),
     );
     return { items: items.filter((item): item is Certificate => Boolean(item)) };
   });

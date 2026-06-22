@@ -201,7 +201,18 @@ func (s *service) ListStudentEnrollments(ctx context.Context, studentID uuid.UUI
 
 	responses := make([]EnrollmentResponse, 0, len(enrollmentList))
 	for _, enrollment := range enrollmentList {
-		responses = append(responses, *s.toEnrollmentResponse(ctx, enrollment))
+		resp := s.toEnrollmentResponse(ctx, enrollment)
+		// Hide enrollments whose course has been soft-deleted (e.g. by an
+		// admin using DELETE /v1/admin/courses/{id}). Surfacing a row with
+		// Course = nil would crash the student's /student/my-courses page
+		// because the frontend dereferences course.id when building the
+		// player link. We also subtract it from the returned total so the
+		// client's pagination stays consistent.
+		if resp.Course == nil {
+			total--
+			continue
+		}
+		responses = append(responses, *resp)
 	}
 
 	return responses, total, nil

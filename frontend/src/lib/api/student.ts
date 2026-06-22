@@ -11,7 +11,11 @@ import { listCourseQuizzes } from "./quizzes";
 
 export type Enrollment = {
   id: string;
-  course: CourseSummary;
+  // Course may be null when the underlying course was soft-deleted (e.g. by
+  // an admin using DELETE /v1/admin/courses/{id}) between the time the
+  // student enrolled and now. The backend filters these out of the list, but
+  // we type it as nullable so any race / older client stays safe.
+  course: CourseSummary | null;
   enrolled_at: string;
   progress_percent: number;
   last_accessed_at?: string | null;
@@ -61,7 +65,7 @@ export async function getCourseProgress(courseId: string) {
     listCourseQuizzes(courseId),
     listMyAssignments({ limit: 100 }),
   ]);
-  const enrollment = enrollments.data.find((item) => item.course.id === courseId);
+  const enrollment = enrollments.data.find((item) => item.course?.id === courseId);
   const modules = course.modules ?? [];
   const lessons = modules.flatMap((module) => module.lessons);
   const progress = await Promise.all(

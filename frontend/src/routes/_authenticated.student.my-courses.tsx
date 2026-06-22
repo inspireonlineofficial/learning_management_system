@@ -61,55 +61,83 @@ function MyCoursesPage() {
         />
       )}
 
-      {!isLoading && data && data.data.length > 0 && (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {data.data.map((e) => (
-            <Link
-              key={e.id}
-              to="/student/player/$courseId"
-              params={{ courseId: e.course.id }}
-              className="group flex flex-col border border-brand/10 bg-white/50 hover:bg-white transition-colors"
-            >
-              <div className="aspect-[16/10] bg-brand/5 overflow-hidden">
-                {e.course.cover_url ? (
-                  <img
-                    src={e.course.cover_url}
-                    alt={e.course.title}
-                    loading="lazy"
-                    className="h-full w-full object-cover group-hover:scale-[1.02] transition-transform duration-700"
-                  />
-                ) : (
-                  <div className="h-full w-full grid place-items-center font-serif italic text-3xl text-brand/20">
-                    {e.course.title.slice(0, 1)}
-                  </div>
-                )}
-              </div>
-              <div className="p-5 flex flex-col flex-1">
-                {e.course.category?.name && (
-                  <p className="eyebrow text-accent mb-2">{e.course.category.name}</p>
-                )}
-                <h3 className="font-serif text-lg leading-snug">{e.course.title}</h3>
-                {e.next_lesson?.title && status === "active" && (
-                  <p className="mt-3 text-xs text-brand/55">
-                    Next · <span className="text-brand/75">{e.next_lesson.title}</span>
-                  </p>
-                )}
-                <div className="mt-auto pt-5">
-                  <div className="h-1 bg-brand/10">
-                    <div
-                      className="h-full bg-accent transition-all"
-                      style={{ width: `${Math.min(100, e.progress_percent)}%` }}
-                    />
-                  </div>
-                  <p className="mt-2 text-[11px] text-brand/45">
-                    {Math.round(e.progress_percent)}% complete
-                  </p>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+      {!isLoading &&
+        data &&
+        (() => {
+          // An enrollment's course can be null when the underlying course was
+          // soft-deleted (e.g. by an admin). Hide those rows so a stale
+          // enrollment does not crash the page.
+          const visible = data.data.filter((e) => e.course != null);
+          if (visible.length === 0) {
+            return (
+              <EmptyState
+                title={status === "active" ? "No courses in progress" : "No completed courses yet"}
+                description={
+                  status === "active"
+                    ? "Enroll in a course to see it here."
+                    : "Finish a course and it'll appear here with your certificate."
+                }
+                action={
+                  <Link to="/courses" className="bg-brand text-white px-6 py-3 text-sm">
+                    Browse catalog
+                  </Link>
+                }
+              />
+            );
+          }
+          return (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {visible.map((e) => {
+                const course = e.course!;
+                return (
+                  <Link
+                    key={e.id}
+                    to="/student/player/$courseId"
+                    params={{ courseId: course.id }}
+                    className="group flex flex-col border border-brand/10 bg-white/50 hover:bg-white transition-colors"
+                  >
+                    <div className="aspect-[16/10] bg-brand/5 overflow-hidden">
+                      {course.cover_url ? (
+                        <img
+                          src={course.cover_url}
+                          alt={course.title}
+                          loading="lazy"
+                          className="h-full w-full object-cover group-hover:scale-[1.02] transition-transform duration-700"
+                        />
+                      ) : (
+                        <div className="h-full w-full grid place-items-center font-serif italic text-3xl text-brand/20">
+                          {course.title.slice(0, 1)}
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-5 flex flex-col flex-1">
+                      {course.category?.name && (
+                        <p className="eyebrow text-accent mb-2">{course.category.name}</p>
+                      )}
+                      <h3 className="font-serif text-lg leading-snug">{course.title}</h3>
+                      {e.next_lesson?.title && status === "active" && (
+                        <p className="mt-3 text-xs text-brand/55">
+                          Next · <span className="text-brand/75">{e.next_lesson.title}</span>
+                        </p>
+                      )}
+                      <div className="mt-auto pt-5">
+                        <div className="h-1 bg-brand/10">
+                          <div
+                            className="h-full bg-accent transition-all"
+                            style={{ width: `${Math.min(100, e.progress_percent)}%` }}
+                          />
+                        </div>
+                        <p className="mt-2 text-[11px] text-brand/45">
+                          {Math.round(e.progress_percent)}% complete
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          );
+        })()}
     </AppShell>
   );
 }

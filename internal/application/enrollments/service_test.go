@@ -1400,3 +1400,75 @@ func TestGetLessonProgress_NotFound(t *testing.T) {
 		t.Errorf("Expected error code LESSON_PROGRESS_NOT_FOUND, got %v", appErr.Code)
 	}
 }
+
+// TestListStudentEnrollments_SkipsSoftDeletedCourses verifies that when a
+// student is enrolled in a course that was soft-deleted (so courseRepo.FindByID
+// returns NOT_FOUND), the enrollment is filtered out of the response and
+// the returned total is decremented. This prevents the /student/my-courses
+// page from crashing on a null course deref.
+func TestListStudentEnrollments_SkipsSoftDeletedCourses(t *testing.T) {
+	enrollmentRepo := newMockEnrollmentRepo()
+	courseRepo := newMockCourseRepo()
+	lessonRepo := newMockLessonRepo()
+	videoRepo := newMockVideoRepo()
+	userRepo := newMockUserRepo()
+	signingKeyStore := &mockSigningKeyStore{}
+	storageClient := newMockStorageClient()
+	lessonProgressRepo := newMockLessonProgressRepo()
+
+	service := NewService(enrollmentRepo, lessonProgressRepo, courseRepo, lessonRepo, videoRepo, userRepo, signingKeyStore, storageClient, "videos")
+
+	studentID := uuid.New()
+	activeCourseID := uuid.New()
+	deletedCourseID := uuid.New()
+
+	// Course A still exists in the course repo.
+	courseRepo.Create(context.Background(), &courses.Course{
+		ID:        activeCourseID,
+		Title:     "Active course",
+		TeacherID: uuid.New(),
+		Status:    courses.CourseStatusPublished,
+	})
+	// Course B has been soft-deleted: do NOT seed it in the course repo,
+	// so FindByID returns NOT_FOUND — mirroring what the postgres repo
+	// does for `WHERE id = $1 AND deleted_at IS NULL`.
+	enrollmentRepo.Create(context.Background(), &enrollments.Enrollment{
+		ID:             uuid.New(),
+		StudentID:      studentID,
+		CourseID:       activeCourseID,
+		EnrollmentType: enrollments.EnrollmentTypeFree,
+		Status:         enrollments.EnrollmentStatusActive,
+		EnrolledAt:     time.Now(),
+	})
+	enrollmentRepo.Create(context.Background(), &enrollments.Enrollment{
+		ID:             uuid.New(),
+		StudentID:      studentID,
+		CourseID:       deletedCourseID,
+		EnrollmentType: enrollments.EnrollmentTypeFree,
+		Status:         enrollments.EnrollmentStatusActive,
+		EnrolledAt:     time.Now(),
+	})
+
+	results, total, err := service.ListStudentEnrollments(context.Background(), studentID, 1, 20)
+	if err != nil {
+		t.Fatalf("ListStudentEnrollments returned error: %v", err)
+	}
+
+	if total != 1 {
+		t.Errorf("Expected total=1 (deleted course filtered), got %d", total)
+	}
+	if len(results) != 1 {
+		t.Fatalf("Expected 1 enrollment in response, got %d", len(results))
+	}
+	if results[0].Course == nil {
+		t.Fatal("Expected Course to be populated for the active enrollment")
+	}
+	if results[0].Course.ID != activeCourseID {
+		t.Errorf("Expected course %s, got %s", activeCourseID, results[0].Course.ID)
+	}
+	for _, r := range results {
+		if r.Course == nil {
+			t.Errorf("Returned enrollment has nil Course; should have been filtered: %+v", r)
+		}
+	}
+}

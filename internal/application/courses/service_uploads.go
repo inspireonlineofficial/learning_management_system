@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"lms-backend/internal/domain/courses"
@@ -150,9 +152,25 @@ func (s *service) UploadVideo(ctx context.Context, cmd UploadVideoCommand) (*Vid
 		logger.Error(ctx, "Video upload metadata persistence failed", "course_id", cmd.CourseID, "video_id", video.ID, "error", err)
 		return nil, err
 	}
-	if s.jobQueue != nil {
+	// The transcode worker needs ffmpeg on PATH to flip the row from
+	// "processing" to "ready". When ffmpeg is missing (e.g. the production
+	// FROM-scratch image), enqueuing the job only causes the worker to
+	// mark the video as "failed" and the student gets VIDEO_NOT_READY
+	// forever. Detect ffmpeg once at upload time: if it is missing, the
+	// file is already on disk and is playable as progressive MP4, so we
+	// skip the queue and mark the video ready immediately.
+	enqueueTranscode := s.jobQueue != nil && ffmpegAvailable()
+	if enqueueTranscode {
 		payload, _ := json.Marshal(map[string]string{"video_id": video.ID.String(), "rustfs_key": video.RustFSKey})
 		_ = s.jobQueue.Enqueue(ctx, notifications.Job{Type: "transcode_video", Payload: payload})
+	} else {
+		video.Status = courses.VideoStatusReady
+		video.UpdatedAt = time.Now()
+		if err := s.videoRepo.Update(ctx, video); err != nil {
+			logger.Warn(ctx, "Could not mark video ready (no ffmpeg path)", "video_id", video.ID, "error", err)
+		} else {
+			logger.Info(ctx, "Video marked ready (no ffmpeg; skipped transcode)", "video_id", video.ID)
+		}
 	}
 	logger.Info(ctx, "Video uploaded", "course_id", cmd.CourseID, "video_id", video.ID, "uploader_id", cmd.UploaderID, "file_name", cmd.FileName, "file_size", cmd.FileSize)
 
@@ -360,9 +378,21 @@ func (s *service) CompleteMultipartUpload(ctx context.Context, cmd CompleteMulti
 	if err != nil || info.Size <= 0 {
 		return nil, apperrors.NewSimpleValidationError("UPLOAD_EMPTY", "assembled upload has zero bytes")
 	}
-	if s.jobQueue != nil {
+	// See UploadVideo: when ffmpeg is missing we cannot produce HLS, so the
+	// transcode worker would just fail the job. Mark ready directly instead
+	// — the multipart-assembled MP4 is already playable.
+	enqueueTranscode := s.jobQueue != nil && ffmpegAvailable()
+	if enqueueTranscode {
 		payload, _ := json.Marshal(map[string]string{"video_id": video.ID.String(), "rustfs_key": video.RustFSKey})
 		_ = s.jobQueue.Enqueue(ctx, notifications.Job{Type: "transcode_video", Payload: payload})
+	} else {
+		video.Status = courses.VideoStatusReady
+		video.UpdatedAt = time.Now()
+		if err := s.videoRepo.Update(ctx, video); err != nil {
+			logger.Warn(ctx, "Could not mark multipart video ready (no ffmpeg path)", "video_id", video.ID, "error", err)
+		} else {
+			logger.Info(ctx, "Multipart video marked ready (no ffmpeg; skipped transcode)", "video_id", video.ID)
+		}
 	}
 	logger.Info(ctx, "Multipart video upload completed", "video_id", video.ID, "parts", len(cmd.Parts), "size", info.Size)
 	return &VideoStatusResponse{
@@ -533,4 +563,22 @@ func generatedUploadKey(prefix, fileName string) string {
 		ext = ".bin"
 	}
 	return fmt.Sprintf("%s/%s%s", prefix, uuid.New().String(), ext)
+}
+
+// ffmpegAvailable reports whether the ffmpeg binary is on PATH. The result
+// is cached for the process lifetime: ffmpeg either is or is not part of
+// the container image, and the answer never changes after startup. We
+// avoid running exec.LookPath on every upload because it would add a
+// filesystem stat per request.
+var (
+	ffmpegOnce   sync.Once
+	ffmpegCached bool
+)
+
+func ffmpegAvailable() bool {
+	ffmpegOnce.Do(func() {
+		_, err := exec.LookPath("ffmpeg")
+		ffmpegCached = err == nil
+	})
+	return ffmpegCached
 }
