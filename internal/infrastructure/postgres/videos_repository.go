@@ -51,18 +51,37 @@ func (r *videoRepository) FindByID(ctx context.Context, id uuid.UUID) (*courses.
 	`
 
 	video := &courses.Video{}
+	// hls_manifest_key is nullable (it is only populated after a successful
+	// transcode). database/sql cannot scan a SQL NULL into a plain Go string,
+	// so we route it through sql.NullString and flatten back to "" when the
+	// column is NULL. Without this the worker crashes on every row that has
+	// not yet been transcoded.
+	var hlsManifestKey sql.NullString
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&video.ID, &video.CourseID, &video.UploaderID, &video.RustFSKey,
 		&video.Status, &video.DurationSeconds, &video.ThumbnailRustFSKey,
-		&video.HLSManifestKey, &video.TranscodedAt,
+		&hlsManifestKey, &video.TranscodedAt,
 		&video.CreatedAt, &video.UpdatedAt,
 	)
-
-	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("video not found")
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("video not found")
+		}
+		return nil, err
 	}
+	video.HLSManifestKey = nullStringToString(hlsManifestKey)
 
-	return video, err
+	return video, nil
+}
+
+// nullStringToString flattens a sql.NullString into a plain string, returning
+// "" when the SQL value is NULL. Used for nullable TEXT columns whose domain
+// representation is a non-pointer string.
+func nullStringToString(ns sql.NullString) string {
+	if !ns.Valid {
+		return ""
+	}
+	return ns.String
 }
 
 func (r *videoRepository) Update(ctx context.Context, video *courses.Video) error {
