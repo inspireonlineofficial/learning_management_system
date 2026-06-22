@@ -86,7 +86,24 @@ func (s *service) UploadVideo(ctx context.Context, cmd UploadVideoCommand) (*Vid
 			}
 		}
 		if !faststart {
-			if fixed, ok, err := mp4tools.FastStartIfPossible(ctx, uploadReader); err == nil && ok {
+			// FastStartIfPossible returns:
+			//   (fixedReader, true, nil)  — ffmpeg re-muxed the file successfully
+			//   (input,      false, nil) — ffmpeg not on PATH; the production
+			//                              runtime image is FROM scratch and does
+			//                              not ship ffmpeg, so this is the common
+			//                              case. Accept the file as-is: it will
+			//                              play progressively, just without the
+			//                              seek-before-download optimization.
+			//   (nil,        false, err) — ffmpeg ran but the re-mux failed;
+			//                              tell the teacher to re-encode.
+			fixed, ok, ferr := mp4tools.FastStartIfPossible(ctx, uploadReader)
+			switch {
+			case ferr != nil:
+				return nil, apperrors.NewSimpleValidationError(
+					"MP4_NOT_FASTSTART",
+					"this MP4 has its metadata at the end of the file, which prevents seeking. Please re-encode with -movflags +faststart (e.g. ffmpeg -i input.mp4 -c copy -movflags +faststart output.mp4) and try again.",
+				)
+			case ok:
 				logger.Info(ctx, "Re-muxed MP4 to faststart", "video_id", video.ID, "file_name", cmd.FileName)
 				uploadReader = fixed
 				if rs, ok := uploadReader.(io.Seeker); ok {
@@ -94,11 +111,8 @@ func (s *service) UploadVideo(ctx context.Context, cmd UploadVideoCommand) (*Vid
 					rs.Seek(0, io.SeekStart)
 					cmd.FileSize = size
 				}
-			} else {
-				return nil, apperrors.NewSimpleValidationError(
-					"MP4_NOT_FASTSTART",
-					"this MP4 has its metadata at the end of the file, which prevents seeking. Please re-encode with -movflags +faststart (e.g. ffmpeg -i input.mp4 -c copy -movflags +faststart output.mp4) and try again.",
-				)
+			default:
+				logger.Warn(ctx, "MP4 not faststart and ffmpeg unavailable; storing as-is", "video_id", video.ID, "file_name", cmd.FileName)
 			}
 		}
 	}
