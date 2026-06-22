@@ -78,14 +78,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Inspire LMS — Science tutoring for high school and college" },
+      { title: "Inspire — Science tutoring for high school and college" },
       {
         name: "description",
         content:
-          "Inspire LMS brings science courses, live classes, assessments, certificates, and curated study books into one tutoring platform.",
+          "Inspire brings science courses, live classes, assessments, certificates, and curated study books into one tutoring platform.",
       },
-      { name: "author", content: "Inspire LMS" },
-      { property: "og:title", content: "Inspire LMS" },
+      { name: "author", content: "Inspire" },
+      { property: "og:title", content: "Inspire" },
       { property: "og:description", content: "Science tutoring for high school and college." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

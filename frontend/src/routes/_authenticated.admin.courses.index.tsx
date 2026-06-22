@@ -1,6 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Trash2 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { AppShell, EmptyState } from "@/components/layout/app-shell";
 import { ListTable } from "@/components/layout/data-page";
@@ -35,6 +37,8 @@ export const Route = createFileRoute("/_authenticated/admin/courses/")({
 function Page() {
   const [status, setStatus] = useState("");
   const [teacherId, setTeacherId] = useState("");
+  const [pendingDelete, setPendingDelete] = useState<AdminCourse | null>(null);
+  const qc = useQueryClient();
 
   const courses = useQuery({
     queryKey: ["admin-courses", status, teacherId],
@@ -50,6 +54,20 @@ function Page() {
         items: result.items ?? result.data ?? result.courses ?? [],
         meta: result.meta,
       })),
+  });
+
+  const deleteCourse = useMutation({
+    mutationFn: (courseId: string) =>
+      apiRequest<{ ok: true }>(`/v1/admin/courses/${encodeURIComponent(courseId)}`, {
+        method: "DELETE",
+        auth: true,
+      }),
+    onSuccess: () => {
+      toast.success("Course deleted");
+      qc.invalidateQueries({ queryKey: ["admin-courses"] });
+      setPendingDelete(null);
+    },
+    onError: (e: Error) => toast.error(e.message ?? "Could not delete course"),
   });
 
   return (
@@ -150,9 +168,66 @@ function Page() {
                   render: (course) =>
                     course.updated_at ? new Date(course.updated_at).toLocaleDateString() : "—",
                 },
+                {
+                  key: "actions",
+                  label: "",
+                  width: "1%",
+                  render: (course) => (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setPendingDelete(course);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-2 py-1 text-xs text-brand/55 hover:text-destructive border border-transparent hover:border-destructive/30 transition-colors"
+                      aria-label={`Delete ${course.title}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Delete
+                    </button>
+                  ),
+                },
               ]}
             />
           )}
+        </div>
+      )}
+
+      {pendingDelete && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 grid place-items-center p-4"
+          onClick={() => !deleteCourse.isPending && setPendingDelete(null)}
+        >
+          <div
+            className="bg-white border border-brand/10 max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="eyebrow text-destructive">Delete course</p>
+            <p className="mt-2 font-serif text-xl">{pendingDelete.title}</p>
+            <p className="mt-3 text-sm text-brand/70 leading-relaxed">
+              This hides the course from the public catalog and the admin queue. Existing
+              enrollments and progress are preserved; the teacher can no longer edit the course.
+              Continue?
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPendingDelete(null)}
+                disabled={deleteCourse.isPending}
+                className="px-4 py-2 text-sm border border-brand/15 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteCourse.mutate(pendingDelete.id)}
+                disabled={deleteCourse.isPending}
+                className="px-5 py-2 text-sm text-white bg-destructive hover:bg-destructive/90 disabled:opacity-50"
+              >
+                {deleteCourse.isPending ? "Deleting…" : "Delete course"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </AppShell>

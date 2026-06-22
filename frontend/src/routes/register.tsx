@@ -33,8 +33,8 @@ type FormValues = z.infer<typeof schema>;
 export const Route = createFileRoute("/register")({
   head: () => ({
     meta: [
-      { title: "Enroll — Inspire LMS" },
-      { name: "description", content: "Create an Inspire LMS account and begin your study." },
+      { title: "Enroll — Inspire" },
+      { name: "description", content: "Create an Inspire account and begin your study." },
     ],
   }),
   component: RegisterPage,

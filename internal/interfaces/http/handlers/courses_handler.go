@@ -1335,6 +1335,46 @@ func (h *CoursesHandler) ReviewCourse(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// AdminDeleteCourse handles DELETE /v1/admin/courses/{courseId}
+//
+// @Summary      Admin: delete a course
+// @Description  Soft-deletes a course as an admin. Skips the teacher-side
+// @Description  restrictions (ownership, draft state, no enrollments) so admins
+// @Description  can remove spam or policy-violating content regardless of state.
+// @Tags         courses
+// @Produce      json
+// @Param        courseId  path  string  true  "Course ID"
+// @Success      204  "No Content"
+// @Failure      400  {object}  ValidationErrorResponse
+// @Failure      401  {object}  ErrorResponse
+// @Failure      403  {object}  ErrorResponse
+// @Failure      404  {object}  ErrorResponse
+// @Security     BearerAuth
+// @Router       /v1/admin/courses/{courseId} [delete]
+func (h *CoursesHandler) AdminDeleteCourse(w http.ResponseWriter, r *http.Request) {
+	courseID, err := uuid.Parse(r.PathValue("courseId"))
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_ID", "invalid course ID"))
+		return
+	}
+
+	userID, err := getUserIDFromContext(r)
+	if err != nil {
+		writeErrorResponse(w, apperrors.ErrUnauthorized)
+		return
+	}
+
+	if err := h.service.AdminDeleteCourse(r.Context(), courses.AdminDeleteCourseCommand{
+		CourseID: courseID,
+		AdminID:  userID,
+	}); err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // Upload endpoints
 
 // UploadVideo handles POST /v1/uploads/video

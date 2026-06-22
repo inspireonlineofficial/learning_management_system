@@ -14,10 +14,10 @@ type FormValues = z.infer<typeof schema>;
 export const Route = createFileRoute("/forgot-password")({
   head: () => ({
     meta: [
-      { title: "Forgot password — Inspire LMS" },
+      { title: "Forgot password — Inspire" },
       {
         name: "description",
-        content: "Request a password reset link for your Inspire LMS account.",
+        content: "Request a password reset link for your Inspire account.",
       },
     ],
   }),

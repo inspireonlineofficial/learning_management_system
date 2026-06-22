@@ -252,6 +252,7 @@ func (s *Server) RegisterRoutes() {
 	s.mux.HandleFunc("GET /v1/admin/courses", s.withAuthAndRole("admin", nil, s.coursesHandler.ListPendingCourses))
 	s.mux.HandleFunc("GET /v1/admin/courses/{courseId}", s.withAuthAndRole("admin", nil, s.coursesHandler.GetAdminCourseDetail))
 	s.mux.HandleFunc("POST /v1/admin/courses/{courseId}/review", s.withAuthAndRole("admin", s.coursesHandler.ReviewCourse, nil))
+	s.mux.HandleFunc("DELETE /v1/admin/courses/{courseId}", s.withAuthAndRole("admin", s.coursesHandler.AdminDeleteCourse, nil))
 	s.mux.HandleFunc("GET /v1/admin/slides", s.withAuthAndRole("admin", nil, s.slidesHandler.ListAdminSlides))
 	s.mux.HandleFunc("POST /v1/admin/slides", s.withAuthAndRole("admin", s.slidesHandler.CreateSlide, nil))
 	s.mux.HandleFunc("PATCH /v1/admin/slides/{slideId}", s.withAuthAndRole("admin", s.slidesHandler.UpdateSlide, nil))

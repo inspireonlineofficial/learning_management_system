@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 export const Route = createFileRoute("/403")({
   head: () => ({
     meta: [
-      { title: "Access denied — Inspire LMS" },
+      { title: "Access denied — Inspire" },
       { name: "description", content: "You don't have permission to view this page." },
     ],
   }),

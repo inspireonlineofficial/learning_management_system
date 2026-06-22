@@ -2,6 +2,7 @@ package courses
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"regexp"
@@ -14,6 +15,7 @@ import (
 	"lms-backend/internal/infrastructure/rustfs"
 	tsclient "lms-backend/internal/infrastructure/typesense"
 	"lms-backend/pkg/apperrors"
+	"lms-backend/pkg/logger"
 
 	"github.com/google/uuid"
 )
@@ -33,6 +35,7 @@ type Service interface {
 	RejectCourse(ctx context.Context, cmd RejectCourseCommand) error
 	ListAdminCourses(ctx context.Context, filters courses.CourseFilters, page, limit int) ([]CourseResponse, int, error)
 	GetAdminCourseDetail(ctx context.Context, courseID uuid.UUID) (*CourseDetailResponse, error)
+	AdminDeleteCourse(ctx context.Context, cmd AdminDeleteCourseCommand) error
 
 	// Content tree management
 	CreateModule(ctx context.Context, cmd CreateModuleCommand) (*ModuleResponse, error)
@@ -385,6 +388,26 @@ func (s *service) DeleteCourse(ctx context.Context, cmd DeleteCourseCommand) err
 	if idxErr := s.indexer.DeleteCourse(ctx, course.ID.String()); idxErr != nil {
 		log.Printf("typesense index error: %v", idxErr)
 	}
+	return nil
+}
+
+// AdminDeleteCourse is the admin override of DeleteCourse. It does not check
+// ownership, editability, or enrollment count — admins must be able to clean
+// up spam, abandoned drafts, or policy-violating courses regardless of state.
+// The course is soft-deleted (deleted_at = NOW) so it disappears from public
+// listings and the admin queue, but the row is preserved for audit.
+func (s *service) AdminDeleteCourse(ctx context.Context, cmd AdminDeleteCourseCommand) error {
+	course, err := s.courseRepo.FindByID(ctx, cmd.CourseID)
+	if err != nil {
+		return apperrors.NewNotFoundError("COURSE_NOT_FOUND", "course not found")
+	}
+	if err := s.courseRepo.SoftDelete(ctx, cmd.CourseID); err != nil {
+		return fmt.Errorf("soft delete course: %w", err)
+	}
+	if idxErr := s.indexer.DeleteCourse(ctx, course.ID.String()); idxErr != nil {
+		log.Printf("typesense index error: %v", idxErr)
+	}
+	logger.Info(ctx, "admin: course deleted", "course_id", cmd.CourseID, "admin_id", cmd.AdminID)
 	return nil
 }
 
