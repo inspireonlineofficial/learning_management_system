@@ -15,9 +15,9 @@ import (
 // tuned for a typical LMS lecture: 360p is the safety net for low-bandwidth
 // mobile viewers, 720p is the default, 1080p rewards broadband users.
 type HLSSpec struct {
-	Name       string // folder name under hls/ (e.g. "v0", "v1")
-	Width      int
-	Height     int
+	Name         string // folder name under hls/ (e.g. "v0", "v1")
+	Width        int
+	Height       int
 	VideoBitrate string // e.g. "800k", "2500k"
 	MaxBitrate   string // e.g. "900k", "2800k"
 	BufSize      string // e.g. "1200k", "3500k"

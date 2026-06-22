@@ -13,8 +13,8 @@ import (
 
 	"lms-backend/internal/domain/courses"
 	"lms-backend/internal/domain/notifications"
-	mp4tools "lms-backend/internal/infrastructure/video"
 	"lms-backend/internal/infrastructure/rustfs"
+	mp4tools "lms-backend/internal/infrastructure/video"
 	"lms-backend/pkg/logger"
 
 	"github.com/google/uuid"
@@ -50,7 +50,7 @@ func NewTranscodeHandler(deps TranscodeDeps) *TranscodeHandler {
 // shape explicit (rather than `map[string]any`) lets us fail fast on bad
 // payloads and gives the worker a typed entry point.
 type transcodePayload struct {
-	VideoID  string `json:"video_id"`
+	VideoID   string `json:"video_id"`
 	RustFSKey string `json:"rustfs_key"`
 }
 
