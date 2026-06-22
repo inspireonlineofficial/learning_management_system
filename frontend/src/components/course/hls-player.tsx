@@ -89,7 +89,11 @@ export function HLSPlayer({
 
     return () => {
       cancelled = true;
-      try { URL.revokeObjectURL(video.src); } catch { /* ignore */ }
+      try {
+        URL.revokeObjectURL(video.src);
+      } catch {
+        /* ignore */
+      }
     };
   }, [hlsUrl, mp4Url]);
 
@@ -155,7 +159,9 @@ export function HLSPlayer({
         >
           <span className="flex items-center gap-2 bg-white/15 backdrop-blur px-5 py-3 text-sm font-medium">
             <Play className="h-4 w-4" /> Play lesson
-            {usingHls && <span className="ml-2 text-[10px] uppercase tracking-wider text-white/60">HLS</span>}
+            {usingHls && (
+              <span className="ml-2 text-[10px] uppercase tracking-wider text-white/60">HLS</span>
+            )}
           </span>
         </button>
       )}
@@ -305,7 +311,10 @@ type M3U8 = {
 };
 
 function parseM3U8(text: string): M3U8 {
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
   const result: M3U8 = { variants: [], segments: [] };
   let isMaster = false;
   for (let i = 0; i < lines.length; i++) {

@@ -274,7 +274,9 @@ export async function uploadMultipart(opts: {
       }
     }
   }
-  const workers = Array.from({ length: Math.min(PARALLEL_PART_UPLOADS, pending.length || 1) }, () => worker());
+  const workers = Array.from({ length: Math.min(PARALLEL_PART_UPLOADS, pending.length || 1) }, () =>
+    worker(),
+  );
   await Promise.all(workers);
 
   if (effectiveSignal.aborted) {

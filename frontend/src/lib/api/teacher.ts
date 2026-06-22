@@ -247,7 +247,8 @@ export async function uploadLessonVideoMultipart(
     signal,
     existingVideoId,
     onProgress: onProgress
-      ? ({ loaded, total, completedParts, totalParts }) => onProgress(loaded, total, completedParts, totalParts)
+      ? ({ loaded, total, completedParts, totalParts }) =>
+          onProgress(loaded, total, completedParts, totalParts)
       : undefined,
   });
 }
@@ -268,9 +269,7 @@ export async function uploadLessonVideoDirect(
     courseId,
     file,
     signal,
-    onProgress: onProgress
-      ? ({ loaded, total }) => onProgress(loaded, total)
-      : undefined,
+    onProgress: onProgress ? ({ loaded, total }) => onProgress(loaded, total) : undefined,
   });
 }
 

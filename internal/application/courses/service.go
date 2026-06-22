@@ -107,6 +107,7 @@ type StorageClient interface {
 	CompleteMultipartUpload(ctx context.Context, bucket, key, uploadID string, parts []rustfs.CompletedPart) error
 	AbortMultipartUpload(ctx context.Context, bucket, key, uploadID string) error
 }
+
 // upload-complete path to verify a direct-to-S3 PUT actually landed and to
 // pull size / content-type back for the video record.
 type ObjectInfo struct {

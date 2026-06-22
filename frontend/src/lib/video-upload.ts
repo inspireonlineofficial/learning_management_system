@@ -130,7 +130,13 @@ export async function uploadVideoDirect(opts: {
     // eslint-disable-next-line no-constant-condition
     while (true) {
       try {
-        await uploadChunk(init.upload_url, file, file.type || "application/octet-stream", () => {}, effectiveSignal);
+        await uploadChunk(
+          init.upload_url,
+          file,
+          file.type || "application/octet-stream",
+          () => {},
+          effectiveSignal,
+        );
         report(total);
         break;
       } catch (err) {
@@ -179,10 +185,11 @@ export async function uploadVideoDirect(opts: {
   // eslint-disable-next-line no-constant-condition
   while (true) {
     try {
-      return await apiRequest<{ video_id: string }>(
-        `/v1/uploads/video/${init.video_id}/complete`,
-        { method: "POST", auth: true, signal: effectiveSignal },
-      );
+      return await apiRequest<{ video_id: string }>(`/v1/uploads/video/${init.video_id}/complete`, {
+        method: "POST",
+        auth: true,
+        signal: effectiveSignal,
+      });
     } catch (err) {
       if (++confirmAttempt >= MAX_RETRIES_PER_CHUNK || effectiveSignal.aborted) throw err;
       await new Promise((r) => setTimeout(r, 500 * 2 ** (confirmAttempt - 1)));
