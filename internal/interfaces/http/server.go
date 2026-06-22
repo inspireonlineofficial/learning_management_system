@@ -260,7 +260,13 @@ func (s *Server) RegisterRoutes() {
 
 	// Upload endpoints (require JWT)
 	s.mux.HandleFunc("POST /v1/uploads/video", s.withAuth(s.coursesHandler.UploadVideo))
+	s.mux.HandleFunc("POST /v1/uploads/video/init", s.withAuth(s.coursesHandler.InitDirectVideoUpload))
+	s.mux.HandleFunc("POST /v1/uploads/video/multipart/init", s.withAuth(s.coursesHandler.InitMultipartVideoUpload))
+	s.mux.HandleFunc("POST /v1/uploads/video/multipart/{videoId}/part", s.withAuth(s.coursesHandler.PresignUploadPart))
+	s.mux.HandleFunc("POST /v1/uploads/video/multipart/{videoId}/complete", s.withAuth(s.coursesHandler.CompleteMultipartVideoUpload))
+	s.mux.HandleFunc("POST /v1/uploads/video/multipart/{videoId}/abort", s.withAuth(s.coursesHandler.AbortMultipartVideoUpload))
 	s.mux.HandleFunc("GET /v1/uploads/video/{videoId}/status", s.withAuth(s.coursesHandler.GetVideoStatus))
+	s.mux.HandleFunc("POST /v1/uploads/video/{videoId}/complete", s.withAuth(s.coursesHandler.CompleteVideoUpload))
 	s.mux.HandleFunc("POST /v1/uploads/file", s.withAuth(s.coursesHandler.UploadFile))
 
 	// Enrollment endpoints (require JWT + student role)

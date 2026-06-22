@@ -418,12 +418,14 @@ func main() {
 	go analyticsWorker.Run(workerCtx)
 
 	// Start background workers
-	// TODO: Fix worker initialization in later phases
-	// worker := workers.NewWorker(redisClient)
-	// worker.RegisterHandler("send_email", workers.NewEmailJobHandler(emailService))
-	// Additional job handlers will be registered in later phases
-	// go worker.Run(workerCtx)
-	logger.Info(ctx, "Background workers started (placeholder)")
+	jobWorker := workers.NewWorker(redisClient, "queue:jobs")
+	jobWorker.RegisterHandler("transcode_video", workers.NewTranscodeHandler(workers.TranscodeDeps{
+		Storage:     rustfsClient,
+		VideoRepo:   videoRepo,
+		VideoBucket: cfg.RustFSVideoBucket,
+	}))
+	go jobWorker.Run(workerCtx)
+	logger.Info(ctx, "Background workers started", "handlers", []string{"transcode_video"})
 
 	// Initialize RBAC repository and service
 	rbacRepo := postgres.NewRBACRepository(db)

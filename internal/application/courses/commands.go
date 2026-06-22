@@ -241,6 +241,78 @@ type UploadVideoCommand struct {
 	Reader     io.Reader
 }
 
+// CompleteVideoUploadCommand is sent by the client after a direct-to-S3 PUT
+// finishes. The server verifies the object actually landed (HEAD) and flips
+// the video row to "ready" so playback unblocks.
+type CompleteVideoUploadCommand struct {
+	VideoID  uuid.UUID
+	Uploader uuid.UUID
+}
+
+// InitDirectUploadCommand is the entry point for the direct-to-RustFS upload
+// path. The client posts file metadata, the server returns a presigned PUT
+// URL, and the bytes travel browser → RustFS directly.
+type InitDirectUploadCommand struct {
+	CourseID   uuid.UUID
+	UploaderID uuid.UUID
+	FileName   string
+	FileSize   int64
+	MimeType   string
+	MagicBytes []byte
+}
+
+// InitMultipartUploadCommand starts a resumable S3 multipart upload. The
+// server allocates an upload id and creates a "processing" video row that
+// the client references on every subsequent part-upload request. The client
+// chooses a chunk size (must be ≥ 5 MB except for the last chunk per S3);
+// we expose what we'd recommend via MultipartInitResponse.ChunkSize.
+type InitMultipartUploadCommand struct {
+	CourseID   uuid.UUID
+	UploaderID uuid.UUID
+	FileName   string
+	FileSize   int64
+	MimeType   string
+	MagicBytes []byte
+	ChunkSize  int64 // suggested chunk size from the client
+}
+
+// PresignUploadPartCommand returns a presigned URL for one chunk. The
+// (video_id, upload_id) pair must match an upload previously initialized via
+// InitMultipartUpload; we re-verify ownership on every call so a leaked
+// video id can't be used to upload to someone else's video.
+type PresignUploadPartCommand struct {
+	VideoID    uuid.UUID
+	Uploader   uuid.UUID
+	UploadID   string
+	PartNumber int
+}
+
+// CompleteMultipartUploadCommand finishes the upload by submitting the list
+// of completed parts in order. The server validates the parts, calls S3
+// CompleteMultipartUpload, and flips the video row to "ready" so playback
+// can start.
+type CompleteMultipartUploadCommand struct {
+	VideoID  uuid.UUID
+	Uploader uuid.UUID
+	UploadID string
+	Parts    []CompletedPart
+}
+
+// CompletedPart is the local mirror of rustfs.CompletedPart. Keeping a local
+// type here avoids leaking the storage driver through the application layer.
+type CompletedPart struct {
+	PartNumber int
+	ETag       string
+}
+
+// AbortMultipartUploadCommand cancels an in-progress upload and removes the
+// "processing" video row. Safe to call multiple times.
+type AbortMultipartUploadCommand struct {
+	VideoID  uuid.UUID
+	Uploader uuid.UUID
+	UploadID string
+}
+
 // UploadFileCommand represents the command to upload a file
 type UploadFileCommand struct {
 	UploaderID uuid.UUID

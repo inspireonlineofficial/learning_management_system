@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -1432,6 +1433,331 @@ func (h *CoursesHandler) GetVideoStatus(w http.ResponseWriter, r *http.Request) 
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(status)
+}
+
+// InitDirectVideoUpload handles POST /v1/uploads/video/init
+//
+// @Summary      Initialize a direct-to-storage video upload
+// @Description  Returns a presigned PUT URL the client can use to upload the video bytes directly to RustFS. After the PUT completes, the client must call POST /v1/uploads/video/{videoId}/complete to flip the status to "ready".
+// @Tags         uploads
+// @Accept       json
+// @Produce      json
+// @Param        request  body  InitDirectVideoUploadRequest  true  "Upload init"
+// @Success      200  {object}  courses.DirectUploadResponse
+// @Failure      400  {object}  ValidationErrorResponse
+// @Failure      401  {object}  ErrorResponse
+// @Security     BearerAuth
+// @Router       /v1/uploads/video/init [post]
+type InitDirectVideoUploadRequest struct {
+	CourseID string `json:"course_id"`
+	FileName string `json:"file_name"`
+	FileSize int64  `json:"file_size"`
+	MimeType string `json:"mime_type"`
+	// MagicBytes is the first 512 bytes of the file, base64 encoded. The
+	// server uses it to validate the file type and to refuse executables.
+	MagicBytes string `json:"magic_b64"`
+}
+
+func (h *CoursesHandler) InitDirectVideoUpload(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserIDFromContext(r)
+	if err != nil {
+		writeErrorResponse(w, apperrors.ErrUnauthorized)
+		return
+	}
+	var req InitDirectVideoUploadRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_BODY", "invalid JSON body"))
+		return
+	}
+	courseID, err := uuid.Parse(req.CourseID)
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_ID", "valid course_id is required"))
+		return
+	}
+	magic, err := decodeMagicB64(req.MagicBytes)
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	resp, err := h.service.InitDirectUpload(r.Context(), courses.InitDirectUploadCommand{
+		CourseID:   courseID,
+		UploaderID: userID,
+		FileName:   req.FileName,
+		FileSize:   req.FileSize,
+		MimeType:   req.MimeType,
+		MagicBytes: magic,
+	})
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+// decodeMagicB64 decodes the magic-bytes header sent by the client. The
+// payload is the first ~512 bytes of the file, base64 encoded so the JSON
+// body stays small.
+func decodeMagicB64(s string) ([]byte, error) {
+	if s == "" {
+		return nil, apperrors.NewSimpleValidationError("MAGIC_REQUIRED", "magic_b64 is required")
+	}
+	raw, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		return nil, apperrors.NewSimpleValidationError("INVALID_MAGIC", "magic_b64 is not valid base64")
+	}
+	return raw, nil
+}
+
+// CompleteVideoUpload handles POST /v1/uploads/video/{videoId}/complete
+//
+// @Summary      Complete a direct-to-storage video upload
+// @Description  Called by the client after a presigned PUT to RustFS finishes. Verifies the object landed, then flips the video status to "ready" so playback can start.
+// @Tags         uploads
+// @Produce      json
+// @Param        videoId  path  string  true  "Video ID"
+// @Success      200  {object}  courses.VideoStatusResponse
+// @Failure      400  {object}  ValidationErrorResponse
+// @Failure      401  {object}  ErrorResponse
+// @Failure      403  {object}  ErrorResponse
+// @Failure      404  {object}  ErrorResponse
+// @Security     BearerAuth
+// @Router       /v1/uploads/video/{videoId}/complete [post]
+func (h *CoursesHandler) CompleteVideoUpload(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserIDFromContext(r)
+	if err != nil {
+		writeErrorResponse(w, apperrors.ErrUnauthorized)
+		return
+	}
+	videoIDStr := r.PathValue("videoId")
+	videoID, err := uuid.Parse(videoIDStr)
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_ID", "invalid video ID"))
+		return
+	}
+	status, err := h.service.CompleteVideoUpload(r.Context(), courses.CompleteVideoUploadCommand{
+		VideoID:  videoID,
+		Uploader: userID,
+	})
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(status)
+}
+
+// InitMultipartVideoUpload handles POST /v1/uploads/video/multipart/init
+//
+// @Summary      Initialize a resumable multipart video upload
+// @Description  Starts an S3 multipart upload and returns an upload id the client uses to upload individual chunks. Each chunk is uploaded independently, so a page refresh can resume from the last completed part.
+// @Tags         uploads
+// @Accept       json
+// @Produce      json
+// @Param        request  body  InitMultipartUploadRequest  true  "Multipart init"
+// @Success      200  {object}  courses.MultipartInitResponse
+// @Failure      400  {object}  ValidationErrorResponse
+// @Failure      401  {object}  ErrorResponse
+// @Security     BearerAuth
+// @Router       /v1/uploads/video/multipart/init [post]
+type InitMultipartUploadRequest struct {
+	CourseID  string `json:"course_id"`
+	FileName  string `json:"file_name"`
+	FileSize  int64  `json:"file_size"`
+	MimeType  string `json:"mime_type"`
+	MagicB64  string `json:"magic_b64"`
+	ChunkSize int64  `json:"chunk_size"`
+}
+
+func (h *CoursesHandler) InitMultipartVideoUpload(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserIDFromContext(r)
+	if err != nil {
+		writeErrorResponse(w, apperrors.ErrUnauthorized)
+		return
+	}
+	var req InitMultipartUploadRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_BODY", "invalid JSON body"))
+		return
+	}
+	courseID, err := uuid.Parse(req.CourseID)
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_ID", "valid course_id is required"))
+		return
+	}
+	magic, err := decodeMagicB64(req.MagicB64)
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	resp, err := h.service.InitMultipartUpload(r.Context(), courses.InitMultipartUploadCommand{
+		CourseID:   courseID,
+		UploaderID: userID,
+		FileName:   req.FileName,
+		FileSize:   req.FileSize,
+		MimeType:   req.MimeType,
+		MagicBytes: magic,
+		ChunkSize:  req.ChunkSize,
+	})
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+// PresignUploadPart handles POST /v1/uploads/video/multipart/{videoId}/part
+//
+// @Summary      Get a presigned URL for one upload chunk
+// @Description  Returns a presigned PUT URL for a single chunk. The client uploads the chunk directly to RustFS and reports the resulting ETag back via the complete endpoint.
+// @Tags         uploads
+// @Accept       json
+// @Produce      json
+// @Param        videoId  path  string  true  "Video ID"
+// @Param        request  body  PresignUploadPartRequest  true  "Part presign request"
+// @Success      200  {object}  courses.PresignUploadPartResponse
+// @Failure      400  {object}  ValidationErrorResponse
+// @Failure      401  {object}  ErrorResponse
+// @Failure      403  {object}  ErrorResponse
+// @Security     BearerAuth
+// @Router       /v1/uploads/video/multipart/{videoId}/part [post]
+type PresignUploadPartRequest struct {
+	UploadID   string `json:"upload_id"`
+	PartNumber int    `json:"part_number"`
+}
+
+func (h *CoursesHandler) PresignUploadPart(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserIDFromContext(r)
+	if err != nil {
+		writeErrorResponse(w, apperrors.ErrUnauthorized)
+		return
+	}
+	videoID, err := uuid.Parse(r.PathValue("videoId"))
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_ID", "invalid video ID"))
+		return
+	}
+	var req PresignUploadPartRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_BODY", "invalid JSON body"))
+		return
+	}
+	resp, err := h.service.PresignUploadPart(r.Context(), courses.PresignUploadPartCommand{
+		VideoID:    videoID,
+		Uploader:   userID,
+		UploadID:   req.UploadID,
+		PartNumber: req.PartNumber,
+	})
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+// CompleteMultipartVideoUpload handles POST /v1/uploads/video/multipart/{videoId}/complete
+//
+// @Summary      Complete a multipart video upload
+// @Description  Submits the list of completed parts in order. The server calls S3 CompleteMultipartUpload, then enqueues the transcode job. The video row flips to "ready" only after the HLS transcoding worker finishes.
+// @Tags         uploads
+// @Accept       json
+// @Produce      json
+// @Param        videoId  path  string  true  "Video ID"
+// @Param        request  body  CompleteMultipartUploadRequest  true  "Complete multipart"
+// @Success      200  {object}  courses.VideoStatusResponse
+// @Failure      400  {object}  ValidationErrorResponse
+// @Failure      401  {object}  ErrorResponse
+// @Failure      403  {object}  ErrorResponse
+// @Security     BearerAuth
+// @Router       /v1/uploads/video/multipart/{videoId}/complete [post]
+type CompleteMultipartUploadRequest struct {
+	UploadID string `json:"upload_id"`
+	Parts    []struct {
+		PartNumber int    `json:"part_number"`
+		ETag       string `json:"etag"`
+	} `json:"parts"`
+}
+
+func (h *CoursesHandler) CompleteMultipartVideoUpload(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserIDFromContext(r)
+	if err != nil {
+		writeErrorResponse(w, apperrors.ErrUnauthorized)
+		return
+	}
+	videoID, err := uuid.Parse(r.PathValue("videoId"))
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_ID", "invalid video ID"))
+		return
+	}
+	var req CompleteMultipartUploadRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_BODY", "invalid JSON body"))
+		return
+	}
+	parts := make([]courses.CompletedPart, len(req.Parts))
+	for i, p := range req.Parts {
+		parts[i] = courses.CompletedPart{PartNumber: p.PartNumber, ETag: p.ETag}
+	}
+	status, err := h.service.CompleteMultipartUpload(r.Context(), courses.CompleteMultipartUploadCommand{
+		VideoID:  videoID,
+		Uploader: userID,
+		UploadID: req.UploadID,
+		Parts:    parts,
+	})
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(status)
+}
+
+// AbortMultipartVideoUpload handles POST /v1/uploads/video/multipart/{videoId}/abort
+//
+// @Summary      Abort a multipart video upload
+// @Description  Cancels an in-progress upload and marks the video row as failed. Safe to call multiple times.
+// @Tags         uploads
+// @Accept       json
+// @Produce      json
+// @Param        videoId  path  string  true  "Video ID"
+// @Param        request  body  AbortMultipartUploadRequest  true  "Abort multipart"
+// @Success      204
+// @Failure      400  {object}  ValidationErrorResponse
+// @Failure      401  {object}  ErrorResponse
+// @Failure      403  {object}  ErrorResponse
+// @Security     BearerAuth
+// @Router       /v1/uploads/video/multipart/{videoId}/abort [post]
+type AbortMultipartUploadRequest struct {
+	UploadID string `json:"upload_id"`
+}
+
+func (h *CoursesHandler) AbortMultipartVideoUpload(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserIDFromContext(r)
+	if err != nil {
+		writeErrorResponse(w, apperrors.ErrUnauthorized)
+		return
+	}
+	videoID, err := uuid.Parse(r.PathValue("videoId"))
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_ID", "invalid video ID"))
+		return
+	}
+	var req AbortMultipartUploadRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_BODY", "invalid JSON body"))
+		return
+	}
+	if err := h.service.AbortMultipartUpload(r.Context(), courses.AbortMultipartUploadCommand{
+		VideoID:  videoID,
+		Uploader: userID,
+		UploadID: req.UploadID,
+	}); err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // UploadFile handles POST /v1/uploads/file

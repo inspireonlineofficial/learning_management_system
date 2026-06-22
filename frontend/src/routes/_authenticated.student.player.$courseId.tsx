@@ -21,6 +21,8 @@ import {
   updateCourseComment,
   type CourseComment,
 } from "@/lib/api/courses";
+import { VideoPlayer } from "@/components/course/video-player";
+import { HLSPlayer } from "@/components/course/hls-player";
 import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { useAuth } from "@/context/auth-context";
 import { completeLesson, getCourseProgress, getLesson } from "@/lib/api/student";
@@ -169,6 +171,19 @@ function PlayerPage() {
   });
 
   const [downloaded, setDownloaded] = useState(false);
+  // Track whether the user has interacted with the page. We use this to decide
+  // whether to escalate <video preload> from "metadata" to "auto" so the next
+  // lesson pre-buffers.
+  const [hasInteracted, setHasInteracted] = useState(false);
+  useEffect(() => {
+    const mark = () => setHasInteracted(true);
+    window.addEventListener("pointerdown", mark, { once: true, passive: true });
+    window.addEventListener("keydown", mark, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", mark);
+      window.removeEventListener("keydown", mark);
+    };
+  }, []);
   const [downloading, setDownloading] = useState(false);
   const [downloadPct, setDownloadPct] = useState(0);
   useEffect(() => {
@@ -340,16 +355,12 @@ function PlayerPage() {
           <article className="max-w-4xl mx-auto px-6 md:px-10 lg:px-16 py-10">
             {/* Player surface */}
             {lesson?.video_url ? (
-              <div className="aspect-video bg-black overflow-hidden">
-                <video
-                  key={lesson.id}
-                  src={lesson.video_url}
-                  controls
-                  preload="metadata"
-                  playsInline
-                  className="h-full w-full"
-                />
-              </div>
+              <HLSPlayer
+                mp4Url={lesson.video_url}
+                hlsUrl={lesson.hls_url ?? undefined}
+                posterUrl={lesson.poster_url ?? undefined}
+                hasInteracted={hasInteracted}
+              />
             ) : (
               <div className="aspect-video bg-brand/10 text-brand/45 grid place-items-center">
                 <div className="text-center px-6">

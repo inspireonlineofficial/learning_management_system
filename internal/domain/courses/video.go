@@ -24,6 +24,11 @@ type Video struct {
 	Status             VideoStatus
 	DurationSeconds    int
 	ThumbnailRustFSKey string
-	CreatedAt          time.Time
-	UpdatedAt          time.Time
+	// HLSManifestKey is the key of the master .m3u8 produced by the
+	// transcoding worker. When non-empty the player should prefer HLS over
+	// progressive MP4 for adaptive bitrate.
+	HLSManifestKey string
+	TranscodedAt   *time.Time
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }

@@ -11,6 +11,7 @@ import (
 	"lms-backend/internal/domain/courses"
 	domainenrollments "lms-backend/internal/domain/enrollments"
 	"lms-backend/internal/domain/notifications"
+	"lms-backend/internal/infrastructure/rustfs"
 	tsclient "lms-backend/internal/infrastructure/typesense"
 	"lms-backend/pkg/apperrors"
 
@@ -67,7 +68,13 @@ type Service interface {
 
 	// Video and file uploads
 	UploadVideo(ctx context.Context, cmd UploadVideoCommand) (*VideoStatusResponse, error)
+	InitDirectUpload(ctx context.Context, cmd InitDirectUploadCommand) (*DirectUploadResponse, error)
+	InitMultipartUpload(ctx context.Context, cmd InitMultipartUploadCommand) (*MultipartInitResponse, error)
+	PresignUploadPart(ctx context.Context, cmd PresignUploadPartCommand) (*PresignUploadPartResponse, error)
+	CompleteMultipartUpload(ctx context.Context, cmd CompleteMultipartUploadCommand) (*VideoStatusResponse, error)
+	AbortMultipartUpload(ctx context.Context, cmd AbortMultipartUploadCommand) error
 	GetVideoStatus(ctx context.Context, videoID uuid.UUID) (*VideoStatusResponse, error)
+	CompleteVideoUpload(ctx context.Context, cmd CompleteVideoUploadCommand) (*VideoStatusResponse, error)
 	UploadFile(ctx context.Context, cmd UploadFileCommand) (*FileUploadResponse, error)
 }
 
@@ -91,7 +98,20 @@ type service struct {
 
 type StorageClient interface {
 	PutObject(ctx context.Context, bucket, key string, r io.Reader, size int64, contentType string) error
+	GetObject(ctx context.Context, bucket, key string) (io.ReadCloser, error)
 	PresignGetURL(ctx context.Context, bucket, key string, ttl time.Duration) (string, error)
+	PresignPutURL(ctx context.Context, bucket, key string, ttl time.Duration, contentType string) (string, error)
+	HeadObject(ctx context.Context, bucket, key string) (rustfs.ObjectInfo, error)
+	CreateMultipartUpload(ctx context.Context, bucket, key, contentType string) (rustfs.MultipartUploadState, error)
+	PresignUploadPart(ctx context.Context, bucket, key, uploadID string, partNumber int, ttl time.Duration) (string, error)
+	CompleteMultipartUpload(ctx context.Context, bucket, key, uploadID string, parts []rustfs.CompletedPart) error
+	AbortMultipartUpload(ctx context.Context, bucket, key, uploadID string) error
+}
+// upload-complete path to verify a direct-to-S3 PUT actually landed and to
+// pull size / content-type back for the video record.
+type ObjectInfo struct {
+	Size        int64
+	ContentType string
 }
 
 // NewService creates a new course service

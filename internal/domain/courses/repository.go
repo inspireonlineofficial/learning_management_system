@@ -86,6 +86,7 @@ type VideoRepository interface {
 	Create(ctx context.Context, video *Video) error
 	FindByID(ctx context.Context, id uuid.UUID) (*Video, error)
 	Update(ctx context.Context, video *Video) error
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 // CourseReviewRepository defines the interface for course review persistence
