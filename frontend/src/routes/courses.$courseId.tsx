@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { PreviewPlayerDialog } from "@/components/course/preview-player-dialog";
 import { BrandLogo } from "@/components/layout/brand-logo";
+import { PublicHeaderActions } from "@/components/layout/public-header-actions";
 import { useAuth } from "@/context/auth-context";
 import {
   createCourseComment,
@@ -168,11 +169,7 @@ function CourseDetailPage() {
           <Link to="/bookshop" className="text-brand/60 hover:text-brand transition-colors">
             Bookshop
           </Link>
-          {!isAuthenticated && (
-            <Link to="/login" className="text-brand/60 hover:text-brand transition-colors">
-              Sign in
-            </Link>
-          )}
+          <PublicHeaderActions />
         </nav>
       </header>
 

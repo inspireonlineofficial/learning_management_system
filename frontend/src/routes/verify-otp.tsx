@@ -18,7 +18,7 @@ const searchSchema = z.object({
 export const Route = createFileRoute("/verify-otp")({
   head: () => ({
     meta: [
-      { title: "Verify your email — Inspire LMS" },
+      { title: "Verify your email — Inspire" },
       {
         name: "description",
         content: "Enter the 6-digit verification code we sent to your email.",

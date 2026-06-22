@@ -5,6 +5,7 @@ import libraryHero from "@/assets/library-hero.jpg";
 import { BookCard } from "@/components/bookshop/book-card";
 import { CourseCard, CourseCardSkeleton } from "@/components/course/course-card";
 import { BrandLogo } from "@/components/layout/brand-logo";
+import { PublicHeaderActions } from "@/components/layout/public-header-actions";
 import { SlideCarousel } from "@/components/marketing/ad-carousel";
 import { listBooks } from "@/lib/api/bookshop";
 import { listCourses } from "@/lib/api/courses";
@@ -74,13 +75,13 @@ const fallbackSlides: Slide[] = [
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Inspire LMS - Science tutoring for high school and college" },
+      { title: "Inspire - Science tutoring for high school and college" },
       {
         name: "description",
         content:
-          "Inspire LMS provides high school and college-level science tutoring, live classes, course catalogs, assessments, certificates, and a study bookshop.",
+          "Inspire provides high school and college-level science tutoring, live classes, course catalogs, assessments, certificates, and a study bookshop.",
       },
-      { property: "og:title", content: "Inspire LMS" },
+      { property: "og:title", content: "Inspire" },
       {
         property: "og:description",
         content: "Science tutoring, course learning, live classes, and curated study books.",
@@ -137,15 +138,7 @@ function Landing() {
           >
             Forum
           </Link>
-          <Link to="/login" className="text-brand/60 hover:text-brand transition-colors">
-            Sign in
-          </Link>
-          <Link
-            to="/register"
-            className="bg-brand text-white px-4 py-2.5 hover:bg-brand/90 transition-colors"
-          >
-            Register
-          </Link>
+          <PublicHeaderActions />
         </nav>
       </header>
 
@@ -342,7 +335,7 @@ function Landing() {
       </main>
 
       <footer className="px-6 md:px-12 lg:px-20 py-8 border-t border-brand/5 flex flex-wrap justify-between items-center gap-4 text-sm text-brand/45">
-        <span>© {new Date().getFullYear()} Inspire LMS</span>
+        <span>© {new Date().getFullYear()} Inspire</span>
         <span>Science tutoring for high school and college learners.</span>
       </footer>
     </div>

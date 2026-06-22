@@ -115,6 +115,7 @@ var knownRoutes = []routeEntry{
 	{"/v1/teacher/content/reorder", "patch"},
 	{"/v1/admin/courses", "get"},
 	{"/v1/admin/courses/{courseId}", "get"},
+	{"/v1/admin/courses/{courseId}", "delete"},
 	{"/v1/admin/slides", "get"},
 	{"/v1/admin/slides", "post"},
 	{"/v1/admin/slides/{slideId}", "patch"},
@@ -123,6 +124,7 @@ var knownRoutes = []routeEntry{
 	// Admin courses
 	{"/v1/admin/courses", "get"},
 	{"/v1/admin/courses/{courseId}", "get"},
+	{"/v1/admin/courses/{courseId}", "delete"},
 	{"/v1/admin/courses/{courseId}/review", "post"},
 	// Promotional slides
 	{"/v1/admin/slides", "get"},

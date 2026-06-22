@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 export const Route = createFileRoute("/$")({
   head: () => ({
     meta: [
-      { title: "Not found — Inspire LMS" },
+      { title: "Not found — Inspire" },
       { name: "description", content: "The page you're looking for can't be found." },
     ],
   }),

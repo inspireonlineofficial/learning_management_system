@@ -33,7 +33,7 @@ function destinationForSession(
 }
 
 export const Route = createFileRoute("/auth/callback")({
-  head: () => ({ meta: [{ title: "Signing you in — Inspire LMS" }] }),
+  head: () => ({ meta: [{ title: "Signing you in — Inspire" }] }),
   validateSearch: searchSchema,
   component: CallbackPage,
 });

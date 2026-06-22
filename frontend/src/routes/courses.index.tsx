@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { CourseCard, CourseCardSkeleton } from "@/components/course/course-card";
 import { BrandLogo } from "@/components/layout/brand-logo";
+import { PublicHeaderActions } from "@/components/layout/public-header-actions";
 import { listCategories, listCourses, type CourseLevel } from "@/lib/api/courses";
 
 const searchSchema = z.object({
@@ -20,16 +21,16 @@ export const Route = createFileRoute("/courses/")({
   validateSearch: searchSchema,
   head: () => ({
     meta: [
-      { title: "Course catalog — Inspire LMS" },
+      { title: "Course catalog — Inspire" },
       {
         name: "description",
         content:
-          "Browse the Inspire LMS science course catalog. Find courses by subject, level, and instructor.",
+          "Browse the Inspire science course catalog. Find courses by subject, level, and instructor.",
       },
-      { property: "og:title", content: "Course catalog — Inspire LMS" },
+      { property: "og:title", content: "Course catalog — Inspire" },
       {
         property: "og:description",
-        content: "Find courses by category, level, and instructor at Inspire LMS.",
+        content: "Find courses by category, level, and instructor at Inspire.",
       },
     ],
   }),
@@ -82,15 +83,7 @@ function CatalogPage() {
           <Link to="/bookshop" className="text-brand/60 hover:text-brand transition-colors">
             Bookshop
           </Link>
-          <Link to="/login" className="text-brand/60 hover:text-brand transition-colors">
-            Sign in
-          </Link>
-          <Link
-            to="/register"
-            className="bg-brand text-white px-5 py-2.5 hover:bg-brand/90 transition-colors"
-          >
-            Enroll
-          </Link>
+          <PublicHeaderActions />
         </nav>
       </header>
 

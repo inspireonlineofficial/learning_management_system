@@ -362,14 +362,20 @@ function PlayerPage() {
                 hasInteracted={hasInteracted}
               />
             ) : (
-              <div className="aspect-video bg-brand/10 text-brand/45 grid place-items-center">
-                <div className="text-center px-6">
+              <div className="aspect-video bg-brand/10 text-brand/55 grid place-items-center">
+                <div className="text-center px-6 max-w-md">
                   <PlayCircle className="h-12 w-12 opacity-60 mx-auto" />
-                  <p className="mt-4 text-sm">
+                  <p className="mt-4 text-sm font-medium text-brand">
                     {displayLesson.type === "video"
                       ? "No video is attached to this lesson yet."
                       : "This lesson does not use a video player."}
                   </p>
+                  {displayLesson.type === "video" && (
+                    <p className="mt-2 text-xs text-brand/55 leading-relaxed">
+                      Your teacher hasn't uploaded a video for this lesson. Please check back later
+                      — the lesson will appear here as soon as the upload is ready.
+                    </p>
+                  )}
                 </div>
               </div>
             )}

@@ -32,8 +32,8 @@ const searchSchema = z.object({ token: z.string().optional() });
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
     meta: [
-      { title: "Reset password — Inspire LMS" },
-      { name: "description", content: "Set a new password for your Inspire LMS account." },
+      { title: "Reset password — Inspire" },
+      { name: "description", content: "Set a new password for your Inspire account." },
     ],
   }),
   validateSearch: searchSchema,

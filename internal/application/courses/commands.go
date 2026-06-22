@@ -61,6 +61,14 @@ type DeleteCourseCommand struct {
 	TeacherID uuid.UUID
 }
 
+// AdminDeleteCourseCommand is the admin override of DeleteCourse: it skips the
+// ownership check, the "is editable" check, and the "no enrollments" check, so
+// admins can clean up spam / abandoned / policy-violating courses.
+type AdminDeleteCourseCommand struct {
+	CourseID uuid.UUID
+	AdminID  uuid.UUID
+}
+
 // ApproveCourseCommand represents the command to approve a course
 type ApproveCourseCommand struct {
 	CourseID uuid.UUID

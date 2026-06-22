@@ -34,8 +34,8 @@ function defaultDestination(user: { role: "student" | "teacher" | "admin"; onboa
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Sign in — Inspire LMS" },
-      { name: "description", content: "Sign in to your Inspire LMS account." },
+      { title: "Sign in — Inspire" },
+      { name: "description", content: "Sign in to your Inspire account." },
     ],
   }),
   validateSearch: searchSchema,
