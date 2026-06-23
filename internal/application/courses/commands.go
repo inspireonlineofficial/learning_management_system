@@ -156,6 +156,7 @@ type UpdateLessonCommand struct {
 	Description     string
 	Type            string
 	VideoID         *uuid.UUID
+	UpdateVideoID   bool
 	DurationSeconds int
 	IsFreePreview   bool
 	IsFree          bool
