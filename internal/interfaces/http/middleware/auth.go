@@ -106,7 +106,6 @@ func (m *AuthenticateMiddleware) AuthenticateOptional(next http.Handler) http.Ha
 	})
 }
 
-
 // Authenticate middleware validates JWT and injects user context (legacy function-based version)
 func Authenticate(verifier JWTVerifier) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
