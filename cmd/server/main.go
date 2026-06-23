@@ -370,6 +370,16 @@ func main() {
 	analyticsService := analytics.NewService(analyticsRepo, analyticsLiveRepo, analyticsCache)
 	logger.Info(ctx, "Analytics service initialized")
 
+	// Wire the analytics service into the courses service so that when an
+	// admin or teacher deletes a course, every enrolled student's cached
+	// dashboard snapshot is invalidated immediately rather than waiting
+	// for the 5-minute TTL.
+	if courseSvc, ok := coursesService.(interface {
+		SetDashboardCache(courses.DashboardCache)
+	}); ok {
+		courseSvc.SetDashboardCache(analyticsService)
+	}
+
 	// Initialize purchase approval repositories and service
 	purchaseRequestRepo := postgres.NewPurchaseRequestRepository(db)
 	txRunner := postgres.NewTxRunner(db)

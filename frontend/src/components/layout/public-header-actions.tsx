@@ -41,19 +41,19 @@ export function PublicHeaderActions() {
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("")
     .slice(0, 2);
+  const displayName = user?.full_name?.trim() || user?.email || "Account";
 
   return (
     <Link
       to={dashboardTo}
       className="inline-flex items-center gap-2 px-2 py-1 hover:bg-brand/[0.03] transition-colors"
-      aria-label={`Open ${user?.role ?? "user"} dashboard`}
+      aria-label={`Open ${displayName}'s dashboard`}
     >
       <span className="h-9 w-9 grid place-items-center rounded-full bg-brand text-white text-xs font-semibold">
         {initials || "U"}
       </span>
-      <span className="hidden sm:flex flex-col text-left leading-tight">
-        <span className="text-xs text-brand/55">{user?.role ?? "user"}</span>
-        <span className="text-sm font-medium text-brand">Dashboard</span>
+      <span className="hidden sm:inline text-sm font-medium text-brand max-w-[160px] truncate">
+        {displayName}
       </span>
     </Link>
   );

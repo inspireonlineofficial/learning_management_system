@@ -171,6 +171,7 @@ func (m *mockCache) Get(_ context.Context, _ string) (string, error) { return ""
 func (m *mockCache) Set(_ context.Context, _ string, _ string, _ time.Duration) error {
 	return nil
 }
+func (m *mockCache) Delete(_ context.Context, _ string) error { return nil }
 
 // ─── Property 57 ─────────────────────────────────────────────────────────────
 
