@@ -53,21 +53,47 @@ export function HLSPlayer({
   const [failed, setFailed] = useState(false);
   const [needsTap, setNeedsTap] = useState(true);
   const [usingHls, setUsingHls] = useState(false);
+  const [hlsFailed, setHlsFailed] = useState(false);
+  const userInteractedRef = useRef(false);
 
-  // Determine the right playback strategy once on mount. Safari supports
-  // HLS via the <video src> attribute directly; everywhere else we have to
-  // drive MSE ourselves.
+  // When the mp4Url changes, we load a new video, so reset the fallback tracking
+  useEffect(() => {
+    setHlsFailed(false);
+    userInteractedRef.current = false;
+  }, [mp4Url]);
+
+  // Handle source setup
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !hlsUrl) return;
+    if (!video) return;
 
+    setFailed(false);
+    setBuffering(false);
+    setNeedsTap(true);
+
+    if (!hlsUrl || hlsFailed) {
+      // Progressive MP4 path
+      video.src = mp4Url;
+      video.load();
+      setUsingHls(false);
+      if (userInteractedRef.current) {
+        video.play().catch(() => {});
+      }
+      return;
+    }
+
+    // Try HLS natively first (Safari/iOS)
     const canNative = video.canPlayType("application/vnd.apple.mpegurl");
     if (canNative) {
       video.src = hlsUrl;
       setUsingHls(true);
+      if (userInteractedRef.current) {
+        video.play().catch(() => {});
+      }
       return;
     }
 
+    // MSE HLS path (Chrome/Firefox)
     let cancelled = false;
     const ms = new MediaSource();
     video.src = URL.createObjectURL(ms);
@@ -77,38 +103,31 @@ export function HLSPlayer({
       try {
         const sb = ms.addSourceBuffer('video/mp4; codecs="avc1.4d401f,mp4a.40.2"');
         await ingestManifest(ms, sb, hlsUrl, video);
-        if (!cancelled) setUsingHls(true);
+        if (!cancelled) {
+          setUsingHls(true);
+          if (userInteractedRef.current) {
+            video.play().catch(() => {});
+          }
+        }
       } catch (err) {
-        // Fall back to MP4 if HLS failed entirely (codec mismatch, CORS, etc.)
         if (cancelled) return;
         // eslint-disable-next-line no-console
-        console.warn("HLS playback failed; falling back to MP4", err);
-        video.src = mp4Url;
+        console.warn("HLS MSE playback failed; falling back to MP4", err);
+        setHlsFailed(true);
       }
     });
 
     return () => {
       cancelled = true;
-      try {
-        URL.revokeObjectURL(video.src);
-      } catch {
-        /* ignore */
+      if (video.src.startsWith("blob:")) {
+        try {
+          URL.revokeObjectURL(video.src);
+        } catch {
+          /* ignore */
+        }
       }
     };
-  }, [hlsUrl, mp4Url]);
-
-  // When the MP4 URL changes (new lesson selected) and we don't have HLS,
-  // re-point the video element so the browser fetches the new source.
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    if (hlsUrl && usingHls) return; // HLS path handles itself
-    video.src = mp4Url;
-    video.load();
-    setFailed(false);
-    setBuffering(false);
-    setNeedsTap(true);
-  }, [mp4Url, hlsUrl, usingHls]);
+  }, [hlsUrl, mp4Url, hlsFailed]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -141,6 +160,16 @@ export function HLSPlayer({
         }}
         onCanPlay={() => setBuffering(false)}
         onError={() => {
+          if (hlsUrl && !hlsFailed) {
+            // HLS stream failed (either native or MSE), fall back silently to MP4
+            // eslint-disable-next-line no-console
+            console.warn(
+              "HLS stream failed to play; triggering silent fallback to progressive MP4",
+            );
+            setHlsFailed(true);
+            setBuffering(false);
+            return;
+          }
           setFailed(true);
           setBuffering(false);
           onError?.("Video failed to load");
@@ -153,6 +182,7 @@ export function HLSPlayer({
           onClick={() => {
             const el = videoRef.current;
             if (!el) return;
+            userInteractedRef.current = true;
             el.play().catch(() => {});
           }}
           aria-label="Play video"
