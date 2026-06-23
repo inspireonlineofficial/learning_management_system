@@ -330,7 +330,9 @@ func (s *service) UpdateLesson(ctx context.Context, cmd UpdateLessonCommand) (*L
 	lesson.Title = cmd.Title
 	lesson.Description = cmd.Description
 	lesson.Type = courses.LessonType(cmd.Type)
-	lesson.VideoID = cmd.VideoID
+	if cmd.UpdateVideoID {
+		lesson.VideoID = cmd.VideoID
+	}
 	lesson.DurationSeconds = cmd.DurationSeconds
 	lesson.IsFreePreview = cmd.IsFreePreview
 	lesson.IsFree = cmd.IsFree

@@ -981,6 +981,12 @@ func (h *CoursesHandler) UpdateLesson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_JSON", "invalid request body"))
+		return
+	}
+
 	var req struct {
 		Title           string  `json:"title"`
 		Description     string  `json:"description"`
@@ -994,10 +1000,14 @@ func (h *CoursesHandler) UpdateLesson(w http.ResponseWriter, r *http.Request) {
 		Status          string  `json:"status"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.Unmarshal(bodyBytes, &req); err != nil {
 		writeErrorResponse(w, apperrors.NewSimpleValidationError("INVALID_JSON", "invalid request body"))
 		return
 	}
+
+	var jsonMap map[string]interface{}
+	_ = json.Unmarshal(bodyBytes, &jsonMap)
+	_, hasVideoID := jsonMap["video_id"]
 
 	videoID, err := parseOptionalUUID(req.VideoID)
 	if err != nil {
@@ -1012,6 +1022,7 @@ func (h *CoursesHandler) UpdateLesson(w http.ResponseWriter, r *http.Request) {
 		Description:     req.Description,
 		Type:            req.Type,
 		VideoID:         videoID,
+		UpdateVideoID:   hasVideoID,
 		DurationSeconds: req.DurationSeconds,
 		IsFreePreview:   req.IsFreePreview,
 		IsFree:          boolDefault(req.IsFree, true),
