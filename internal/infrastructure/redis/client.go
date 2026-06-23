@@ -78,6 +78,26 @@ func (c *Client) SRem(ctx context.Context, key string, members ...interface{}) e
 	return c.rdb.SRem(ctx, key, members...).Err()
 }
 
+// LPush prepends one or more values to a list
+func (c *Client) LPush(ctx context.Context, key string, values ...interface{}) error {
+	return c.rdb.LPush(ctx, key, values...).Err()
+}
+
+// RPush appends one or more values to a list
+func (c *Client) RPush(ctx context.Context, key string, values ...interface{}) error {
+	return c.rdb.RPush(ctx, key, values...).Err()
+}
+
+// LPop removes and returns the first element of a list
+func (c *Client) LPop(ctx context.Context, key string) (string, error) {
+	return c.rdb.LPop(ctx, key).Result()
+}
+
+// RPop removes and returns the last element of a list
+func (c *Client) RPop(ctx context.Context, key string) (string, error) {
+	return c.rdb.RPop(ctx, key).Result()
+}
+
 // Close closes the Redis connection
 func (c *Client) Close() error {
 	return c.rdb.Close()

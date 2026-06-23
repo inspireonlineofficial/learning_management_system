@@ -69,7 +69,7 @@ func (w *RecordingWorker) Run(ctx context.Context) {
 
 // processNext dequeues and processes one recording job.
 func (w *RecordingWorker) processNext(ctx context.Context) error {
-	raw, err := w.redis.Get(ctx, recordingQueueKey)
+	raw, err := w.redis.LPop(ctx, recordingQueueKey)
 	if err != nil || raw == "" {
 		return nil // no job available
 	}
@@ -121,5 +121,5 @@ func (w *RecordingWorker) EnqueueProcessRecording(ctx context.Context, sessionID
 	if err != nil {
 		return fmt.Errorf("failed to marshal recording job: %w", err)
 	}
-	return w.redis.Set(ctx, recordingQueueKey, string(data), 0)
+	return w.redis.RPush(ctx, recordingQueueKey, string(data))
 }

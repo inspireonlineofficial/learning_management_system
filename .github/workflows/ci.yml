@@ -223,6 +223,7 @@ jobs:
             --exclude='coverage.out' \
             --exclude='.deploy' \
             --exclude='frontend/.output' \
+            --exclude='frontend/.vinxi' \
             --exclude='frontend/node_modules' \
             --exclude='node_modules' \
             -czf - . \
