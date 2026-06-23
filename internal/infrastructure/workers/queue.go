@@ -33,7 +33,7 @@ func (q *RedisQueue) Enqueue(ctx context.Context, job notifications.Job) error {
 	}
 
 	key := fmt.Sprintf("queue:%s", q.queue)
-	if err := q.redis.Set(ctx, key, string(data), 0); err != nil {
+	if err := q.redis.RPush(ctx, key, string(data)); err != nil {
 		return fmt.Errorf("failed to enqueue job: %w", err)
 	}
 
@@ -43,7 +43,7 @@ func (q *RedisQueue) Enqueue(ctx context.Context, job notifications.Job) error {
 // Dequeue removes and returns a job from the queue
 func (q *RedisQueue) Dequeue(ctx context.Context, timeout time.Duration) (*notifications.Job, error) {
 	key := fmt.Sprintf("queue:%s", q.queue)
-	result, err := q.redis.Get(ctx, key)
+	result, err := q.redis.LPop(ctx, key)
 	if err != nil {
 		return nil, nil // No job available
 	}
@@ -82,7 +82,7 @@ func (q *NotificationQueue) EnqueueNotification(ctx context.Context, userID uuid
 	}
 
 	key := "queue:notifications"
-	if err := q.redis.Set(ctx, key, string(data), 0); err != nil {
+	if err := q.redis.RPush(ctx, key, string(data)); err != nil {
 		return fmt.Errorf("failed to enqueue notification: %w", err)
 	}
 

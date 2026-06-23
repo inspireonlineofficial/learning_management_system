@@ -16,5 +16,9 @@ type RedisClient interface {
 	SAdd(ctx context.Context, key string, members ...interface{}) error
 	SMembers(ctx context.Context, key string) ([]string, error)
 	SRem(ctx context.Context, key string, members ...interface{}) error
+	LPush(ctx context.Context, key string, values ...interface{}) error
+	RPush(ctx context.Context, key string, values ...interface{}) error
+	LPop(ctx context.Context, key string) (string, error)
+	RPop(ctx context.Context, key string) (string, error)
 	Close() error
 }

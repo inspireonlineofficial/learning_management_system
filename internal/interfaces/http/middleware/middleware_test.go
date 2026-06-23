@@ -361,6 +361,22 @@ func (m *mockRedisClient) SRem(ctx context.Context, key string, members ...inter
 	return nil
 }
 
+func (m *mockRedisClient) LPush(ctx context.Context, key string, values ...interface{}) error {
+	return nil
+}
+
+func (m *mockRedisClient) RPush(ctx context.Context, key string, values ...interface{}) error {
+	return nil
+}
+
+func (m *mockRedisClient) LPop(ctx context.Context, key string) (string, error) {
+	return "", nil
+}
+
+func (m *mockRedisClient) RPop(ctx context.Context, key string) (string, error) {
+	return "", nil
+}
+
 func (m *mockRedisClient) Close() error {
 	return nil
 }

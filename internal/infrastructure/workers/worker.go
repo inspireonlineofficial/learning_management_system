@@ -57,7 +57,8 @@ func (w *Worker) Run(ctx context.Context) {
 			}
 
 			if job == nil {
-				// No job available, continue
+				// No job available, sleep to avoid tight CPU loop
+				time.Sleep(1 * time.Second)
 				continue
 			}
 
@@ -73,10 +74,10 @@ func (w *Worker) Run(ctx context.Context) {
 }
 
 func (w *Worker) dequeue(ctx context.Context) (*notifications.Job, error) {
-	// Use BLPOP with timeout for graceful shutdown
-	result, err := w.redis.Get(ctx, fmt.Sprintf("queue:%s", w.queue))
+	// Use LPOP to atomically fetch and remove the next job from the list
+	result, err := w.redis.LPop(ctx, fmt.Sprintf("queue:%s", w.queue))
 	if err != nil {
-		// No job available
+		// No job available or connection issue
 		return nil, nil
 	}
 
