@@ -151,6 +151,13 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           printf '%s\n' "${{ secrets.SERVER_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
+          cat <<'EOF' > ~/.ssh/config
+          Host *
+            ServerAliveInterval 30
+            ServerAliveCountMax 15
+            TCPKeepAlive yes
+          EOF
+          chmod 600 ~/.ssh/config
 
       - name: Prepare production configuration
         env:
@@ -235,10 +242,11 @@ jobs:
           ssh -i ~/.ssh/deploy_key -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" <<EOF
           set -euo pipefail
           cd '$DEPLOY_PATH'
+          docker compose --env-file .env build
           docker compose --env-file .env down --remove-orphans
           docker ps -aq --filter name='inspire-lms-frontend' | xargs -r docker rm -f
           docker ps -aq --filter publish=3000 | xargs -r docker rm -f
-          docker compose --env-file .env up -d --build --remove-orphans
+          docker compose --env-file .env up -d --remove-orphans
           sleep 25
           docker compose --env-file .env ps
           docker compose --env-file .env logs typesense --tail=50 || true
