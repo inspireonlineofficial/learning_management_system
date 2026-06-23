@@ -25,13 +25,13 @@ RUN --mount=type=cache,target=/build/go-build-cache \
     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /app/server ./cmd/server/main.go
 
 # Stage 2: Final image
-FROM scratch
+FROM alpine:3.21
 
-# Copy CA certificates for outbound HTTPS (Requirement 5.2)
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
+# Install CA certificates and ffmpeg
+RUN apk --no-cache add ca-certificates ffmpeg
 
-# Copy passwd for non-root user resolution (Requirement 4.2)
-COPY --from=builder /etc/passwd /etc/passwd
+# Create non-root system user with UID 1001 (Requirement 4.1)
+RUN adduser -D -u 1001 appuser
 
 # Copy compiled binary
 COPY --from=builder /app/server /app/server
