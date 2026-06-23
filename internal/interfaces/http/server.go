@@ -217,7 +217,7 @@ func (s *Server) RegisterRoutes() {
 
 	// Public course endpoints
 	s.mux.HandleFunc("GET /v1/courses", s.coursesHandler.ListPublishedCourses)
-	s.mux.HandleFunc("GET /v1/courses/{courseId}", s.coursesHandler.GetCourseDetail)
+	s.mux.HandleFunc("GET /v1/courses/{courseId}", s.withAuthOptional(s.coursesHandler.GetCourseDetail))
 	s.mux.HandleFunc("GET /v1/courses/{courseId}/reviews", s.coursesHandler.ListCourseReviews)
 	s.mux.HandleFunc("POST /v1/courses/{courseId}/reviews", s.withAuthAndRole("student", s.coursesHandler.UpsertCourseReview, nil))
 	s.mux.HandleFunc("DELETE /v1/courses/{courseId}/reviews/me", s.withAuthAndRole("student", s.coursesHandler.DeleteCourseReview, nil))
@@ -490,6 +490,14 @@ func (s *Server) withAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authMiddleware := middleware.NewAuthenticateMiddleware(s.jwtService)
 		authMiddleware.Authenticate(http.HandlerFunc(next)).ServeHTTP(w, r)
+	}
+}
+
+// withAuthOptional wraps a handler with optional JWT authentication middleware
+func (s *Server) withAuthOptional(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		authMiddleware := middleware.NewAuthenticateMiddleware(s.jwtService)
+		authMiddleware.AuthenticateOptional(http.HandlerFunc(next)).ServeHTTP(w, r)
 	}
 }
 

@@ -68,6 +68,45 @@ func (m *AuthenticateMiddleware) Authenticate(next http.Handler) http.Handler {
 	})
 }
 
+// AuthenticateOptional middleware validates JWT if present, and injects user context. It does not fail if JWT is missing or invalid.
+func (m *AuthenticateMiddleware) AuthenticateOptional(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		token := parts[1]
+
+		userID, role, email, err := m.verifier.VerifyToken(token)
+		if err != nil {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		parsedUserID, parseErr := uuid.Parse(userID)
+		if parseErr != nil {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, "user_id", parsedUserID)
+		ctx = context.WithValue(ctx, "role", role)
+		ctx = context.WithValue(ctx, "email", email)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+
 // Authenticate middleware validates JWT and injects user context (legacy function-based version)
 func Authenticate(verifier JWTVerifier) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
