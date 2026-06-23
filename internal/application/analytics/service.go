@@ -27,12 +27,21 @@ type Service interface {
 	ListCoursesAnalytics(ctx context.Context) (*CourseAnalyticsListResponse, error)
 	ListStudentsAnalytics(ctx context.Context) (*StudentAnalyticsListResponse, error)
 	GetStudentDashboard(ctx context.Context, studentID uuid.UUID) (*StudentDashboardResponse, error)
+
+	// InvalidateStudentDashboard drops the cached dashboard response for the
+	// given student. Callers should invoke this whenever a backend event
+	// invalidates the snapshot — typically when a course the student is
+	// enrolled in is soft-deleted (admin/teacher delete), so the next
+	// /v1/student/dashboard read returns an up-to-date stats object instead
+	// of a 5-minute-old cached copy that still references the deleted course.
+	InvalidateStudentDashboard(ctx context.Context, studentID uuid.UUID) error
 }
 
 // Cache defines the Redis caching interface for analytics responses.
 type Cache interface {
 	Get(ctx context.Context, key string) (string, error)
 	Set(ctx context.Context, key string, value string, ttl time.Duration) error
+	Delete(ctx context.Context, key string) error
 }
 
 // LiveQueryRepo provides live (non-pre-aggregated) queries needed for analytics.
@@ -569,4 +578,17 @@ func (s *service) GetStudentDashboard(ctx context.Context, studentID uuid.UUID) 
 
 	s.cacheResponse(ctx, cacheKey, resp)
 	return resp, nil
+}
+
+// InvalidateStudentDashboard removes the cached student dashboard snapshot so
+// the next GetStudentDashboard call recomputes from the database. The cache
+// is also used by related stats and continue_learning responses, so dropping
+// the dashboard key is enough to refresh every read on the /student page.
+func (s *service) InvalidateStudentDashboard(ctx context.Context, studentID uuid.UUID) error {
+	cacheKey := fmt.Sprintf("analytics:student_dashboard:%s", studentID)
+	if err := s.cache.Delete(ctx, cacheKey); err != nil {
+		logger.Error(ctx, "Failed to invalidate student dashboard cache", "key", cacheKey, "error", err)
+		return err
+	}
+	return nil
 }

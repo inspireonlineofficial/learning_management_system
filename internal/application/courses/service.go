@@ -96,7 +96,21 @@ type service struct {
 	jobQueue       notifications.JobQueue
 	videoBucket    string
 	filesBucket    string
+	// dashboardCache is an optional best-effort cache invalidator. When a
+	// course is soft-deleted we look up the enrolled students and drop their
+	// cached /v1/student/dashboard snapshot, so the next /student page read
+	// does not show the deleted course. nil is allowed for tests and for
+	// bootstrap environments without Redis.
+	dashboardCache DashboardCache
 	// Add audit logger and notification queue when implementing admin operations
+}
+
+// DashboardCache drops the cached student dashboard response for one
+// student. Defined here (not imported from application/analytics) so the
+// courses package does not import its sibling — that would create a cycle
+// since analytics references the courses domain through the live repo.
+type DashboardCache interface {
+	InvalidateStudentDashboard(ctx context.Context, studentID uuid.UUID) error
 }
 
 type StorageClient interface {
@@ -164,6 +178,14 @@ func NewServiceWithUploadDeps(
 	svc.videoBucket = videoBucket
 	svc.filesBucket = filesBucket
 	return svc
+}
+
+// SetDashboardCache wires the analytics service in as a best-effort
+// student-dashboard cache invalidator. Called from cmd/server once both
+// services are constructed. Passing nil disables the optimisation and
+// leaves the dashboard cache stale until its 5-minute TTL expires.
+func (s *service) SetDashboardCache(cache DashboardCache) {
+	s.dashboardCache = cache
 }
 
 // CreateCourse creates a new course in draft status
@@ -388,6 +410,7 @@ func (s *service) DeleteCourse(ctx context.Context, cmd DeleteCourseCommand) err
 	if idxErr := s.indexer.DeleteCourse(ctx, course.ID.String()); idxErr != nil {
 		log.Printf("typesense index error: %v", idxErr)
 	}
+	s.invalidateDashboardCacheForCourse(ctx, course.ID)
 	return nil
 }
 
@@ -407,8 +430,43 @@ func (s *service) AdminDeleteCourse(ctx context.Context, cmd AdminDeleteCourseCo
 	if idxErr := s.indexer.DeleteCourse(ctx, course.ID.String()); idxErr != nil {
 		log.Printf("typesense index error: %v", idxErr)
 	}
+	s.invalidateDashboardCacheForCourse(ctx, course.ID)
 	logger.Info(ctx, "admin: course deleted", "course_id", cmd.CourseID, "admin_id", cmd.AdminID)
 	return nil
+}
+
+// invalidateDashboardCacheForCourse drops every enrolled student's cached
+// /v1/student/dashboard snapshot. The previous snapshot may still list this
+// course under continue_learning and bump the enrolled counter, which would
+// be wrong now that the course is gone. Best-effort: failures are logged
+// but do not fail the delete.
+func (s *service) invalidateDashboardCacheForCourse(ctx context.Context, courseID uuid.UUID) {
+	if s.dashboardCache == nil || s.enrollmentRepo == nil {
+		return
+	}
+	// Page through every enrollment on the course. A single course rarely has
+	// more than a few hundred active enrollments so a 200/page walk is fine.
+	const pageSize = 200
+	page := 1
+	for {
+		enrollments, _, err := s.enrollmentRepo.FindByCourseID(ctx, courseID, page, pageSize)
+		if err != nil {
+			logger.Warn(ctx, "could not load enrollments for dashboard cache invalidation", "course_id", courseID, "error", err)
+			return
+		}
+		if len(enrollments) == 0 {
+			return
+		}
+		for _, e := range enrollments {
+			if err := s.dashboardCache.InvalidateStudentDashboard(ctx, e.StudentID); err != nil {
+				logger.Warn(ctx, "dashboard cache invalidation failed", "student_id", e.StudentID, "course_id", courseID, "error", err)
+			}
+		}
+		if len(enrollments) < pageSize {
+			return
+		}
+		page++
+	}
 }
 
 // GetTeacherCoursePreview returns course preview as student would see it

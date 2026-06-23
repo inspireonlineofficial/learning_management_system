@@ -421,18 +421,21 @@ func (r *AnalyticsLiveRepository) ListStudentsAnalytics(ctx context.Context) ([]
 func (r *AnalyticsLiveRepository) GetStudentDashboardStats(ctx context.Context, studentID uuid.UUID) (*appanalytics.StudentDashboardStats, error) {
 	stats := &appanalytics.StudentDashboardStats{}
 
-	// Enrolled courses
+	// Enrolled courses. Filter out enrollments whose course was soft-deleted
+	// so the stat reflects the courses the student can actually open.
 	err := r.db.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM enrollments
-		WHERE student_id = $1 AND status = 'active'`, studentID).Scan(&stats.EnrolledCourses)
+		SELECT COUNT(*) FROM enrollments e
+		JOIN courses c ON c.id = e.course_id
+		WHERE e.student_id = $1 AND e.status = 'active' AND c.deleted_at IS NULL`, studentID).Scan(&stats.EnrolledCourses)
 	if err != nil {
 		return nil, err
 	}
 
 	// Completed courses
 	err = r.db.QueryRowContext(ctx, `
-		SELECT COUNT(*) FROM enrollments
-		WHERE student_id = $1 AND status = 'active' AND progress_percent = 100`, studentID).Scan(&stats.CompletedCourses)
+		SELECT COUNT(*) FROM enrollments e
+		JOIN courses c ON c.id = e.course_id
+		WHERE e.student_id = $1 AND e.status = 'active' AND e.progress_percent = 100 AND c.deleted_at IS NULL`, studentID).Scan(&stats.CompletedCourses)
 	if err != nil {
 		return nil, err
 	}
@@ -442,7 +445,8 @@ func (r *AnalyticsLiveRepository) GetStudentDashboardStats(ctx context.Context, 
 		SELECT COALESCE(COUNT(*) * 0.5, 0.0)
 		FROM lesson_progress lp
 		JOIN enrollments e ON e.id = lp.enrollment_id
-		WHERE e.student_id = $1 AND lp.completed = true`, studentID).Scan(&stats.HoursLearned)
+		JOIN courses c ON c.id = e.course_id
+		WHERE e.student_id = $1 AND lp.completed = true AND c.deleted_at IS NULL`, studentID).Scan(&stats.HoursLearned)
 	if err != nil {
 		return nil, err
 	}

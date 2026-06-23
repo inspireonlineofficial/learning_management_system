@@ -24,3 +24,10 @@ func (c *AnalyticsCache) Get(ctx context.Context, key string) (string, error) {
 func (c *AnalyticsCache) Set(ctx context.Context, key string, value string, ttl time.Duration) error {
 	return c.client.Set(ctx, key, value, ttl)
 }
+
+// Delete removes a cached analytics response by key. Missing keys are not an
+// error — cache invalidation is best-effort, and the next read will simply
+// repopulate from the database.
+func (c *AnalyticsCache) Delete(ctx context.Context, key string) error {
+	return c.client.Del(ctx, key)
+}
