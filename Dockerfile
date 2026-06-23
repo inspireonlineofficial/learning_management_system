@@ -16,11 +16,13 @@ RUN mkdir -p /build/go-build-cache /build/go-tmp
 
 # Copy dependency manifests first for layer caching (Requirements 3.1, 3.3)
 COPY go.mod go.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod go mod download
 
 # Copy full source and compile static binary (Requirements 2.1, 2.2, 2.3, 2.4)
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /app/server ./cmd/server/main.go
+RUN --mount=type=cache,target=/build/go-build-cache \
+    --mount=type=cache,target=/go/pkg/mod \
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /app/server ./cmd/server/main.go
 
 # Stage 2: Final image
 FROM scratch
