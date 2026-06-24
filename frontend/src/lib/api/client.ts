@@ -5,9 +5,21 @@ import {
   type Session,
 } from "@/lib/session";
 
-export const API_BASE_URL =
-  (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
-  (typeof window !== "undefined" ? window.location.origin : "http://localhost:8080");
+export const API_BASE_URL = (() => {
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    const isLocal =
+      host === "localhost" ||
+      host === "127.0.0.1" ||
+      host.endsWith(".local") ||
+      host.endsWith(".internal");
+    if (isLocal) {
+      return (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://localhost:8080";
+    }
+    return window.location.origin;
+  }
+  return (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://localhost:8080";
+})();
 
 export class ApiError extends Error {
   status: number;
