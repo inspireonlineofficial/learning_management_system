@@ -61,7 +61,7 @@ function CourseDetailPage() {
     isError,
     error,
   } = useQuery({
-    queryKey: ["course", courseId],
+    queryKey: ["course", courseId, user?.id],
     queryFn: () => getCourse(courseId),
   });
 

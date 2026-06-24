@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import {
   createContext,
   useCallback,
@@ -5,6 +6,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useRef,
   type ReactNode,
 } from "react";
 
@@ -33,6 +35,15 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSessionState] = useState<Session | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
+  const queryClient = useQueryClient();
+  const prevUserId = useRef<string | undefined>(session?.user?.id);
+
+  useEffect(() => {
+    if (isHydrated && session?.user?.id !== prevUserId.current) {
+      prevUserId.current = session?.user?.id;
+      queryClient.clear();
+    }
+  }, [session?.user?.id, isHydrated, queryClient]);
 
   useEffect(() => {
     setSessionState(getStoredSession());
