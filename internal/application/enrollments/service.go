@@ -21,7 +21,7 @@ type Service interface {
 	EnrollFree(ctx context.Context, cmd EnrollFreeCommand) (*EnrollmentResponse, error)
 	RevokeEnrollment(ctx context.Context, cmd RevokeEnrollmentCommand) error
 	GetEnrollment(ctx context.Context, studentID, courseID uuid.UUID) (*EnrollmentResponse, error)
-	ListStudentEnrollments(ctx context.Context, studentID uuid.UUID, page, limit int) ([]EnrollmentResponse, int, error)
+	ListStudentEnrollments(ctx context.Context, studentID uuid.UUID, status string, page, limit int) ([]EnrollmentResponse, int, error)
 
 	// Progress tracking
 	UpdateLessonProgress(ctx context.Context, cmd UpdateLessonProgressCommand) (*LessonProgressResponse, error)
@@ -193,8 +193,46 @@ func (s *service) GetEnrollment(ctx context.Context, studentID, courseID uuid.UU
 }
 
 // ListStudentEnrollments retrieves all enrollments for a student
-func (s *service) ListStudentEnrollments(ctx context.Context, studentID uuid.UUID, page, limit int) ([]EnrollmentResponse, int, error) {
-	enrollmentList, total, err := s.enrollmentRepo.FindByStudentID(ctx, studentID, page, limit)
+func (s *service) ListStudentEnrollments(ctx context.Context, studentID uuid.UUID, status string, page, limit int) ([]EnrollmentResponse, int, error) {
+	type statusFilterRepository interface {
+		FindByStudentIDAndStatus(ctx context.Context, studentID uuid.UUID, status string, page, limit int) ([]*enrollments.Enrollment, int, error)
+	}
+
+	var enrollmentList []*enrollments.Enrollment
+	var total int
+	var err error
+
+	if status != "" {
+		if repoWithStatus, ok := s.enrollmentRepo.(statusFilterRepository); ok {
+			enrollmentList, total, err = repoWithStatus.FindByStudentIDAndStatus(ctx, studentID, status, page, limit)
+		} else {
+			// Fallback: fetch all and filter in-memory for tests/mocks
+			allEnrollments, _, fetchErr := s.enrollmentRepo.FindByStudentID(ctx, studentID, 1, 1000)
+			if fetchErr != nil {
+				return nil, 0, fetchErr
+			}
+			filteredList := make([]*enrollments.Enrollment, 0)
+			for _, e := range allEnrollments {
+				if status == "completed" && e.CompletedAt != nil && e.Status == enrollments.EnrollmentStatusActive {
+					filteredList = append(filteredList, e)
+				} else if status == "active" && e.CompletedAt == nil && e.Status == enrollments.EnrollmentStatusActive {
+					filteredList = append(filteredList, e)
+				}
+			}
+			total = len(filteredList)
+			offset := (page - 1) * limit
+			if offset < total {
+				end := offset + limit
+				if end > total {
+					end = total
+				}
+				enrollmentList = filteredList[offset:end]
+			}
+		}
+	} else {
+		enrollmentList, total, err = s.enrollmentRepo.FindByStudentID(ctx, studentID, page, limit)
+	}
+
 	if err != nil {
 		return nil, 0, err
 	}

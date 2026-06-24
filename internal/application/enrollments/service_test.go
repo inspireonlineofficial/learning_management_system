@@ -1449,7 +1449,7 @@ func TestListStudentEnrollments_SkipsSoftDeletedCourses(t *testing.T) {
 		EnrolledAt:     time.Now(),
 	})
 
-	results, total, err := service.ListStudentEnrollments(context.Background(), studentID, 1, 20)
+	results, total, err := service.ListStudentEnrollments(context.Background(), studentID, "", 1, 20)
 	if err != nil {
 		t.Fatalf("ListStudentEnrollments returned error: %v", err)
 	}
