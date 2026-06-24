@@ -36,14 +36,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSessionState] = useState<Session | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
   const queryClient = useQueryClient();
-  const prevUserId = useRef<string | undefined>(session?.user?.id);
-
-  useEffect(() => {
-    if (isHydrated && session?.user?.id !== prevUserId.current) {
-      prevUserId.current = session?.user?.id;
-      queryClient.clear();
-    }
-  }, [session?.user?.id, isHydrated, queryClient]);
 
   useEffect(() => {
     setSessionState(getStoredSession());
@@ -52,16 +44,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const onStorage = (e: StorageEvent) => {
       if (e.key && e.key !== SESSION_STORAGE_KEY) return;
       setSessionState(getStoredSession());
+      queryClient.clear();
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  }, []);
+  }, [queryClient]);
 
-  const setSession = useCallback((next: Session | null) => {
-    if (next) setStoredSession(next);
-    else clearStoredSession();
-    setSessionState(next);
-  }, []);
+  const setSession = useCallback(
+    (next: Session | null) => {
+      if (next) setStoredSession(next);
+      else clearStoredSession();
+      setSessionState(next);
+      queryClient.clear();
+    },
+    [queryClient],
+  );
 
   const refreshProfile = useCallback(async () => {
     const current = getStoredSession();
@@ -84,7 +81,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     clearStoredSession();
     setSessionState(null);
-  }, []);
+    queryClient.clear();
+  }, [queryClient]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
