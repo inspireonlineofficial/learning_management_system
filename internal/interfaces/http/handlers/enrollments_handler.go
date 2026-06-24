@@ -92,7 +92,8 @@ func (h *EnrollmentsHandler) ListStudentEnrollments(w http.ResponseWriter, r *ht
 		}
 	}
 
-	enrollmentList, total, err := h.service.ListStudentEnrollments(r.Context(), userID, page, limit)
+	status := r.URL.Query().Get("status")
+	enrollmentList, total, err := h.service.ListStudentEnrollments(r.Context(), userID, status, page, limit)
 	if err != nil {
 		writeErrorResponse(w, err)
 		return

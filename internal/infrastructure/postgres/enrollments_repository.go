@@ -161,6 +161,83 @@ func (r *enrollmentRepository) FindByStudentID(ctx context.Context, studentID uu
 	return enrollmentList, total, rows.Err()
 }
 
+func (r *enrollmentRepository) FindByStudentIDAndStatus(ctx context.Context, studentID uuid.UUID, status string, page, limit int) ([]*enrollments.Enrollment, int, error) {
+	offset := (page - 1) * limit
+
+	var countQuery string
+	var query string
+	var args []interface{}
+
+	if status == "completed" {
+		countQuery = `SELECT COUNT(*) FROM enrollments WHERE student_id = $1 AND status = 'active' AND completed_at IS NOT NULL`
+		query = `
+			SELECT id, student_id, course_id, enrollment_type, status,
+				progress_percent, completed_at, enrolled_at
+			FROM enrollments
+			WHERE student_id = $1 AND status = 'active' AND completed_at IS NOT NULL
+			ORDER BY enrolled_at DESC
+			LIMIT $2 OFFSET $3
+		`
+		args = []interface{}{studentID, limit, offset}
+	} else if status == "active" {
+		countQuery = `SELECT COUNT(*) FROM enrollments WHERE student_id = $1 AND status = 'active' AND completed_at IS NULL`
+		query = `
+			SELECT id, student_id, course_id, enrollment_type, status,
+				progress_percent, completed_at, enrolled_at
+			FROM enrollments
+			WHERE student_id = $1 AND status = 'active' AND completed_at IS NULL
+			ORDER BY enrolled_at DESC
+			LIMIT $2 OFFSET $3
+		`
+		args = []interface{}{studentID, limit, offset}
+	} else {
+		// Fallback to all enrollments
+		countQuery = `SELECT COUNT(*) FROM enrollments WHERE student_id = $1`
+		query = `
+			SELECT id, student_id, course_id, enrollment_type, status,
+				progress_percent, completed_at, enrolled_at
+			FROM enrollments
+			WHERE student_id = $1
+			ORDER BY enrolled_at DESC
+			LIMIT $2 OFFSET $3
+		`
+		args = []interface{}{studentID, limit, offset}
+	}
+
+	var total int
+	err := r.db.QueryRowContext(ctx, countQuery, studentID).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var enrollmentList []*enrollments.Enrollment
+	for rows.Next() {
+		enrollment := &enrollments.Enrollment{}
+		err := rows.Scan(
+			&enrollment.ID,
+			&enrollment.StudentID,
+			&enrollment.CourseID,
+			&enrollment.EnrollmentType,
+			&enrollment.Status,
+			&enrollment.ProgressPercent,
+			&enrollment.CompletedAt,
+			&enrollment.EnrolledAt,
+		)
+		if err != nil {
+			return nil, 0, err
+		}
+		enrollmentList = append(enrollmentList, enrollment)
+	}
+
+	return enrollmentList, total, rows.Err()
+}
+
 func (r *enrollmentRepository) FindByCourseID(ctx context.Context, courseID uuid.UUID, page, limit int) ([]*enrollments.Enrollment, int, error) {
 	offset := (page - 1) * limit
 

@@ -41,7 +41,7 @@ func (m *mockEnrollmentsService) GetEnrollment(ctx context.Context, studentID, c
 	return nil, nil
 }
 
-func (m *mockEnrollmentsService) ListStudentEnrollments(ctx context.Context, studentID uuid.UUID, page, limit int) ([]enrollments.EnrollmentResponse, int, error) {
+func (m *mockEnrollmentsService) ListStudentEnrollments(ctx context.Context, studentID uuid.UUID, status string, page, limit int) ([]enrollments.EnrollmentResponse, int, error) {
 	return nil, 0, nil
 }
 
