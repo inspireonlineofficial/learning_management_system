@@ -109,6 +109,82 @@ export function HLSPlayer({
     [indicatorTimeout],
   );
 
+  const togglePlay = useCallback(() => {
+    const video = videoRef.current;
+    if (!video || failed) return;
+    userInteractedRef.current = true;
+    if (video.paused) {
+      video.play().catch(() => {});
+      showIndicator("play-hud");
+    } else {
+      video.pause();
+      showIndicator("pause-hud");
+    }
+  }, [failed, showIndicator]);
+
+  const toggleMute = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    showIndicator(video.muted ? "mute" : "unmute");
+  }, [showIndicator]);
+
+  const handleVolumeSlider = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const video = videoRef.current;
+    if (!video) return;
+    const vol = Number(e.target.value);
+    video.volume = vol;
+    video.muted = vol === 0;
+  };
+
+  const toggleFullscreen = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    } else {
+      container.requestFullscreen().catch(() => {});
+    }
+  }, []);
+
+  const togglePiP = async () => {
+    const video = videoRef.current;
+    if (!video) return;
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      } else {
+        await video.requestPictureInPicture();
+      }
+    } catch (e) {
+      console.warn("PiP not supported or failed", e);
+    }
+  };
+
+  const handleVideoDoubleClick = (e: React.MouseEvent<HTMLVideoElement>) => {
+    e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const ratio = clickX / rect.width;
+
+    if (ratio < 0.3) {
+      if (videoRef.current) {
+        videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 10);
+        showIndicator("seek-back-10");
+      }
+    } else if (ratio > 0.7) {
+      if (videoRef.current) {
+        videoRef.current.currentTime = Math.min(
+          videoRef.current.duration || 0,
+          videoRef.current.currentTime + 10,
+        );
+        showIndicator("seek-forward-10");
+      }
+    } else {
+      toggleFullscreen();
+    }
+  };
+
   // Close speed menu on outside click
   useEffect(() => {
     if (!showSpeedMenu) return;
@@ -410,83 +486,6 @@ export function HLSPlayer({
     document.addEventListener("fullscreenchange", handleFs);
     return () => document.removeEventListener("fullscreenchange", handleFs);
   }, []);
-
-  const togglePlay = useCallback(() => {
-    const video = videoRef.current;
-    if (!video || failed) return;
-    userInteractedRef.current = true;
-    if (video.paused) {
-      video.play().catch(() => {});
-      showIndicator("play-hud");
-    } else {
-      video.pause();
-      showIndicator("pause-hud");
-    }
-  }, [failed, showIndicator]);
-
-  const toggleMute = useCallback(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.muted = !video.muted;
-    showIndicator(video.muted ? "mute" : "unmute");
-  }, [showIndicator]);
-
-  const handleVolumeSlider = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const video = videoRef.current;
-    if (!video) return;
-    const vol = Number(e.target.value);
-    video.volume = vol;
-    video.muted = vol === 0;
-  };
-
-  const toggleFullscreen = useCallback(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch(() => {});
-    } else {
-      container.requestFullscreen().catch(() => {});
-    }
-  }, []);
-
-  const togglePiP = async () => {
-    const video = videoRef.current;
-    if (!video) return;
-    try {
-      if (document.pictureInPictureElement) {
-        await document.exitPictureInPicture();
-      } else {
-        await video.requestPictureInPicture();
-      }
-    } catch (e) {
-      console.warn("PiP not supported or failed", e);
-    }
-  };
-
-  // Double click on video: skip 10s back/forward on sides, fullscreen in center
-  const handleVideoDoubleClick = (e: React.MouseEvent<HTMLVideoElement>) => {
-    e.preventDefault();
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const ratio = clickX / rect.width;
-
-    if (ratio < 0.3) {
-      if (videoRef.current) {
-        videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 10);
-        showIndicator("seek-back-10");
-      }
-    } else if (ratio > 0.7) {
-      if (videoRef.current) {
-        videoRef.current.currentTime = Math.min(
-          videoRef.current.duration || 0,
-          videoRef.current.currentTime + 10,
-        );
-        showIndicator("seek-forward-10");
-      }
-    } else {
-      toggleFullscreen();
-    }
-  };
 
   // Timeline Progress Scrubber seek
   const handleScrubberSeek = (e: React.MouseEvent<HTMLDivElement>) => {
