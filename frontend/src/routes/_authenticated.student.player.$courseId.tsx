@@ -273,7 +273,7 @@ function PlayerPage() {
                   className="inline-flex items-center gap-1.5 text-xs text-brand/55 hover:text-brand"
                 >
                   <ChevronLeft className="h-3 w-3" /> Exit
-                 </Link>
+                </Link>
                 <p className="mt-2 font-serif text-base leading-snug truncate">{courseTitle}</p>
               </div>
               <button
