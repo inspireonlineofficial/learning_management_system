@@ -164,9 +164,7 @@ export function AppShell({
         <div className="flex items-center gap-3">
           <BrandLogo imageClassName="max-h-10 max-w-[140px]" />
           {user?.role && user.role !== "student" && (
-            <span className="eyebrow text-brand/45 border-l border-brand/10 pl-3">
-              {user.role}
-            </span>
+            <span className="eyebrow text-brand/45 border-l border-brand/10 pl-3">{user.role}</span>
           )}
         </div>
         <button
