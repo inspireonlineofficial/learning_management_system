@@ -25,7 +25,7 @@
  *   - Better recovery: a failed segment is retried independently.
  */
 import { useEffect, useRef, useState } from "react";
-import { Play } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play } from "lucide-react";
 
 interface HLSPlayerProps {
   /** Progressive MP4 URL. Always required as a fallback. */
@@ -49,12 +49,108 @@ export function HLSPlayer({
   onProgress,
 }: HLSPlayerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const speedContainerRef = useRef<HTMLDivElement | null>(null);
   const [buffering, setBuffering] = useState(false);
   const [failed, setFailed] = useState(false);
   const [needsTap, setNeedsTap] = useState(true);
   const [usingHls, setUsingHls] = useState(false);
   const [hlsFailed, setHlsFailed] = useState(false);
   const userInteractedRef = useRef(false);
+
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const [indicator, setIndicator] = useState<string | null>(null);
+  const [indicatorTimeout, setIndicatorTimeout] = useState<number | null>(null);
+
+  const speeds = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+
+  const showIndicator = (type: string) => {
+    setIndicator(type);
+    if (indicatorTimeout) clearTimeout(indicatorTimeout);
+    const id = window.setTimeout(() => setIndicator(null), 800);
+    setIndicatorTimeout(id);
+  };
+
+  // Close speed menu on outside click
+  useEffect(() => {
+    if (!showSpeedMenu) return;
+    const handleOutside = (e: MouseEvent) => {
+      if (speedContainerRef.current && !speedContainerRef.current.contains(e.target as Node)) {
+        setShowSpeedMenu(false);
+      }
+    };
+    window.addEventListener("click", handleOutside);
+    return () => window.removeEventListener("click", handleOutside);
+  }, [showSpeedMenu]);
+
+  // Sync playback rate when changed
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.playbackRate = playbackRate;
+    }
+  }, [playbackRate]);
+
+  // Keyboard shortcut listener
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "TEXTAREA" || target.tagName === "INPUT" || target.isContentEditable) {
+        return;
+      }
+
+      switch (e.key) {
+        case " ":
+          e.preventDefault();
+          if (video.paused) {
+            video.play().catch(() => {});
+          } else {
+            video.pause();
+          }
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          video.currentTime = Math.max(0, video.currentTime - 10);
+          showIndicator("seek-back");
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          video.currentTime = Math.min(video.duration || 0, video.currentTime + 10);
+          showIndicator("seek-forward");
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          video.volume = Math.min(1, video.volume + 0.1);
+          showIndicator("volume-up");
+          break;
+        case "ArrowDown":
+          e.preventDefault();
+          video.volume = Math.max(0, video.volume - 0.1);
+          showIndicator("volume-down");
+          break;
+        case "m":
+        case "M":
+          e.preventDefault();
+          video.muted = !video.muted;
+          showIndicator(video.muted ? "mute" : "unmute");
+          break;
+        case "f":
+        case "F":
+          e.preventDefault();
+          if (document.fullscreenElement) {
+            document.exitFullscreen().catch(() => {});
+          } else {
+            video.parentElement?.requestFullscreen().catch(() => {});
+          }
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [indicatorTimeout]);
 
   // When the mp4Url changes, we load a new video, so reset the fallback tracking
   useEffect(() => {
@@ -145,6 +241,68 @@ export function HLSPlayer({
 
   return (
     <div className="aspect-video bg-black overflow-hidden relative group">
+      {/* Speed Control Overlay */}
+      {!failed && (
+        <div className="absolute top-4 right-4 z-20" ref={speedContainerRef}>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-brand/80 hover:bg-brand backdrop-blur border border-white/15 transition-all shadow-md"
+            >
+              <span>Speed: {playbackRate}x</span>
+            </button>
+            {showSpeedMenu && (
+              <div className="absolute right-0 mt-1 bg-brand border border-white/10 shadow-xl z-30 py-1 w-28">
+                {speeds.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => {
+                      setPlaybackRate(s);
+                      setShowSpeedMenu(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 text-xs font-medium transition-colors hover:bg-white/10 ${
+                      s === playbackRate ? "text-accent" : "text-white"
+                    }`}
+                  >
+                    {s}x {s === 1 ? "(Normal)" : ""}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Visual Overlay Indicator */}
+      {indicator && (
+        <div className="pointer-events-none absolute inset-0 grid place-items-center bg-black/10 z-20 animate-fade-out duration-700">
+          <div className="flex flex-col items-center gap-2 bg-brand/90 backdrop-blur px-5 py-4 shadow-xl border border-white/10 text-white text-xs font-semibold">
+            {indicator === "seek-back" && (
+              <>
+                <ChevronLeft className="h-5 w-5 animate-ping" />
+                <span>-10s</span>
+              </>
+            )}
+            {indicator === "seek-forward" && (
+              <>
+                <ChevronRight className="h-5 w-5 animate-ping" />
+                <span>+10s</span>
+              </>
+            )}
+            {indicator === "volume-up" && (
+              <span>Volume: {Math.round((videoRef.current?.volume ?? 0) * 100)}%</span>
+            )}
+            {indicator === "volume-down" && (
+              <span>Volume: {Math.round((videoRef.current?.volume ?? 0) * 100)}%</span>
+            )}
+            {indicator === "mute" && <span>Muted</span>}
+            {indicator === "unmute" && <span>Unmuted</span>}
+          </div>
+        </div>
+      )}
+
       <video
         ref={videoRef}
         // crossOrigin so Range headers are sent across origins to RustFS.
@@ -157,8 +315,16 @@ export function HLSPlayer({
         onPlaying={() => {
           setBuffering(false);
           setNeedsTap(false);
+          if (videoRef.current) {
+            videoRef.current.playbackRate = playbackRate;
+          }
         }}
-        onCanPlay={() => setBuffering(false)}
+        onCanPlay={() => {
+          setBuffering(false);
+          if (videoRef.current) {
+            videoRef.current.playbackRate = playbackRate;
+          }
+        }}
         onError={() => {
           if (hlsUrl && !hlsFailed) {
             // HLS stream failed (either native or MSE), fall back silently to MP4
