@@ -43,6 +43,7 @@ interface HLSPlayerProps {
 }
 
 const SEGMENT_RETRY = 3;
+const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
 export function HLSPlayer({
   mp4Url,
@@ -81,8 +82,6 @@ export function HLSPlayer({
   const [bufferedPercent, setBufferedPercent] = useState(0);
   const [hoverTooltipTime, setHoverTooltipTime] = useState<string | null>(null);
   const [hoverTooltipLeft, setHoverTooltipLeft] = useState<number | null>(null);
-
-  const speeds = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
   // Auto-hide controls timeout
   const controlsTimeoutRef = useRef<number | null>(null);
@@ -131,10 +130,10 @@ export function HLSPlayer({
 
   // Keyboard shortcut listener
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
     const handleKeyDown = (e: KeyboardEvent) => {
+      const video = videoRef.current;
+      if (!video) return;
+
       const target = e.target as HTMLElement;
       if (target.tagName === "TEXTAREA" || target.tagName === "INPUT" || target.isContentEditable) {
         return;
@@ -211,9 +210,9 @@ export function HLSPlayer({
         case ",":
           if (e.key === "<" || e.shiftKey) {
             e.preventDefault();
-            const curIdx = speeds.indexOf(playbackRate);
+            const curIdx = SPEEDS.indexOf(playbackRate);
             if (curIdx > 0) {
-              const nextSpd = speeds[curIdx - 1];
+              const nextSpd = SPEEDS[curIdx - 1];
               setPlaybackRate(nextSpd);
               showIndicator(`speed-${nextSpd}`);
             }
@@ -227,9 +226,9 @@ export function HLSPlayer({
         case ".":
           if (e.key === ">" || e.shiftKey) {
             e.preventDefault();
-            const curIdx = speeds.indexOf(playbackRate);
-            if (curIdx < speeds.length - 1 && curIdx !== -1) {
-              const nextSpd = speeds[curIdx + 1];
+            const curIdx = SPEEDS.indexOf(playbackRate);
+            if (curIdx < SPEEDS.length - 1 && curIdx !== -1) {
+              const nextSpd = SPEEDS[curIdx + 1];
               setPlaybackRate(nextSpd);
               showIndicator(`speed-${nextSpd}`);
             }
@@ -244,16 +243,7 @@ export function HLSPlayer({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
-    indicatorTimeout,
-    togglePlay,
-    toggleMute,
-    toggleFullscreen,
-    showIndicator,
-    resetControlsTimeout,
-    playbackRate,
-    speeds,
-  ]);
+  }, [togglePlay, toggleMute, toggleFullscreen, showIndicator, resetControlsTimeout, playbackRate]);
 
   // When the mp4Url changes, we load a new video, so reset the fallback tracking
   useEffect(() => {
@@ -605,12 +595,12 @@ export function HLSPlayer({
             )}
             {indicator?.startsWith("seek-pct") && (
               <span className="text-xs font-bold px-2 py-0.5 bg-red-600 rounded">
-                Seek: {indicator.split("-")[2]}%
+                Seek: {indicator?.split("-")?.[2]}%
               </span>
             )}
             {indicator?.startsWith("speed-") && (
               <span className="text-xs font-bold px-2 py-0.5 bg-blue-600 rounded">
-                Speed: {indicator.split("-")[1]}x
+                Speed: {indicator?.split("-")?.[1]}x
               </span>
             )}
             {indicator === "volume-up" && (
@@ -791,7 +781,7 @@ export function HLSPlayer({
                 </button>
                 {showSpeedMenu && (
                   <div className="absolute right-0 bottom-8 mb-2 bg-brand border border-white/10 shadow-2xl z-30 py-1 w-28">
-                    {speeds.map((s) => (
+                    {SPEEDS.map((s) => (
                       <button
                         key={s}
                         type="button"
