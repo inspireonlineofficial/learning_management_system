@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   Library,
   LogOut,
+  Menu,
   MessageSquare,
   Radio,
   Search,
@@ -24,6 +25,7 @@ import {
   User,
   UserCog,
   Users,
+  X,
 } from "lucide-react";
 import { useEffect, useState, type ComponentType, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -102,6 +104,7 @@ export function AppShell({
 
   const [impersonating, setImpersonating] = useState(false);
   const [originName, setOriginName] = useState<string | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const sync = () => {
@@ -113,6 +116,10 @@ export function AppShell({
     window.addEventListener("storage", sync);
     return () => window.removeEventListener("storage", sync);
   }, [user?.id]);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
 
   const handleSignOut = async () => {
     try {
@@ -151,15 +158,110 @@ export function AppShell({
           </button>
         </div>
       )}
+
+      {/* Mobile Header */}
+      <header className="lg:hidden flex items-center justify-between border-b border-brand/10 bg-surface/95 backdrop-blur px-6 py-4 sticky top-0 z-45">
+        <div className="flex items-center gap-3">
+          <BrandLogo imageClassName="max-h-10 max-w-[140px]" />
+          {user?.role && user.role !== "student" && (
+            <span className="eyebrow text-brand/45 border-l border-brand/10 pl-3">
+              {user.role}
+            </span>
+          )}
+        </div>
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-1 text-brand hover:bg-brand/[0.05] transition-colors"
+          aria-label="Toggle navigation menu"
+        >
+          {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </button>
+      </header>
+
+      {/* Mobile Menu Drawer Overlay */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 z-40 flex">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-brand/35 backdrop-blur-sm transition-opacity"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+
+          {/* Drawer Content */}
+          <div className="relative flex w-4/5 max-w-sm flex-1 flex-col bg-surface border-r border-brand/10 h-full p-6 animate-in slide-in-from-left duration-250 ease-out z-50">
+            <div className="flex items-center justify-between pb-6 border-b border-brand/10">
+              <div className="flex items-center gap-3">
+                <BrandLogo imageClassName="max-h-10 max-w-[140px]" />
+                {user?.role && user.role !== "student" && (
+                  <span className="eyebrow text-brand/45 border-l border-brand/10 pl-3">
+                    {user.role}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-1 text-brand hover:bg-brand/[0.05] transition-colors"
+                aria-label="Close menu"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Mobile Nav */}
+            <nav className="flex-1 overflow-y-auto py-6 space-y-1.5 pr-2">
+              {nav.map(({ to, label, icon: Icon }) => {
+                const sectionRoot = to === "/admin" || to === "/student" || to === "/teacher";
+                const active = pathname === to || (!sectionRoot && pathname.startsWith(`${to}/`));
+                return (
+                  <Link
+                    key={to}
+                    to={to}
+                    className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors ${
+                      active
+                        ? "bg-brand text-white"
+                        : "text-brand/70 hover:text-brand hover:bg-brand/[0.03]"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* User Profile & Sign Out */}
+            <div className="pt-4 border-t border-brand/10">
+              <div className="flex items-center gap-3 px-2 py-3">
+                <div className="h-9 w-9 grid place-items-center bg-brand/10 text-brand">
+                  <User className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate">{user?.full_name ?? "Scholar"}</p>
+                  <p className="text-xs text-brand/55 truncate">{user?.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={handleSignOut}
+                className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2.5 text-xs font-medium text-brand/70 hover:text-brand border border-brand/15 hover:bg-brand/[0.03] transition-colors"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Sign out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex min-h-screen flex-col lg:flex-row">
-        <aside className="lg:w-64 lg:fixed lg:inset-y-0 lg:flex lg:flex-col border-b lg:border-b-0 lg:border-r border-brand/10 bg-surface/95 backdrop-blur">
-          <div className="px-6 py-6 lg:py-8">
+        {/* Desktop Sidebar */}
+        <aside className="hidden lg:flex lg:w-64 lg:fixed lg:inset-y-0 lg:flex-col border-r border-brand/10 bg-surface/95 backdrop-blur">
+          <div className="px-6 py-8">
             <BrandLogo imageClassName="max-h-12 max-w-[170px]" />
             {user?.role && user.role !== "student" && (
               <p className="mt-1 eyebrow text-brand/45">{user.role} portal</p>
             )}
           </div>
-          <nav className="px-3 lg:px-4 flex lg:flex-col gap-1 overflow-x-auto lg:overflow-y-auto lg:overflow-x-visible lg:flex-1 pb-2">
+          <nav className="px-4 flex flex-col gap-1 overflow-y-auto flex-1 pb-2">
             {nav.map(({ to, label, icon: Icon }) => {
               const sectionRoot = to === "/admin" || to === "/student" || to === "/teacher";
               const active = pathname === to || (!sectionRoot && pathname.startsWith(`${to}/`));
@@ -167,7 +269,7 @@ export function AppShell({
                 <Link
                   key={to}
                   to={to}
-                  className={`flex items-center gap-3 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors ${
+                  className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors ${
                     active
                       ? "bg-brand text-white"
                       : "text-brand/70 hover:text-brand hover:bg-brand/[0.03]"
@@ -179,7 +281,7 @@ export function AppShell({
               );
             })}
           </nav>
-          <div className="hidden lg:block p-4 border-t border-brand/10">
+          <div className="p-4 border-t border-brand/10">
             <div className="flex items-center gap-3 px-2 py-3">
               <div className="h-9 w-9 grid place-items-center bg-brand/10 text-brand">
                 <User className="h-4 w-4" />

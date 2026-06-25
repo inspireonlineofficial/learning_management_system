@@ -6,9 +6,11 @@ import {
   Circle,
   Download,
   FileText,
+  List,
   Lock,
   PlayCircle,
   Trash2,
+  X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -59,6 +61,11 @@ function PlayerPage() {
   );
 
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
+  const [isSyllabusOpen, setIsSyllabusOpen] = useState(false);
+
+  useEffect(() => {
+    setIsSyllabusOpen(false);
+  }, [activeLessonId]);
 
   useEffect(() => {
     if (activeLessonId || allLessons.length === 0) return;
@@ -229,8 +236,113 @@ function PlayerPage() {
 
   return (
     <div className="min-h-screen bg-surface text-brand font-sans flex flex-col lg:flex-row">
+      {/* Mobile Header / Sticky Top Bar for Player */}
+      <header className="lg:hidden flex items-center justify-between border-b border-brand/10 bg-surface/95 backdrop-blur px-5 py-4 sticky top-0 z-30 w-full">
+        <Link
+          to="/student/my-courses"
+          className="inline-flex items-center gap-1.5 text-xs text-brand/55 hover:text-brand"
+        >
+          <ChevronLeft className="h-3 w-3" /> Exit player
+        </Link>
+        <span className="font-serif text-sm truncate max-w-[50%] font-medium">{courseTitle}</span>
+        <button
+          onClick={() => setIsSyllabusOpen(true)}
+          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs border border-brand/15 bg-white text-brand/80 hover:text-brand hover:bg-brand/[0.03] transition-colors"
+          aria-label="Open syllabus"
+        >
+          <List className="h-3.5 w-3.5" />
+          Syllabus
+        </button>
+      </header>
+
+      {/* Mobile Syllabus Drawer */}
+      {isSyllabusOpen && (
+        <div className="lg:hidden fixed inset-0 z-40 flex">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-brand/35 backdrop-blur-sm transition-opacity"
+            onClick={() => setIsSyllabusOpen(false)}
+          />
+
+          {/* Drawer Content */}
+          <div className="relative flex w-4/5 max-w-sm flex-1 flex-col bg-surface border-r border-brand/10 h-full p-0 animate-in slide-in-from-left duration-250 ease-out z-50">
+            <div className="px-5 py-5 border-b border-brand/10 flex items-center justify-between">
+              <div className="min-w-0">
+                <Link
+                  to="/student/my-courses"
+                  className="inline-flex items-center gap-1.5 text-xs text-brand/55 hover:text-brand"
+                >
+                  <ChevronLeft className="h-3 w-3" /> Exit
+                 </Link>
+                <p className="mt-2 font-serif text-base leading-snug truncate">{courseTitle}</p>
+              </div>
+              <button
+                onClick={() => setIsSyllabusOpen(false)}
+                className="p-1 text-brand hover:bg-brand/[0.05] transition-colors flex-shrink-0"
+                aria-label="Close syllabus"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-5 border-b border-brand/10 bg-brand/[0.01]">
+              <div className="h-1 bg-brand/10">
+                <div
+                  className="h-full bg-accent transition-all"
+                  style={{ width: `${Math.min(100, pct)}%` }}
+                />
+              </div>
+              <p className="mt-2 text-[11px] text-brand/45">{Math.round(pct)}% complete</p>
+            </div>
+
+            <nav className="overflow-y-auto flex-1 pb-6">
+              {modules.map((m, idx) => (
+                <div key={m.id} className="border-b border-brand/5">
+                  <div className="px-5 pt-5 pb-2">
+                    <p className="eyebrow text-brand/40">Module {idx + 1}</p>
+                    <p className="font-serif text-sm mt-1">{m.title}</p>
+                  </div>
+                  <ul>
+                    {m.lessons.map((l) => {
+                      const done = completedSet.has(l.id);
+                      const active = l.id === activeLessonId;
+                      return (
+                        <li key={l.id}>
+                          <button
+                            onClick={() => setActiveLessonId(l.id)}
+                            className={`w-full text-left px-5 py-2.5 flex items-start gap-3 text-sm transition-colors ${
+                              active
+                                ? "bg-brand/[0.05] text-brand"
+                                : "text-brand/70 hover:bg-brand/[0.03] hover:text-brand"
+                            }`}
+                          >
+                            {done ? (
+                              <CheckCircle2 className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" />
+                            ) : (
+                              <Circle className="h-4 w-4 text-brand/25 flex-shrink-0 mt-0.5" />
+                            )}
+                            <span className="flex-1 min-w-0">
+                              <span className="block">{l.title}</span>
+                              {typeof l.duration_minutes === "number" && (
+                                <span className="text-[11px] text-brand/40">
+                                  {l.duration_minutes} min
+                                </span>
+                              )}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </nav>
+          </div>
+        </div>
+      )}
+
       {/* Sidebar */}
-      <aside className="lg:w-80 lg:fixed lg:inset-y-0 lg:flex lg:flex-col border-b lg:border-b-0 lg:border-r border-brand/10 bg-white/40">
+      <aside className="hidden lg:flex lg:w-80 lg:fixed lg:inset-y-0 lg:flex-col border-r border-brand/10 bg-white/40">
         <div className="px-5 py-5 border-b border-brand/10">
           <Link
             to="/student/my-courses"
