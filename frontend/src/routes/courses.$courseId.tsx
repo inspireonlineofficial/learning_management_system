@@ -173,8 +173,8 @@ function CourseDetailPage() {
         </nav>
       </header>
 
-      <div className="px-6 md:px-12 lg:px-20 py-12 lg:py-16 grid lg:grid-cols-[1fr_380px] gap-12">
-        <article>
+      <div className="px-6 md:px-12 lg:px-20 py-12 lg:py-16 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-12">
+        <article className="order-2 lg:order-1">
           {course.category?.name && (
             <p className="eyebrow text-accent mb-4">{course.category.name}</p>
           )}
@@ -347,7 +347,7 @@ function CourseDetailPage() {
         </article>
 
         {/* Enrollment card */}
-        <aside className="lg:sticky lg:top-8 lg:self-start">
+        <aside className="lg:sticky lg:top-8 lg:self-start order-1 lg:order-2">
           <div className="border border-brand/10 bg-white/60 overflow-hidden">
             {course.cover_url ? (
               <img

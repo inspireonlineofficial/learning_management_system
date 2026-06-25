@@ -64,7 +64,7 @@ export function SlideCarousel({
         {slides.map((item) => (
           <article
             key={item.id}
-            className="relative w-full shrink-0 aspect-[21/9] md:aspect-[24/7]"
+            className="relative w-full shrink-0 aspect-[16/11] sm:aspect-[21/9] md:aspect-[24/7] min-h-[260px] sm:min-h-0"
             aria-hidden={item.id !== slide.id}
           >
             <img
@@ -75,16 +75,18 @@ export function SlideCarousel({
             />
             <div className="absolute inset-0 bg-gradient-to-r from-brand/85 via-brand/55 to-transparent" />
             <div className="relative h-full px-6 md:px-12 lg:px-20 flex flex-col justify-center max-w-3xl text-white">
-              <h2 className="font-serif text-3xl md:text-5xl leading-tight text-balance">
+              <h2 className="font-serif text-xl sm:text-3xl md:text-5xl leading-tight text-balance">
                 {item.title}
               </h2>
               {item.subtitle && (
-                <p className="mt-4 text-base md:text-lg max-w-xl text-white/75">{item.subtitle}</p>
+                <p className="mt-2 sm:mt-4 text-[11px] sm:text-base md:text-lg max-w-xl text-white/75 line-clamp-2 sm:line-clamp-none">
+                  {item.subtitle}
+                </p>
               )}
               {item.link_url && (
                 <a
                   href={item.link_url}
-                  className="mt-6 inline-flex w-fit items-center gap-2 px-6 py-3 text-sm font-medium transition-colors bg-white text-brand hover:bg-white/90"
+                  className="mt-4 sm:mt-6 inline-flex w-fit items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-medium transition-colors bg-white text-brand hover:bg-white/90"
                 >
                   Learn more
                   <span aria-hidden>→</span>
