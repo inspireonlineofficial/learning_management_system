@@ -5,8 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { PreviewPlayerDialog } from "@/components/course/preview-player-dialog";
-import { BrandLogo } from "@/components/layout/brand-logo";
-import { PublicHeaderActions } from "@/components/layout/public-header-actions";
+import { PublicHeader } from "@/components/layout/public-header";
 import { useAuth } from "@/context/auth-context";
 import {
   createCourseComment,
@@ -160,18 +159,7 @@ function CourseDetailPage() {
 
   return (
     <div className="min-h-screen bg-surface text-brand font-sans">
-      <header className="px-6 md:px-12 lg:px-20 py-6 flex items-center justify-between border-b border-brand/10">
-        <BrandLogo imageClassName="max-h-14 max-w-[220px]" />
-        <nav className="flex items-center gap-6 text-sm">
-          <Link to="/courses" className="text-brand/60 hover:text-brand transition-colors">
-            Catalog
-          </Link>
-          <Link to="/bookshop" className="text-brand/60 hover:text-brand transition-colors">
-            Bookshop
-          </Link>
-          <PublicHeaderActions />
-        </nav>
-      </header>
+      <PublicHeader active="courses" />
 
       <div className="px-6 md:px-12 lg:px-20 py-12 lg:py-16 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-12">
         <article className="order-2 lg:order-1">

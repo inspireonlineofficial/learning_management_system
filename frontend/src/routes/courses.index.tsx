@@ -5,8 +5,7 @@ import { useState } from "react";
 import { z } from "zod";
 
 import { CourseCard, CourseCardSkeleton } from "@/components/course/course-card";
-import { BrandLogo } from "@/components/layout/brand-logo";
-import { PublicHeaderActions } from "@/components/layout/public-header-actions";
+import { PublicHeader } from "@/components/layout/public-header";
 import { listCategories, listCourses, type CourseLevel } from "@/lib/api/courses";
 
 const searchSchema = z.object({
@@ -74,18 +73,7 @@ function CatalogPage() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-surface text-brand font-sans">
-      <header className="px-6 md:px-12 lg:px-20 py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-brand/10">
-        <BrandLogo imageClassName="max-h-14 max-w-[220px]" />
-        <nav className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 text-sm sm:w-auto">
-          <Link to="/courses" className="text-brand font-medium">
-            Catalog
-          </Link>
-          <Link to="/bookshop" className="text-brand/60 hover:text-brand transition-colors">
-            Bookshop
-          </Link>
-          <PublicHeaderActions />
-        </nav>
-      </header>
+      <PublicHeader active="courses" />
 
       <section className="px-6 md:px-12 lg:px-20 py-12 lg:py-16 border-b border-brand/10">
         <p className="eyebrow text-accent mb-4">The library</p>

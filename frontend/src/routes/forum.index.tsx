@@ -3,8 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { MessageSquare, Search } from "lucide-react";
 import { useState } from "react";
 
-import { BrandLogo } from "@/components/layout/brand-logo";
-import { useAuth } from "@/context/auth-context";
+import { PublicHeader } from "@/components/layout/public-header";
 import { listForumThreads, type ForumThreadSummary } from "@/lib/api/forum";
 
 type Sort = "recent" | "popular" | "unanswered";
@@ -14,7 +13,6 @@ export const Route = createFileRoute("/forum/")({
 });
 
 function PublicForumPage() {
-  const { isAuthenticated } = useAuth();
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<Sort>("recent");
   const threads = useQuery({
@@ -24,25 +22,7 @@ function PublicForumPage() {
 
   return (
     <div className="min-h-screen bg-surface text-brand font-sans">
-      <header className="border-b border-brand/10">
-        <div className="max-w-6xl mx-auto px-6 lg:px-10 py-6 flex items-center justify-between">
-          <BrandLogo imageClassName="max-h-14 max-w-[220px]" />
-          <nav className="flex items-center gap-5 text-sm">
-            <Link to="/courses" className="text-brand/65 hover:text-brand">
-              Courses
-            </Link>
-            <Link to="/bookshop" className="text-brand/65 hover:text-brand">
-              Bookshop
-            </Link>
-            <Link
-              to={isAuthenticated ? "/student/forum" : "/login"}
-              className="bg-brand text-white px-4 py-2 text-xs"
-            >
-              {isAuthenticated ? "New post" : "Sign in"}
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <PublicHeader active="forum" />
 
       <main className="max-w-6xl mx-auto px-6 lg:px-10 py-12">
         <p className="eyebrow text-accent mb-4">Community forum</p>

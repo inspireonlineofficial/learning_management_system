@@ -4,8 +4,7 @@ import { BookOpen, Search, Star } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 
-import { BrandLogo } from "@/components/layout/brand-logo";
-import { useAuth } from "@/context/auth-context";
+import { PublicHeader } from "@/components/layout/public-header";
 import { formatPrice, listBooks, type BookSummary } from "@/lib/api/bookshop";
 
 type Sort = "popular" | "newest" | "price_asc" | "price_desc";
@@ -23,7 +22,6 @@ export const Route = createFileRoute("/bookshop/")({
 });
 
 function PublicBookshopIndex() {
-  const { isAuthenticated, user } = useAuth();
   const routeSearch = Route.useSearch();
   const [search, setSearch] = useState(routeSearch.q ?? "");
   const [category, setCategory] = useState(routeSearch.category ?? "");
@@ -36,45 +34,7 @@ function PublicBookshopIndex() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-surface text-brand font-sans">
-      <header className="border-b border-brand/10">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10 py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <BrandLogo imageClassName="max-h-14 max-w-[220px]" />
-          <nav className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 text-sm sm:w-auto">
-            <Link to="/courses" className="text-brand/70 hover:text-brand transition-colors">
-              Courses
-            </Link>
-            <Link to="/bookshop" className="font-medium text-brand">
-              Bookshop
-            </Link>
-            {isAuthenticated ? (
-              <Link
-                to={
-                  user?.role === "admin"
-                    ? "/admin"
-                    : user?.role === "teacher"
-                      ? "/teacher"
-                      : "/student"
-                }
-                className="px-4 py-2 bg-brand text-white text-xs font-medium hover:bg-brand/90 transition-colors"
-              >
-                Go to Dashboard
-              </Link>
-            ) : (
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-                <Link to="/login" className="text-brand/70 hover:text-brand transition-colors">
-                  Sign in
-                </Link>
-                <Link
-                  to="/register"
-                  className="px-4 py-2 bg-brand text-white text-xs font-medium hover:bg-brand/90 transition-colors"
-                >
-                  Register
-                </Link>
-              </div>
-            )}
-          </nav>
-        </div>
-      </header>
+      <PublicHeader active="bookshop" />
 
       <section className="px-6 lg:px-10 py-12 lg:py-20 border-b border-brand/10 bg-gradient-to-br from-brand/[0.02] to-accent/[0.02]">
         <div className="max-w-7xl mx-auto">
