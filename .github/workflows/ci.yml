@@ -139,6 +139,9 @@ jobs:
       SERVER_HOST: ${{ secrets.SERVER_HOST }}
       SERVER_PORT: ${{ secrets.SERVER_PORT }}
       SERVER_USER: ${{ secrets.SERVER_USER }}
+      SSH_CONNECT_TIMEOUT: 15
+      SSH_RETRY_ATTEMPTS: 5
+      SSH_RETRY_DELAY: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -153,11 +156,48 @@ jobs:
           chmod 600 ~/.ssh/known_hosts
           cat <<'EOF' > ~/.ssh/config
           Host *
+            BatchMode yes
+            ConnectTimeout 15
             ServerAliveInterval 30
             ServerAliveCountMax 15
             TCPKeepAlive yes
           EOF
           chmod 600 ~/.ssh/config
+          install -m 700 -d .deploy
+          cat <<'EOF' > .deploy/ssh-retry.sh
+          ssh_base() {
+            ssh \
+              -i ~/.ssh/deploy_key \
+              -o BatchMode=yes \
+              -o ConnectTimeout="${SSH_CONNECT_TIMEOUT:-15}" \
+              -p "$SERVER_PORT" \
+              "$SERVER_USER@$SERVER_HOST" \
+              "$@"
+          }
+
+          retry_ssh_command() {
+            local attempt=1
+            local max_attempts="${SSH_RETRY_ATTEMPTS:-5}"
+            local delay_seconds="${SSH_RETRY_DELAY:-20}"
+            local status=0
+
+            until "$@"; do
+              status=$?
+              if [ "$attempt" -ge "$max_attempts" ]; then
+                echo "Command failed after ${attempt} attempt(s)." >&2
+                return "$status"
+              fi
+
+              echo "Command failed with exit ${status}; retrying in ${delay_seconds}s (${attempt}/${max_attempts})..." >&2
+              sleep "$delay_seconds"
+              attempt=$((attempt + 1))
+            done
+          }
+
+          ssh_retry() {
+            retry_ssh_command ssh_base "$@"
+          }
+          EOF
 
       - name: Prepare production configuration
         env:
@@ -218,29 +258,39 @@ jobs:
       - name: Upload release files
         run: |
           set -euo pipefail
-          tar \
-            --exclude='.git' \
-            --exclude='coverage.out' \
-            --exclude='.deploy' \
-            --exclude='frontend/.output' \
-            --exclude='frontend/.vinxi' \
-            --exclude='frontend/node_modules' \
-            --exclude='node_modules' \
-            -czf - . \
-            | ssh -i ~/.ssh/deploy_key -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" \
+          source .deploy/ssh-retry.sh
+          upload_release_files() {
+            tar \
+              --exclude='.git' \
+              --exclude='coverage.out' \
+              --exclude='.deploy' \
+              --exclude='frontend/.output' \
+              --exclude='frontend/.vinxi' \
+              --exclude='frontend/node_modules' \
+              --exclude='node_modules' \
+              -czf - . \
+              | ssh_base \
                 "mkdir -p '$DEPLOY_PATH' && tar -xzf - -C '$DEPLOY_PATH'"
+          }
+          retry_ssh_command upload_release_files
 
       - name: Upload production configuration
         run: |
           set -euo pipefail
-          tar -C .deploy -czf - .env keys \
-            | ssh -i ~/.ssh/deploy_key -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" \
+          source .deploy/ssh-retry.sh
+          upload_production_configuration() {
+            tar -C .deploy -czf - .env keys \
+              | ssh_base \
                 "umask 077 && tar -xzf - -C '$DEPLOY_PATH'"
+          }
+          retry_ssh_command upload_production_configuration
 
       - name: Rebuild and restart services
         run: |
           set -euo pipefail
-          ssh -i ~/.ssh/deploy_key -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" <<EOF
+          source .deploy/ssh-retry.sh
+          rebuild_and_restart_services() {
+            ssh_base <<EOF
           set -euo pipefail
           cd '$DEPLOY_PATH'
           docker compose --env-file .env build
@@ -253,11 +303,15 @@ jobs:
           docker compose --env-file .env logs typesense --tail=50 || true
           docker compose --env-file .env logs app --tail=100 || true
           EOF
+          }
+          retry_ssh_command rebuild_and_restart_services
 
       - name: Configure Nginx root endpoint
         run: |
           set -euo pipefail
-          ssh -i ~/.ssh/deploy_key -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" <<EOF
+          source .deploy/ssh-retry.sh
+          configure_nginx_root_endpoint() {
+            ssh_base <<EOF
           set -euo pipefail
           DEPLOY_PATH="$DEPLOY_PATH"
 
@@ -293,3 +347,5 @@ jobs:
 
           curl -I -sS http://127.0.0.1/ || true
           EOF
+          }
+          retry_ssh_command configure_nginx_root_endpoint
