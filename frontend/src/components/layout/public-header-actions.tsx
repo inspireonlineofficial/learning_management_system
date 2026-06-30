@@ -13,7 +13,7 @@ import { useAuth } from "@/context/auth-context";
  * Use this anywhere we previously had an unconditional "Sign in" link so the
  * header stays consistent across public pages.
  */
-export function PublicHeaderActions() {
+export function PublicHeaderActions({ compact = false }: { compact?: boolean }) {
   const { isAuthenticated, isHydrated, user } = useAuth();
   const dashboardTo =
     user?.role === "admin" ? "/admin" : user?.role === "teacher" ? "/teacher" : "/student";
@@ -22,13 +22,26 @@ export function PublicHeaderActions() {
   // shape to avoid showing a flash of "Dashboard" to a logged-out user.
   if (!isHydrated || !isAuthenticated) {
     return (
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <Link to="/login" className="text-brand/60 hover:text-brand transition-colors">
+      <div
+        className={
+          compact
+            ? "flex flex-nowrap items-center gap-2 text-xs"
+            : "flex flex-wrap items-center gap-x-4 gap-y-2"
+        }
+      >
+        <Link
+          to="/login"
+          className="whitespace-nowrap text-brand/60 transition-colors hover:text-brand"
+        >
           Sign in
         </Link>
         <Link
           to="/register"
-          className="bg-brand text-white px-4 py-2.5 hover:bg-brand/90 transition-colors"
+          className={
+            compact
+              ? "whitespace-nowrap bg-brand px-3 py-2 text-white transition-colors hover:bg-brand/90"
+              : "whitespace-nowrap bg-brand px-4 py-2.5 text-white transition-colors hover:bg-brand/90"
+          }
         >
           Register
         </Link>
@@ -46,7 +59,9 @@ export function PublicHeaderActions() {
   return (
     <Link
       to={dashboardTo}
-      className="inline-flex items-center gap-2 px-2 py-1 hover:bg-brand/[0.03] transition-colors"
+      className={`inline-flex items-center gap-2 py-1 transition-colors hover:bg-brand/[0.03] ${
+        compact ? "px-1" : "px-2"
+      }`}
       aria-label={`Open ${displayName}'s dashboard`}
     >
       <span className="h-9 w-9 grid place-items-center rounded-full bg-brand text-white text-xs font-semibold">
