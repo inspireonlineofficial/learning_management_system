@@ -4,8 +4,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import libraryHero from "@/assets/library-hero.jpg";
 import { BookCard } from "@/components/bookshop/book-card";
 import { CourseCard, CourseCardSkeleton } from "@/components/course/course-card";
-import { BrandLogo } from "@/components/layout/brand-logo";
-import { PublicHeaderActions } from "@/components/layout/public-header-actions";
+import { PublicHeader } from "@/components/layout/public-header";
 import { SlideCarousel } from "@/components/marketing/ad-carousel";
 import { listBooks } from "@/lib/api/bookshop";
 import { listCourses } from "@/lib/api/courses";
@@ -123,24 +122,7 @@ function Landing() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-surface text-brand font-sans flex flex-col">
-      <header className="px-6 md:px-12 lg:px-20 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-brand/10">
-        <BrandLogo imageClassName="max-h-14 max-w-[220px]" />
-        <nav className="flex w-full flex-wrap items-center gap-x-4 gap-y-2 text-sm sm:w-auto">
-          <Link to="/courses" className="text-brand/60 hover:text-brand transition-colors">
-            Courses
-          </Link>
-          <Link to="/bookshop" className="text-brand/60 hover:text-brand transition-colors">
-            Bookshop
-          </Link>
-          <Link
-            to="/forum"
-            className="hidden sm:inline text-brand/60 hover:text-brand transition-colors"
-          >
-            Forum
-          </Link>
-          <PublicHeaderActions />
-        </nav>
-      </header>
+      <PublicHeader />
 
       <SlideCarousel slides={slides} />
 

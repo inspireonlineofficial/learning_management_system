@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle2, ShieldCheck, XCircle } from "lucide-react";
 
-import { BrandLogo } from "@/components/layout/brand-logo";
+import { PublicHeader } from "@/components/layout/public-header";
 import { verifyCertificate } from "@/lib/api/certificates";
 
 export const Route = createFileRoute("/verify/$certId")({
@@ -20,14 +20,7 @@ function CertificateVerifyPage() {
 
   return (
     <div className="min-h-screen bg-surface text-brand font-sans">
-      <header className="border-b border-brand/10">
-        <div className="max-w-5xl mx-auto px-6 lg:px-10 py-6 flex items-center justify-between">
-          <BrandLogo imageClassName="max-h-14 max-w-[220px]" />
-          <Link to="/courses" className="text-sm text-brand/65 hover:text-brand">
-            Browse courses
-          </Link>
-        </div>
-      </header>
+      <PublicHeader />
 
       <main className="max-w-5xl mx-auto px-6 lg:px-10 py-14">
         <p className="eyebrow text-accent mb-4">Certificate verification</p>

@@ -3,9 +3,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { BookOpen, Search } from "lucide-react";
 import { useState } from "react";
 
-import { BrandLogo } from "@/components/layout/brand-logo";
+import { PublicHeader } from "@/components/layout/public-header";
 import { QueryErrorPanel } from "@/components/layout/query-error-panel";
-import { useAuth } from "@/context/auth-context";
 import { formatPrice, listBooks, type BookSummary } from "@/lib/api/bookshop";
 
 type Sort = "popular" | "newest" | "price_asc" | "price_desc";
@@ -15,7 +14,6 @@ export const Route = createFileRoute("/_authenticated/student/bookshop/")({
 });
 
 function BookshopIndex() {
-  const { isAuthenticated } = useAuth();
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<Sort>("popular");
 
@@ -26,31 +24,7 @@ function BookshopIndex() {
 
   return (
     <div className="min-h-screen bg-surface text-brand font-sans">
-      <header className="border-b border-brand/10">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10 py-6 flex items-center justify-between gap-6">
-          <BrandLogo imageClassName="max-h-14 max-w-[220px]" />
-          <nav className="flex items-center gap-5 text-sm">
-            <Link to="/courses" className="text-brand/70 hover:text-brand">
-              Courses
-            </Link>
-            <Link to="/student/bookshop" className="font-medium text-brand">
-              Bookshop
-            </Link>
-            {isAuthenticated ? (
-              <Link
-                to="/student/bookshop/library"
-                className="px-4 py-2 bg-brand text-white text-xs font-medium"
-              >
-                My library
-              </Link>
-            ) : (
-              <Link to="/login" className="px-4 py-2 bg-brand text-white text-xs font-medium">
-                Sign in
-              </Link>
-            )}
-          </nav>
-        </div>
-      </header>
+      <PublicHeader active="bookshop" />
 
       <section className="px-6 lg:px-10 py-12 lg:py-20 border-b border-brand/10">
         <div className="max-w-7xl mx-auto">
