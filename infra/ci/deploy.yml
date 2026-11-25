@@ -1,0 +1,155 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
+  deploy:
+    name: Deploy to production
+    needs: ci
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://inspireonlinebd.com
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+    env:
+      DEPLOY_PATH: /opt/inspire
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check required secrets
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          PROD_ENV: ${{ secrets.PROD_ENV }}
+          CF_ORIGIN_CERT: ${{ secrets.CF_ORIGIN_CERT }}
+          CF_ORIGIN_KEY: ${{ secrets.CF_ORIGIN_KEY }}
+        run: |
+          missing=0
+          for v in SSH_HOST SSH_PORT SSH_USER SSH_PRIVATE_KEY SSH_KNOWN_HOSTS PROD_ENV CF_ORIGIN_CERT CF_ORIGIN_KEY; do
+            if [ -z "${!v}" ]; then echo "::error::Missing secret $v"; missing=1; fi
+          done
+          exit $missing
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/deploy_key ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host prod
+            HostName $SSH_HOST
+            Port $SSH_PORT
+            User $SSH_USER
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            BatchMode yes
+            StrictHostKeyChecking yes
+            ConnectTimeout 15
+            ServerAliveInterval 30
+          EOF
+          chmod 600 ~/.ssh/config
+          ssh prod 'echo "connected as $(whoami) on $(hostname)"'
+
+      - name: Build production config
+        env:
+          PROD_ENV: ${{ secrets.PROD_ENV }}
+          CF_ORIGIN_CERT: ${{ secrets.CF_ORIGIN_CERT }}
+          CF_ORIGIN_KEY: ${{ secrets.CF_ORIGIN_KEY }}
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p .deploy/keys .deploy/tls
+          # PROD_ENV is the full production .env. JWT keys may be inline PEM
+          # values (JWT_PRIVATE_KEY / JWT_PUBLIC_KEY); they are split into files.
+          printf '%s\n' "$PROD_ENV" | perl -0 -e '
+            use strict; use warnings;
+            my $env = <STDIN>;
+            $env =~ s/\r\n/\n/g;
+            sub pem { my ($ref, $path, @names) = @_;
+              for my $n (@names) {
+                if ($$ref =~ s/^$n=(["\x27]?)(-----BEGIN [^-]+-----.*?-----END [^-]+-----)\1[ \t]*\n?//ms) {
+                  my $p = $2; $p =~ s/\\n/\n/g; $p =~ s/^\s+|\s+\z//g;
+                  open my $fh, ">", $path or die $!; print {$fh} "$p\n"; close $fh; return 1;
+                }
+              }
+              return 0;
+            }
+            pem(\$env, ".deploy/keys/private.pem", "JWT_PRIVATE_KEY", "JWT_PRIVATE_KEY_PATH");
+            pem(\$env, ".deploy/keys/public.pem",  "JWT_PUBLIC_KEY",  "JWT_PUBLIC_KEY_PATH");
+            die "unparsed PEM left in PROD_ENV\n" if $env =~ /-----BEGIN /;
+            if (-s ".deploy/keys/private.pem") {
+              $env =~ s/^JWT_(PRIVATE|PUBLIC)_KEY_PATH=.*\n?//mg;
+              $env .= "\nJWT_PRIVATE_KEY_PATH=keys/private.pem\nJWT_PUBLIC_KEY_PATH=keys/public.pem\n";
+            }
+            $env =~ s/\n{2,}/\n/g;
+            open my $out, ">", ".deploy/.env" or die $!; print {$out} $env; close $out;
+          '
+          printf '%s\n' "$CF_ORIGIN_CERT" > .deploy/tls/inspireonlinebd.pem
+          printf '%s\n' "$CF_ORIGIN_KEY"  > .deploy/tls/inspireonlinebd.key
+          for k in POSTGRES_PASSWORD REDIS_PASSWORD GOOGLE_CLIENT_ID GOOGLE_REDIRECT_URL VITE_API_BASE_URL; do
+            grep -q "^$k=." .deploy/.env || { echo "::error::PROD_ENV is missing $k"; exit 1; }
+          done
+
+      - name: Upload release
+        run: |
+          set -euo pipefail
+          ssh prod "mkdir -p '$DEPLOY_PATH'"
+          tar --exclude=.git --exclude=.deploy --exclude=node_modules \
+              --exclude=frontend/.output --exclude='*.out' -czf - . \
+            | ssh prod "tar -xzf - -C '$DEPLOY_PATH'"
+          tar -C .deploy -czf - .env keys tls \
+            | ssh prod "umask 077 && tar -xzf - -C '$DEPLOY_PATH'"
+
+      - name: Build and start containers
+        run: |
+          ssh prod "DEPLOY_PATH='$DEPLOY_PATH' bash -s" <<'EOF'
+          set -euo pipefail
+          cd "$DEPLOY_PATH"
+          docker compose --env-file .env build --pull
+          docker compose --env-file .env up -d --remove-orphans
+          docker image prune -f >/dev/null
+          docker compose --env-file .env ps
+          EOF
+
+      - name: Apply Nginx config
+        run: ssh prod "sudo /usr/local/sbin/inspire-apply-nginx '$DEPLOY_PATH'"
+
+      - name: Health check
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 20); do
+            if ssh prod "curl -fsS -o /dev/null http://127.0.0.1:8080/health && curl -fsS -o /dev/null http://127.0.0.1:3000/"; then
+              echo "Backend and frontend are healthy"; exit 0
+            fi
+            echo "waiting for services ($i/20)..."; sleep 6
+          done
+          ssh prod "cd '$DEPLOY_PATH' && docker compose logs --tail=80 app frontend" || true
+          exit 1
+
+      - name: Public check
+        run: curl -fsS -o /dev/null -w "https://inspireonlinebd.com/health -> %{http_code}\n" https://inspireonlinebd.com/health
+
+      - name: Clean up
+        if: always()
+        run: rm -rf .deploy ~/.ssh/deploy_key

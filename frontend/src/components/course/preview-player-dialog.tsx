@@ -7,6 +7,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { HLSPlayer } from "@/components/course/hls-player";
 import { getLessonPreview } from "@/lib/api/courses";
 
 type Props = {
@@ -54,11 +55,14 @@ export function PreviewPlayerDialog({
           {data && data.mime_type?.startsWith("audio") ? (
             <audio src={data.url} controls autoPlay className="w-full px-6" />
           ) : data ? (
-            <video src={data.url} controls autoPlay playsInline className="w-full h-full">
-              {data.captions_url && (
-                <track kind="captions" src={data.captions_url} srcLang="en" default />
-              )}
-            </video>
+            <div className="w-full">
+              <HLSPlayer
+                mp4Url={data.url}
+                hlsUrl={data.hls_url}
+                posterUrl={data.poster_url}
+                hasInteracted
+              />
+            </div>
           ) : null}
         </div>
       </DialogContent>

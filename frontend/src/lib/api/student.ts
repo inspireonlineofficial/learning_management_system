@@ -68,18 +68,10 @@ export async function getCourseProgress(courseId: string) {
   const enrollment = enrollments.data.find((item) => item.course?.id === courseId);
   const modules = course.modules ?? [];
   const lessons = modules.flatMap((module) => module.lessons);
-  const progress = await Promise.all(
-    lessons.map((lesson) =>
-      apiRequest<{ lesson_id: string; completed: boolean }>(
-        `/v1/enrollments/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(lesson.id)}/progress`,
-        { auth: true },
-      )
-        .then((result) => result)
-        .catch(() => null),
-    ),
-  );
-  const completedLessons = progress
-    .filter((item): item is { lesson_id: string; completed: boolean } => Boolean(item?.completed))
+  // One request for all lesson progress (previously one request per lesson).
+  const courseProgress = await getEnrollmentProgress(courseId).catch(() => null);
+  const completedLessons = (courseProgress?.lessons ?? [])
+    .filter((item) => item.completed)
     .map((item) => item.lesson_id);
   const courseAssignments = assignments.data.filter(
     (assignment) => assignment.course_id === courseId,
@@ -136,11 +128,66 @@ export function getLesson(courseId: string, lessonId: string) {
   );
 }
 
-export function completeLesson(courseId: string, lessonId: string) {
-  return apiRequest<{ progress_percent: number }>(
-    `/v1/enrollments/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(lessonId)}/progress`,
-    { method: "POST", auth: true, body: { progress_percent: 100, completed: true } },
+export type LessonProgress = {
+  lesson_id: string;
+  position_seconds: number;
+  watched_percent: number;
+  completed: boolean;
+  last_watched_at?: string;
+};
+
+export type EnrollmentProgress = {
+  enrollment_id: string;
+  course_id: string;
+  progress_percent: number;
+  completed_at?: string | null;
+  lessons: LessonProgress[];
+};
+
+export function getEnrollmentProgress(courseId: string) {
+  return apiRequest<EnrollmentProgress>(
+    `/v1/enrollments/${encodeURIComponent(courseId)}/progress`,
+    { auth: true },
   );
+}
+
+export function saveLessonProgress(
+  courseId: string,
+  lessonId: string,
+  progress: { position_seconds: number; watched_percent: number; completed?: boolean },
+  options: { keepalive?: boolean } = {},
+) {
+  return apiRequest<LessonProgress>(
+    `/v1/enrollments/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(lessonId)}/progress`,
+    {
+      method: "POST",
+      auth: true,
+      keepalive: options.keepalive,
+      body: {
+        position_seconds: Math.max(0, Math.floor(progress.position_seconds)),
+        watched_percent: Math.min(
+          100,
+          Math.max(0, Math.round(progress.watched_percent * 100) / 100),
+        ),
+        completed: Boolean(progress.completed),
+      },
+    },
+  );
+}
+
+/**
+ * Explicit "Mark complete". The API field is `watched_percent` — this used to
+ * send `progress_percent`, which the backend ignores, so the server saw 0%
+ * watched and never recorded the completion even though the UI said it had.
+ * Video lessons may still be deferred by the server until a plausible amount
+ * of the video has been watched; callers must check `completed`.
+ */
+export function completeLesson(courseId: string, lessonId: string, positionSeconds = 0) {
+  return saveLessonProgress(courseId, lessonId, {
+    position_seconds: positionSeconds,
+    watched_percent: 100,
+    completed: true,
+  });
 }
 
 export type StudentDashboard = {

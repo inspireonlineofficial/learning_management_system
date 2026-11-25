@@ -146,12 +146,17 @@ export function CourseEditor({ courseId }: { courseId: string }) {
         </section>
       )}
 
-      <div className="flex gap-2 border-b border-brand/10 mb-8">
+      <div
+        role="tablist"
+        className="flex gap-1 sm:gap-2 border-b border-brand/10 mb-8 overflow-x-auto"
+      >
         {(["content", "notes", "details", "students"] as const).map((t) => (
           <button
             key={t}
+            role="tab"
+            aria-selected={tab === t}
             onClick={() => setTab(t)}
-            className={`px-4 py-3 text-sm font-medium capitalize border-b-2 -mb-px ${
+            className={`shrink-0 px-3 sm:px-4 py-3 text-sm font-medium capitalize border-b-2 -mb-px ${
               tab === t
                 ? "border-brand text-brand"
                 : "border-transparent text-brand/55 hover:text-brand"
@@ -483,8 +488,12 @@ function ModuleCard({
       onDrop={onDrop}
       className={`border border-brand/15 bg-white/40 ${dragging ? "opacity-50" : ""}`}
     >
-      <div className="flex items-center gap-3 px-4 py-3">
-        <button onClick={() => setOpen((v) => !v)} className="text-brand/55 hover:text-brand">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 sm:px-4 py-3">
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className="text-brand/55 hover:text-brand"
+          aria-label={open ? "Collapse module" : "Expand module"}
+        >
           <ChevronDown className={`h-4 w-4 transition-transform ${open ? "" : "-rotate-90"}`} />
         </button>
         {editing ? (
@@ -539,7 +548,7 @@ function ModuleCard({
           <>
             <button
               onClick={() => setEditing(true)}
-              className="flex-1 text-left font-serif text-lg hover:text-accent"
+              className="flex-1 min-w-[8rem] text-left font-serif text-lg hover:text-accent break-words"
             >
               {module.title}
             </button>
@@ -571,6 +580,7 @@ function ModuleCard({
                 if (confirm("Delete this module and its chapters?")) remove.mutate();
               }}
               className="p-1.5 text-brand/45 hover:text-destructive"
+              aria-label="Delete module"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
@@ -644,6 +654,7 @@ function ChapterCard({
       is_free?: boolean;
       is_downloadable?: boolean;
       status?: string;
+      position?: number;
       video_id?: string | null;
     }[];
   };
@@ -1506,7 +1517,7 @@ function NotesEditor({
   const upload = useMutation({
     mutationFn: (file: File) => uploadLessonFile(file),
     onSuccess: (result) => {
-      setForm((current) => ({ ...current, file_url: result.presigned_url }));
+      setForm((current) => ({ ...current, file_url: result.url }));
       toast.success("Attachment uploaded");
     },
     onError: (e: Error) => toast.error(e.message),
@@ -1705,7 +1716,7 @@ function NoteRow({
   const upload = useMutation({
     mutationFn: (file: File) => uploadLessonFile(file),
     onSuccess: (result) => {
-      setDraft((current) => ({ ...current, file_url: result.presigned_url }));
+      setDraft((current) => ({ ...current, file_url: result.url }));
       toast.success("Attachment uploaded");
     },
     onError: (e: Error) => toast.error(e.message),
@@ -2124,67 +2135,4 @@ function secondsToMinutesInput(seconds: number) {
 
 function durationMinutesToSeconds(minutes: string | number) {
   return Math.max(0, Math.round((Number(minutes) || 0) * 60));
-}
-
-function VideoUploader({
-  lessonId,
-  onUploaded,
-}: {
-  lessonId: string;
-  onUploaded: (publicUrl: string) => void;
-}) {
-  const [progress, setProgress] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleFile(file: File) {
-    setError(null);
-    setProgress(0);
-    try {
-      const ticket = await requestLessonVideoUpload(lessonId, {
-        filename: file.name,
-        content_type: file.type || "application/octet-stream",
-        size_bytes: file.size,
-      });
-      await uploadLessonVideoFile(ticket, file, setProgress);
-      await finalizeLessonVideo(lessonId, {
-        public_url: ticket.public_url,
-        asset_id: ticket.asset_id,
-      });
-      onUploaded(ticket.public_url);
-      toast.success("Video uploaded");
-      setProgress(null);
-    } catch (e) {
-      setError((e as Error).message);
-      setProgress(null);
-    }
-  }
-
-  return (
-    <div className="border border-dashed border-brand/20 bg-white/50 p-3">
-      <label className="flex items-center gap-3 text-xs text-brand/70 cursor-pointer">
-        <span className="px-3 py-1.5 bg-brand text-white">Upload file</span>
-        <span className="text-brand/55">MP4 / MOV / WebM up to ~2&nbsp;GB</span>
-        <input
-          type="file"
-          accept="video/*"
-          className="hidden"
-          disabled={progress !== null}
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) handleFile(f);
-            e.target.value = "";
-          }}
-        />
-      </label>
-      {progress !== null && (
-        <div className="mt-3">
-          <div className="h-1.5 bg-brand/10 overflow-hidden">
-            <div className="h-full bg-accent transition-all" style={{ width: `${progress}%` }} />
-          </div>
-          <p className="text-[11px] text-brand/55 mt-1">Uploading… {progress}%</p>
-        </div>
-      )}
-      {error && <p className="mt-2 text-[11px] text-destructive">{error}</p>}
-    </div>
-  );
 }

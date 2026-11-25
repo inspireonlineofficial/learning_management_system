@@ -24,9 +24,13 @@ keys/
 *.out
 *.test.exe
 /bin/
+/backend/bin/
 /build/
 /dist/
+/server
+/backend/server
 /vendor/
+/backend/vendor/
 .gocache/
 go.work
 go.work.sum
@@ -34,6 +38,7 @@ coverage.out
 coverage.html
 *.prof
 *.coverprofile
+**/testdata/rapid/**/*.fail
 
 # =============================================================================
 # Node / frontend
@@ -43,6 +48,10 @@ frontend/node_modules/
 dist/
 dist-ssr/
 frontend/dist/
+frontend/.output/
+frontend/.vinxi/
+frontend/.nitro/
+frontend/.tanstack/
 *.local
 .npm
 .eslintcache
@@ -62,13 +71,15 @@ pnpm-debug.log*
 lerna-debug.log*
 
 # =============================================================================
-# Docker & local runtime
+# Docker & deployment
 # =============================================================================
+.docker_tmp/
+.deploy/
 docker-build*.out.txt
 *.out.txt
 
 # =============================================================================
-# Databases & uploads (local dev)
+# Databases & local storage
 # =============================================================================
 *.db
 *.sqlite
@@ -76,6 +87,7 @@ docker-build*.out.txt
 uploads/
 storage/
 data/
+screenshots/
 
 # =============================================================================
 # IDE & OS
@@ -96,7 +108,7 @@ Thumbs.db
 Desktop.ini
 
 # =============================================================================
-# Misc build & temp
+# Misc temporary & scratch artifacts
 # =============================================================================
 /tmp/
 /temp/
@@ -104,15 +116,5 @@ Desktop.ini
 *.temp
 .cache/
 *.bak
-
-# =============================================================================
-# Screenshots & Markdown exclusion rules (Option 2)
-# =============================================================================
-screenshots/
-*.md
-**/*.md
-!requirements.md
-/server
 scratch/
 .puku/
-

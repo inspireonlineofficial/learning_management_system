@@ -3,11 +3,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { BookOpen, Search } from "lucide-react";
 import { useState } from "react";
 
+import { BookshopNav } from "@/components/bookshop/bookshop-nav";
 import { PublicHeader } from "@/components/layout/public-header";
 import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { formatPrice, listBooks, type BookSummary } from "@/lib/api/bookshop";
 
-type Sort = "popular" | "newest" | "price_asc" | "price_desc";
+type Sort = "newest" | "price_asc" | "price_desc" | "title";
 
 export const Route = createFileRoute("/_authenticated/student/bookshop/")({
   component: BookshopIndex,
@@ -15,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/student/bookshop/")({
 
 function BookshopIndex() {
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<Sort>("popular");
+  const [sort, setSort] = useState<Sort>("newest");
 
   const books = useQuery({
     queryKey: ["bookshop-books", { search, sort }],
@@ -28,10 +29,13 @@ function BookshopIndex() {
 
       <section className="px-6 lg:px-10 py-12 lg:py-20 border-b border-brand/10">
         <div className="max-w-7xl mx-auto">
-          <p className="eyebrow text-accent mb-4">The bookshop</p>
-          <h1 className="font-serif text-4xl lg:text-6xl text-balance max-w-3xl mb-8">
+          <p className="eyebrow text-accent-ink mb-4">The bookshop</p>
+          <h1 className="font-serif text-4xl lg:text-6xl text-balance max-w-3xl mb-6">
             Curated science study materials.
           </h1>
+          <div className="mb-8">
+            <BookshopNav />
+          </div>
 
           <div className="flex flex-wrap items-center gap-3 max-w-3xl">
             <div className="flex-1 min-w-[240px] relative">
@@ -48,8 +52,8 @@ function BookshopIndex() {
               onChange={(e) => setSort(e.target.value as Sort)}
               className="px-4 py-3 text-sm border border-brand/15 bg-white/50"
             >
-              <option value="popular">Most popular</option>
               <option value="newest">Newest</option>
+              <option value="title">Title A–Z</option>
               <option value="price_asc">Price: low to high</option>
               <option value="price_desc">Price: high to low</option>
             </select>

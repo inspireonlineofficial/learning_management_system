@@ -35,8 +35,7 @@ type SystemSettings = {
 
 function readMarketingSettings(settings: SystemSettings, placement: AdPlacement): AdSettings {
   const marketing = settings.feature_flags?.marketing as
-    | Partial<Record<AdPlacement, Partial<AdSettings>>>
-    | undefined;
+    Partial<Record<AdPlacement, Partial<AdSettings>>> | undefined;
   const placementSettings = marketing?.[placement] ?? {};
   return {
     slide_interval_ms: placementSettings.slide_interval_ms ?? 5000,

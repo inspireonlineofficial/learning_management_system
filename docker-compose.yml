@@ -71,10 +71,13 @@ services:
 
   app:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      # Bound to loopback: in production Nginx proxies /v1/ to 127.0.0.1:8080.
+      # Exposing the API directly would let clients forge X-Real-IP and
+      # bypass per-IP rate limits. Local browsers can still use localhost:8080.
+      - "127.0.0.1:8080:8080"
     env_file: .env
     volumes:
       - ./keys/:/app/keys/:ro
@@ -95,6 +98,24 @@ services:
       - /tmp
     restart: unless-stopped
 
+  # Development mail server: `docker compose --profile dev up`. Catches every
+  # email the app sends (inbox at http://127.0.0.1:8025); nothing is relayed.
+  # Point the app at it with SMTP_HOST=mailsink SMTP_PORT=1025 SMTP_TLS=none.
+  # Never use it in production; configure a real SMTP relay there.
+  mailsink:
+    profiles: ["dev"]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.mailsink
+    ports:
+      - "127.0.0.1:8025:8025"
+    networks:
+      - backend
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    restart: unless-stopped
+
   frontend:
     build:
       context: ./frontend
@@ -102,7 +123,8 @@ services:
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
     ports:
-      - "3000:3000"
+      # Loopback only: Nginx proxies / to 127.0.0.1:3000.
+      - "127.0.0.1:3000:3000"
     networks:
       - frontend
     depends_on:

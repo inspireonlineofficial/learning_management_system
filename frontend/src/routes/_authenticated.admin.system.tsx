@@ -15,12 +15,20 @@ import {
   type PointsConfig,
 } from "@/lib/api/settings";
 
+type QueueDepth = { pending: number; retry: number; dead: number };
+
 type SysHealth = {
+  status: "ok" | "degraded";
   uptime_seconds: number;
+  db_status: "ok" | "down";
+  redis_status: "ok" | "down";
+  queues: Record<string, QueueDepth>;
   queue_depth: number;
+  dead_jobs: number;
   worker_count: number;
-  db_status: "ok" | "degraded" | "down";
-  cache_hit_rate: number;
+  email: { configured: boolean; server: string };
+  storage_cors: string;
+  problems: string[];
 };
 
 export const Route = createFileRoute("/_authenticated/admin/system")({
@@ -63,34 +71,117 @@ function Page() {
   );
 }
 
+function formatUptime(seconds: number) {
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return d > 0 ? `${d}d ${h}h` : h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+// Real platform state (it used to show a hard-coded "ok" and queue depth 0).
 function HealthTab() {
-  const { data } = useQuery({
+  const { data, isError, error, refetch } = useQuery({
     queryKey: ["system-health"],
-    queryFn: () =>
-      apiRequest<Partial<SysHealth> & { status?: string }>("/v1/admin/system/health", {
-        auth: true,
-      }).then(
-        (health) =>
-          ({
-            uptime_seconds: health.uptime_seconds ?? 0,
-            queue_depth: health.queue_depth ?? 0,
-            worker_count: health.worker_count ?? 0,
-            db_status: health.db_status ?? (health.status === "ok" ? "ok" : "degraded"),
-            cache_hit_rate: health.cache_hit_rate ?? 0,
-          }) satisfies SysHealth,
-      ),
+    queryFn: () => apiRequest<SysHealth>("/v1/admin/system/health", { auth: true }),
     refetchInterval: 30000,
   });
-  return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <StatCard label="DB" value={data?.db_status ?? "—"} />
-      <StatCard label="Queue" value={data?.queue_depth ?? "—"} hint="depth" />
-      <StatCard label="Workers" value={data?.worker_count ?? "—"} />
-      <StatCard
-        label="Cache"
-        value={data ? `${Math.round(data.cache_hit_rate * 100)}%` : "—"}
-        hint="hit rate"
+  const testEmail = useMutation({
+    mutationFn: () =>
+      apiRequest<{ sent: boolean; to: string; error?: string }>("/v1/admin/system/test-email", {
+        method: "POST",
+        auth: true,
+      }),
+    onSuccess: (res) =>
+      toast.success(`Test email sent to ${res.to}. Check the inbox and spam folder.`),
+    onError: (e: Error) => toast.error(`Test email failed: ${e.message}`),
+  });
+
+  if (isError) {
+    return (
+      <QueryErrorPanel
+        error={error}
+        title="Couldn't load system health"
+        onRetry={() => refetch()}
       />
+    );
+  }
+  return (
+    <div className="space-y-6">
+      {data && data.problems.length > 0 && (
+        <ul
+          className="space-y-1 border border-destructive/20 bg-destructive/5 p-4 text-sm"
+          role="status"
+        >
+          {data.problems.map((p) => (
+            <li key={p}>{p}</li>
+          ))}
+        </ul>
+      )}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Status"
+          value={data?.status ?? "—"}
+          hint={data ? `up ${formatUptime(data.uptime_seconds)}` : undefined}
+        />
+        <StatCard label="Database" value={data?.db_status ?? "—"} />
+        <StatCard label="Redis" value={data?.redis_status ?? "—"} />
+        <StatCard
+          label="Jobs waiting"
+          value={data?.queue_depth ?? "—"}
+          hint={data ? `${data.dead_jobs} failed permanently` : undefined}
+        />
+      </div>
+
+      {data && (
+        <section className="border border-brand/10 bg-white/40 p-5">
+          <h2 className="font-serif text-lg mb-3">Background queues</h2>
+          <table className="w-full max-w-lg text-sm">
+            <thead>
+              <tr className="text-left text-brand/70">
+                <th className="py-1 font-normal">Queue</th>
+                <th className="py-1 font-normal">Waiting</th>
+                <th className="py-1 font-normal">Retrying</th>
+                <th className="py-1 font-normal">Failed</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(data.queues).map(([name, q]) => (
+                <tr key={name} className="border-t border-brand/10">
+                  <td className="py-1.5 capitalize">{name}</td>
+                  <td>{q.pending}</td>
+                  <td>{q.retry}</td>
+                  <td className={q.dead > 0 ? "text-destructive" : ""}>{q.dead}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="mt-2 text-xs text-brand/70">
+            Failed jobs are kept for inspection; see docs/email.md (Monitoring) to retry them.
+          </p>
+        </section>
+      )}
+
+      {data && (
+        <section className="border border-brand/10 bg-white/40 p-5">
+          <h2 className="font-serif text-lg mb-1">Email</h2>
+          <p className="text-sm text-brand/70">
+            {data.email.configured
+              ? `Sending through ${data.email.server}`
+              : "Not configured — set SMTP_* (docs/email.md)."}
+          </p>
+          <button
+            onClick={() => testEmail.mutate()}
+            disabled={testEmail.isPending || !data.email.configured}
+            className="mt-3 bg-brand px-4 py-2 text-sm text-white disabled:opacity-50"
+          >
+            {testEmail.isPending ? "Sending…" : "Send a test email to me"}
+          </button>
+          <h2 className="font-serif text-lg mt-6 mb-1">Storage access for the book reader</h2>
+          <p className="text-sm text-brand/70">
+            {data.storage_cors === "ok" ? "CORS rule in place." : data.storage_cors}
+          </p>
+        </section>
+      )}
     </div>
   );
 }

@@ -147,6 +147,11 @@ export function getForumThread(threadId: string) {
     tags: post.status ? [post.status] : [],
     body: post.body_markdown ?? post.body_html ?? "",
     body_html: post.body_html,
+    // The backend has no pin/resolve flags; a removed or rejected post is
+    // treated as locked so the reply box is not offered.
+    is_pinned: false,
+    is_resolved: false,
+    is_locked: post.status === "removed" || post.status === "rejected",
   }));
 }
 

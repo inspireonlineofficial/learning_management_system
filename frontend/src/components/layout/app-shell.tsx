@@ -235,7 +235,7 @@ export function AppShell({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium truncate">{user?.full_name ?? "Scholar"}</p>
-                  <p className="text-xs text-brand/55 truncate">{user?.email}</p>
+                  <p className="text-xs text-brand/70 truncate">{user?.email}</p>
                 </div>
               </div>
               <button
@@ -256,7 +256,7 @@ export function AppShell({
           <div className="px-6 py-8">
             <BrandLogo imageClassName="max-h-12 max-w-[170px]" />
             {user?.role && user.role !== "student" && (
-              <p className="mt-1 eyebrow text-brand/45">{user.role} portal</p>
+              <p className="mt-1 eyebrow text-brand/70">{user.role} portal</p>
             )}
           </div>
           <nav className="px-4 flex flex-col gap-1 overflow-y-auto flex-1 pb-2">
@@ -286,7 +286,7 @@ export function AppShell({
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium truncate">{user?.full_name ?? "Scholar"}</p>
-                <p className="text-xs text-brand/55 truncate">{user?.email}</p>
+                <p className="text-xs text-brand/70 truncate">{user?.email}</p>
               </div>
             </div>
             <button
@@ -302,7 +302,7 @@ export function AppShell({
         <main className="min-w-0 flex-1 lg:ml-64">
           {(title || eyebrow) && (
             <header className="px-6 md:px-10 lg:px-14 pt-10 lg:pt-14 pb-6 border-b border-brand/10">
-              {eyebrow && <p className="eyebrow text-accent mb-3">{eyebrow}</p>}
+              {eyebrow && <p className="eyebrow text-accent-ink mb-3">{eyebrow}</p>}
               {title && <h1 className="font-serif text-4xl lg:text-5xl text-balance">{title}</h1>}
             </header>
           )}

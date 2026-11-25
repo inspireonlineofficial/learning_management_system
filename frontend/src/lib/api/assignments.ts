@@ -1,12 +1,7 @@
 import { apiRequest } from "./client";
 
 export type AssignmentStatus =
-  | "not_submitted"
-  | "submitted"
-  | "graded"
-  | "revision_requested"
-  | "late"
-  | "missed";
+  "not_submitted" | "submitted" | "graded" | "revision_requested" | "late" | "missed";
 
 export type AssignmentAttachment = {
   id: string;

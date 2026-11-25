@@ -64,12 +64,19 @@ function LibraryPage() {
                     </div>
                   )}
                 </div>
-                <p className="text-[11px] uppercase tracking-wider text-brand/45 mb-1">
+                <p className="text-[11px] uppercase tracking-wider text-brand/65 mb-1">
                   {b.author}
                 </p>
-                <p className="font-serif text-base leading-snug group-hover:text-accent">
+                <p className="font-serif text-base leading-snug group-hover:text-accent-ink">
                   {b.title}
                 </p>
+                {b.reading_enabled === false ? (
+                  <p className="mt-1 text-xs text-brand/65">Digital file not uploaded yet</p>
+                ) : b.last_page_read ? (
+                  <p className="mt-1 text-xs text-brand/65">
+                    Continue from page {b.last_page_read}
+                  </p>
+                ) : null}
               </Link>
             ))}
           </div>

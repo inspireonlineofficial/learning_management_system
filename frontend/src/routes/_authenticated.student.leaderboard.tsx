@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { AppShell, EmptyState } from "@/components/layout/app-shell";
 import { QueryErrorPanel } from "@/components/layout/query-error-panel";
+import { useAuth } from "@/context/auth-context";
 import {
   getLeaderboard,
   type LeaderboardEntry,
@@ -22,11 +23,16 @@ function LeaderboardPage() {
     queryKey: ["leaderboard", scope],
     queryFn: () => getLeaderboard({ scope, limit: 50 }),
   });
+  const { user } = useAuth();
+  const entries = (data?.data ?? []).map((e) => ({
+    ...e,
+    is_me: Boolean(user && e.user_id === user.id),
+  }));
 
   return (
     <AppShell eyebrow="Standings" title="The leaderboard.">
       <div className="flex gap-2 mb-8">
-        {(["weekly", "monthly", "all_time"] as LeaderboardScope[]).map((s) => (
+        {(["weekly", "all_time"] as LeaderboardScope[]).map((s) => (
           <button
             key={s}
             onClick={() => setScope(s)}
@@ -53,29 +59,23 @@ function LeaderboardPage() {
             <div key={i} className="h-14 border border-brand/10 bg-white/30 animate-pulse" />
           ))}
         </div>
-      ) : !data || data.data.length === 0 ? (
+      ) : entries.length === 0 ? (
         <EmptyState icon={Trophy} title="No standings yet" />
       ) : (
         <>
-          {data.data.slice(0, 3).length > 0 && (
+          {entries.slice(0, 3).length > 0 && (
             <div className="grid sm:grid-cols-3 gap-3 mb-8">
-              {data.data.slice(0, 3).map((e) => (
+              {entries.slice(0, 3).map((e) => (
                 <PodiumCard key={e.user_id} entry={e} />
               ))}
             </div>
           )}
 
           <ul className="divide-y divide-brand/10 border-y border-brand/10">
-            {data.data.slice(3).map((e) => (
+            {entries.slice(3).map((e) => (
               <RankRow key={e.user_id} entry={e} />
             ))}
           </ul>
-
-          {data.me && !data.data.some((e) => e.is_me) && (
-            <div className="mt-8 border-2 border-accent/40 bg-accent/5">
-              <RankRow entry={{ ...data.me, is_me: true }} />
-            </div>
-          )}
         </>
       )}
     </AppShell>

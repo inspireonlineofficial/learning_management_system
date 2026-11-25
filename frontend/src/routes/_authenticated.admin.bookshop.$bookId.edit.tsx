@@ -4,7 +4,8 @@ import { toast } from "sonner";
 import { useEffect, useState } from "react";
 
 import { AppShell } from "@/components/layout/app-shell";
-import { getBook, updateAdminBook, type AdminBookInput } from "@/lib/api/bookshop";
+import { BookFilesEditor } from "@/components/bookshop/book-files-editor";
+import { getAdminBook, updateAdminBook, type AdminBookInput } from "@/lib/api/bookshop";
 
 export const Route = createFileRoute("/_authenticated/admin/bookshop/$bookId/edit")({
   component: EditBookPage,
@@ -13,13 +14,16 @@ export const Route = createFileRoute("/_authenticated/admin/bookshop/$bookId/edi
 function EditBookPage() {
   const { bookId } = Route.useParams();
   const navigate = useNavigate();
-  const book = useQuery({ queryKey: ["book", bookId], queryFn: () => getBook(bookId) });
+  // The admin endpoint also returns hidden books; the public one 404s on
+  // them, which made a hidden book impossible to edit or re-publish.
+  const book = useQuery({ queryKey: ["admin-book", bookId], queryFn: () => getAdminBook(bookId) });
   const [form, setForm] = useState<AdminBookInput & { title: string; author: string }>({
     title: "",
     author: "",
     subject: "",
     class_grade: "",
     description: "",
+    format: "both",
     price: 0,
     physical_stock: 0,
     is_active: true,
@@ -33,6 +37,7 @@ function EditBookPage() {
       subject: book.data.subject ?? book.data.category ?? "",
       class_grade: book.data.class_grade ?? "",
       description: book.data.description ?? "",
+      format: book.data.format ?? "both",
       price: book.data.price_cents / 100,
       currency: book.data.currency,
       physical_stock: book.data.physical_stock ?? 0,
@@ -82,7 +87,7 @@ function EditBookPage() {
             />
           </div>
           <label className="block">
-            <span className="eyebrow text-brand/45">Description</span>
+            <span className="eyebrow text-brand/65">Description</span>
             <textarea
               value={form.description ?? ""}
               onChange={(event) => setForm({ ...form, description: event.target.value })}
@@ -90,7 +95,24 @@ function EditBookPage() {
               className="mt-2 w-full border border-brand/15 bg-white px-3 py-2 text-sm"
             />
           </label>
-          <div className="grid sm:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-4 gap-4">
+            <label className="block">
+              <span className="eyebrow text-brand/65">Format</span>
+              <select
+                value={form.format ?? "both"}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    format: event.target.value as "physical" | "digital" | "both",
+                  })
+                }
+                className="mt-2 w-full border border-brand/15 bg-white px-3 py-2 text-sm"
+              >
+                <option value="physical">Printed only</option>
+                <option value="digital">Digital only</option>
+                <option value="both">Both</option>
+              </select>
+            </label>
             <NumberField
               label="Price"
               value={form.price ?? 0}
@@ -102,7 +124,7 @@ function EditBookPage() {
               onChange={(physical_stock) => setForm({ ...form, physical_stock })}
             />
             <label className="block">
-              <span className="eyebrow text-brand/45">Visibility</span>
+              <span className="eyebrow text-brand/65">Visibility</span>
               <select
                 value={form.is_active ? "active" : "inactive"}
                 onChange={(event) =>
@@ -115,6 +137,7 @@ function EditBookPage() {
               </select>
             </label>
           </div>
+          {book.data && <BookFilesEditor book={book.data} />}
           <button
             onClick={() => update.mutate()}
             disabled={!form.title.trim() || !form.author.trim() || update.isPending}
@@ -139,7 +162,7 @@ function TextField({
 }) {
   return (
     <label className="block">
-      <span className="eyebrow text-brand/45">{label}</span>
+      <span className="eyebrow text-brand/65">{label}</span>
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -160,7 +183,7 @@ function NumberField({
 }) {
   return (
     <label className="block">
-      <span className="eyebrow text-brand/45">{label}</span>
+      <span className="eyebrow text-brand/65">{label}</span>
       <input
         type="number"
         min={0}

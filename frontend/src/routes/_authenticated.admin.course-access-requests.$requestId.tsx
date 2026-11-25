@@ -52,7 +52,11 @@ function Page() {
   });
 
   if (requests.isLoading) {
-    return <AppShell eyebrow="Course Access" title="Loading request..." />;
+    return (
+      <AppShell eyebrow="Course Access" title="Loading request...">
+        <div className="h-40 border border-brand/10 bg-white/30 animate-pulse" />
+      </AppShell>
+    );
   }
 
   if (!request) {

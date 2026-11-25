@@ -28,9 +28,9 @@ function CreateBookPage() {
 
   const create = useMutation({
     mutationFn: () => createAdminBook(form),
-    onSuccess: () => {
-      toast.success("Book added");
-      navigate({ to: "/admin/bookshop" });
+    onSuccess: (book) => {
+      toast.success("Book added — now upload its PDF, sample and cover");
+      navigate({ to: "/admin/bookshop/$bookId/edit", params: { bookId: book.id } });
     },
     onError: (error: Error) => toast.error(error.message),
   });

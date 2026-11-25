@@ -118,7 +118,7 @@ export function DetailGrid({ items }: { items: Array<{ label: string; value: Rea
     <dl className="grid sm:grid-cols-2 gap-x-10 gap-y-4 border border-brand/10 bg-white/40 p-6">
       {items.map((it) => (
         <div key={it.label}>
-          <dt className="eyebrow text-brand/45">{it.label}</dt>
+          <dt className="eyebrow text-brand/70">{it.label}</dt>
           <dd className="mt-1 text-brand">{it.value}</dd>
         </div>
       ))}

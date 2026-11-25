@@ -117,11 +117,27 @@ export function listTeacherLiveSessions(
   });
 }
 
-export function getTeacherLiveSession(sessionId: string) {
+export function getTeacherLiveSession(sessionId: string): Promise<LiveSessionDetail> {
+  // The backend session payload has no recording URL or agenda yet; those
+  // optional fields stay undefined and the page shows its empty states.
   return apiRequest<BackendLiveSession>(
     `/v1/teacher/live-sessions/${encodeURIComponent(sessionId)}`,
     { auth: true },
   ).then(normalizeLiveSession);
+}
+
+export type LiveAttendanceRecord = {
+  student_id: string;
+  joined_at: string;
+  left_at?: string | null;
+  duration_minutes: number;
+};
+
+export function getLiveSessionAttendance(sessionId: string) {
+  return apiRequest<{ session_id: string; records?: LiveAttendanceRecord[] | null }>(
+    `/v1/teacher/live-sessions/${encodeURIComponent(sessionId)}/attendance`,
+    { auth: true },
+  ).then((result) => result.records ?? []);
 }
 
 export function createLiveSession(input: TeacherLiveInput) {

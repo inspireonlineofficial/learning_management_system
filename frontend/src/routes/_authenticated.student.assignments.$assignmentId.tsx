@@ -131,11 +131,14 @@ function AssignmentDetail() {
           {/* Brief */}
           <section className="mb-10">
             <h2 className="font-serif text-2xl mb-3">Brief</h2>
+            {/* instructions_html is the teacher's raw description (not
+                sanitised by the API), so it is rendered as text, never as
+                markup — any registered teacher could otherwise run script
+                in their students' sessions. */}
             {assignment.instructions_html ? (
-              <div
-                className="prose prose-sm max-w-none text-brand/80 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: assignment.instructions_html }}
-              />
+              <p className="text-brand/80 leading-relaxed whitespace-pre-line">
+                {assignment.instructions_html}
+              </p>
             ) : (
               <p className="text-brand/75 leading-relaxed whitespace-pre-line">
                 {assignment.brief}

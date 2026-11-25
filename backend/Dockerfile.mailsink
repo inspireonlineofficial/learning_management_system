@@ -1,0 +1,14 @@
+# Development mail server (cmd/mailsink). Captures email; never relays it.
+FROM golang:1.25.11-alpine AS builder
+WORKDIR /build
+COPY go.mod go.sum ./
+RUN --mount=type=cache,target=/go/pkg/mod go mod download
+COPY . .
+RUN --mount=type=cache,target=/go/pkg/mod CGO_ENABLED=0 go build -ldflags="-w -s" -o /mailsink ./cmd/mailsink
+
+FROM alpine:3.21
+RUN adduser -D -u 1001 appuser
+COPY --from=builder /mailsink /mailsink
+USER appuser
+EXPOSE 1025 8025
+ENTRYPOINT ["/mailsink", "-smtp", "0.0.0.0:1025", "-http", "0.0.0.0:8025"]

@@ -32,6 +32,9 @@ jobs:
   backend-ci:
     name: Backend CI
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -41,6 +44,7 @@ jobs:
         with:
           go-version: '1.25.1'
           cache: true
+          cache-dependency-path: backend/go.sum
 
       - name: Check formatting
         run: |
@@ -104,8 +108,8 @@ jobs:
       - name: Build backend Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./Dockerfile
+          context: ./backend
+          file: ./backend/Dockerfile
           push: false
           tags: inspire-backend:latest
           cache-from: type=gha
@@ -263,6 +267,7 @@ jobs:
             tar \
               --exclude='.git' \
               --exclude='coverage.out' \
+              --exclude='backend/coverage.out' \
               --exclude='.deploy' \
               --exclude='frontend/.output' \
               --exclude='frontend/.vinxi' \
@@ -322,10 +327,10 @@ jobs:
 
           if [ -f /etc/letsencrypt/live/inspire-online.com/fullchain.pem ]; then
             echo "SSL certificate found. Activating HTTPS config..."
-            cp "\$DEPLOY_PATH/nginx/inspire-online.conf" /etc/nginx/sites-available/inspire-lms.conf
+            cp "\$DEPLOY_PATH/infra/nginx/inspire-online.conf" /etc/nginx/sites-available/inspire-lms.conf
           else
             echo "SSL certificate not found. Activating HTTP fallback config..."
-            cp "\$DEPLOY_PATH/nginx/inspire-online-http.conf" /etc/nginx/sites-available/inspire-lms.conf
+            cp "\$DEPLOY_PATH/infra/nginx/inspire-online-http.conf" /etc/nginx/sites-available/inspire-lms.conf
           fi
 
           rm -f /etc/nginx/sites-enabled/default
@@ -341,7 +346,7 @@ jobs:
               DEBIAN_FRONTEND=noninteractive apt-get install -y certbot python3-certbot-nginx
             fi
             certbot --nginx -d inspire-online.com -d www.inspire-online.com --non-interactive --agree-tos -m contact@inspire-online.com --redirect
-            cp "\$DEPLOY_PATH/nginx/inspire-online.conf" /etc/nginx/sites-available/inspire-lms.conf
+            cp "\$DEPLOY_PATH/infra/nginx/inspire-online.conf" /etc/nginx/sites-available/inspire-lms.conf
             systemctl reload nginx
           fi
 

@@ -15,6 +15,7 @@
   --color-surface: var(--surface);
   --color-brand: var(--brand);
   --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
   --color-accent-foreground: var(--accent-foreground);
 
   --color-card: var(--card);
@@ -43,6 +44,9 @@
   /* Academic Editorial palette */
   --brand: #0f172a;
   --accent: #b59410;
+  /* Same gold, darkened for text: #b59410 on the surface is 2.9:1 (fails
+     WCAG AA for normal text); this is about 5.3:1. */
+  --accent-ink: #806508;
   --accent-foreground: #fdfcfb;
   --surface: #fdfcfb;
 
@@ -116,4 +120,13 @@
       max-width: 28rem;
     }
   }
+}
+
+/* Toast text colours darkened to meet WCAG AA (4.5:1) on Sonner's light
+   rich-colour backgrounds; the defaults are ~4.3:1 for success. */
+:root [data-sonner-toaster][data-sonner-theme="light"] {
+  --success-text: #166534;
+  --info-text: #1e40af;
+  --warning-text: #92400e;
+  --error-text: #b91c1c;
 }

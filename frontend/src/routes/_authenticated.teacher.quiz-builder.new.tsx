@@ -20,7 +20,9 @@ function CreateQuizPage() {
     time_limit_minutes: 30,
     attempts_allowed: 1,
     is_free: true,
-    is_published: true,
+    // A new quiz has no questions yet, so it starts as a draft and is
+    // published from the builder.
+    is_published: false,
   });
 
   const courses = useQuery({
@@ -106,14 +108,10 @@ function CreateQuizPage() {
             />
             Free access
           </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={form.is_published}
-              onChange={(event) => setForm({ ...form, is_published: event.target.checked })}
-            />
-            Published
-          </label>
+          <p className="text-xs text-brand/55">
+            The quiz is created as a draft. Add questions in the builder, then publish or schedule
+            it.
+          </p>
         </div>
 
         <button

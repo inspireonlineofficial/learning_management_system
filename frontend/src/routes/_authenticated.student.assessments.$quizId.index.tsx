@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Clock, FileQuestion, RotateCw } from "lucide-react";
+import { Award, Clock, FileQuestion, RotateCw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { RichContent } from "@/components/assessment/rich-content";
 import { AppShell } from "@/components/layout/app-shell";
 import { useAuth } from "@/context/auth-context";
 import {
@@ -95,25 +96,44 @@ function QuizOverview() {
   if (isError || !quiz) {
     return (
       <AppShell eyebrow="Quiz" title="Couldn't load this quiz">
-        <p className="text-sm text-brand/55">{(error as Error)?.message}</p>
+        <p className="text-sm text-brand/70">{(error as Error)?.message}</p>
       </AppShell>
     );
   }
 
-  const attemptsLeft =
-    quiz.attempts_allowed == null
-      ? null
-      : Math.max(0, quiz.attempts_allowed - (quiz.attempts_used ?? 0));
+  const attemptsLeft = quiz.remaining_attempts ?? null;
+  const resuming = Boolean(quiz.in_progress_attempt_id);
+  const blocked = !resuming && (attemptsLeft === 0 || quiz.availability !== "open");
+  const fmt = (iso?: string | null) => (iso ? new Date(iso).toLocaleString() : null);
 
   return (
-    <AppShell eyebrow={quiz.course_title ?? "Quiz"} title={quiz.title}>
+    <AppShell eyebrow={quiz.course_title ?? "Assessment"} title={quiz.title}>
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span
+          className={`border px-2 py-0.5 uppercase tracking-wide ${quiz.mode === "practice" ? "border-accent/40 text-accent-ink" : "border-brand/20 text-brand/70"}`}
+        >
+          {quiz.mode === "practice" ? "Practice — hints and answer checks available" : "Exam"}
+        </span>
+        {quiz.status === "pending_grading" && (
+          <span className="border border-brand/20 px-2 py-0.5 text-brand/70">
+            Last attempt awaiting marking
+          </span>
+        )}
+        {quiz.best_score != null && (
+          <span className="border border-brand/20 px-2 py-0.5 text-brand/70 tabular-nums">
+            Best score {quiz.best_score}%
+          </span>
+        )}
+      </div>
       {quiz.description && (
-        <p className="text-brand/70 leading-relaxed max-w-2xl">{quiz.description}</p>
+        <div className="mt-4 max-w-2xl text-brand/75">
+          <RichContent text={quiz.description} />
+        </div>
       )}
 
-      <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-3xl">
+      <dl className="mt-8 grid max-w-4xl grid-cols-2 gap-4 lg:grid-cols-4">
         <Meta icon={FileQuestion} label="Questions" value={String(quiz.total_questions)} />
-        <Meta icon={RotateCw} label="Points" value={String(quiz.total_points)} />
+        <Meta icon={Award} label="Total marks" value={String(quiz.total_points)} />
         <Meta
           icon={Clock}
           label="Time limit"
@@ -121,43 +141,101 @@ function QuizOverview() {
         />
         <Meta
           icon={RotateCw}
-          label="Attempts"
+          label="Attempts left"
           value={
             quiz.attempts_allowed == null
               ? "Unlimited"
-              : `${quiz.attempts_used ?? 0} / ${quiz.attempts_allowed}`
+              : `${attemptsLeft ?? 0} of ${quiz.attempts_allowed}`
           }
         />
-      </div>
+      </dl>
+
+      <dl className="mt-6 grid max-w-4xl gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
+        <Row label="Passing score" value={`${quiz.passing_score}%`} />
+        <Row label="Opens" value={fmt(quiz.available_from) ?? "Now"} />
+        <Row label="Closes" value={fmt(quiz.available_until) ?? "No closing date"} />
+        <Row
+          label="Calculator"
+          value={
+            quiz.calculator_policy === "none"
+              ? "Not permitted"
+              : `${quiz.calculator_policy[0].toUpperCase()}${quiz.calculator_policy.slice(1)} calculator permitted`
+          }
+        />
+        <Row
+          label="Answers after submission"
+          value={
+            quiz.show_answers_after_submission
+              ? "Correct answers are shown"
+              : "Only your own answers are shown"
+          }
+        />
+      </dl>
 
       {quiz.instructions && (
         <section className="mt-10 max-w-2xl">
           <h2 className="font-serif text-xl mb-3">Instructions</h2>
-          <p className="text-sm text-brand/70 leading-relaxed whitespace-pre-line">
-            {quiz.instructions}
-          </p>
+          <div className="text-sm text-brand/75 leading-relaxed">
+            <RichContent text={quiz.instructions} />
+          </div>
         </section>
       )}
+      {quiz.reference_material && (
+        <section className="mt-6 max-w-2xl">
+          <h2 className="font-serif text-xl mb-3">Permitted resources</h2>
+          <div className="text-sm text-brand/75 leading-relaxed">
+            <RichContent text={quiz.reference_material} />
+          </div>
+        </section>
+      )}
+      <ul className="mt-6 max-w-2xl list-disc space-y-1 pl-5 text-xs text-brand/70">
+        <li>
+          Your answers are saved automatically as you work, including if you lose your connection.
+        </li>
+        {quiz.time_limit_minutes ? (
+          <li>
+            The timer keeps running if you leave; when it ends, your saved answers are submitted.
+          </li>
+        ) : null}
+        <li>You can flag questions and review everything before you submit.</li>
+      </ul>
 
-      <div className="mt-10 flex flex-wrap gap-3 items-center">
+      <div className="mt-10 flex flex-wrap items-center gap-3">
         <button
-          disabled={startMutation.isPending || attemptsLeft === 0}
+          disabled={startMutation.isPending || blocked}
           onClick={() => startMutation.mutate()}
-          className="bg-brand text-white px-7 py-4 text-sm font-medium hover:bg-brand/90 transition-colors disabled:opacity-50"
+          className="bg-brand px-7 py-4 text-sm font-medium text-white transition-colors hover:bg-brand/90 disabled:opacity-50"
         >
           {startMutation.isPending
             ? "Preparing your attempt…"
-            : quiz.status === "in_progress"
+            : resuming
               ? "Resume attempt"
-              : "Begin attempt"}
+              : "Start assessment"}
         </button>
+        {quiz.latest_attempt_id && quiz.status !== "in_progress" && (
+          <Link
+            to="/student/assessments/$quizId/result/$attemptId"
+            params={{ quizId, attemptId: quiz.latest_attempt_id }}
+            className="border border-brand/15 px-6 py-4 text-sm hover:border-brand/40"
+          >
+            View last result
+          </Link>
+        )}
         <Link
           to="/student/assessments"
-          className="text-xs text-brand/55 hover:text-brand underline underline-offset-4"
+          className="text-xs text-brand/70 underline underline-offset-4 hover:text-brand"
         >
           Back to assessments
         </Link>
-        {attemptsLeft === 0 && <p className="text-xs text-destructive">No attempts remaining.</p>}
+        {!resuming && quiz.availability === "not_open" && (
+          <p className="text-xs text-brand/70">Opens {fmt(quiz.available_from)}.</p>
+        )}
+        {!resuming && quiz.availability === "closed" && (
+          <p className="text-xs text-destructive">This assessment has closed.</p>
+        )}
+        {!resuming && attemptsLeft === 0 && (
+          <p className="text-xs text-destructive">No attempts remaining.</p>
+        )}
       </div>
 
       <QuizDiscussion
@@ -180,9 +258,18 @@ function QuizOverview() {
 function Meta({ icon: Icon, label, value }: { icon: typeof Clock; label: string; value: string }) {
   return (
     <div className="border border-brand/10 bg-white/40 p-5">
-      <Icon className="h-4 w-4 text-brand/40 mb-3" />
-      <p className="eyebrow text-brand/45">{label}</p>
-      <p className="mt-2 font-serif text-2xl">{value}</p>
+      <Icon className="h-4 w-4 text-brand/70 mb-3" aria-hidden />
+      <dt className="eyebrow text-brand/70">{label}</dt>
+      <dd className="mt-2 font-serif text-2xl tabular-nums">{value}</dd>
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-4 border-b border-brand/10 pb-2">
+      <dt className="text-brand/70">{label}</dt>
+      <dd className="text-right">{value}</dd>
     </div>
   );
 }
@@ -247,7 +334,7 @@ function QuizDiscussion({
         </button>
       </form>
       <ul className="mt-5 space-y-3">
-        {roots.length === 0 && <li className="text-sm text-brand/45">No quiz comments yet.</li>}
+        {roots.length === 0 && <li className="text-sm text-brand/70">No quiz comments yet.</li>}
         {roots.map((comment) => {
           const canEdit = comment.user_id === userId;
           const canModerate = userRole === "teacher" || userRole === "admin";
@@ -257,7 +344,7 @@ function QuizDiscussion({
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                   {comment.is_pinned && (
-                    <p className="mb-1 text-[10px] uppercase tracking-[0.18em] text-accent">
+                    <p className="mb-1 text-[10px] uppercase tracking-[0.18em] text-accent-ink">
                       Pinned
                     </p>
                   )}
@@ -271,7 +358,7 @@ function QuizDiscussion({
                   ) : (
                     <p className="text-sm text-brand/75 whitespace-pre-wrap">{comment.content}</p>
                   )}
-                  <p className="mt-2 text-[11px] text-brand/40">
+                  <p className="mt-2 text-[11px] text-brand/70">
                     {new Date(comment.created_at).toLocaleString()}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-3 text-xs">
@@ -320,7 +407,7 @@ function QuizDiscussion({
                         type="button"
                         disabled={saving}
                         onClick={() => onDelete(comment.id)}
-                        className="text-brand/45 hover:text-destructive"
+                        className="text-brand/70 hover:text-destructive"
                       >
                         Delete
                       </button>
@@ -358,7 +445,7 @@ function QuizDiscussion({
                           <p className="text-sm text-brand/70 whitespace-pre-wrap">
                             {child.content}
                           </p>
-                          <p className="mt-2 text-[11px] text-brand/40">
+                          <p className="mt-2 text-[11px] text-brand/70">
                             {new Date(child.created_at).toLocaleString()}
                           </p>
                         </li>

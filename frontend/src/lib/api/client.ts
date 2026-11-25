@@ -55,6 +55,8 @@ type RequestOptions = {
   query?: Record<string, unknown>;
   headers?: Record<string, string>;
   signal?: AbortSignal;
+  /** Keep the request alive while the page unloads (progress beacons). */
+  keepalive?: boolean;
 };
 
 let refreshPromise: Promise<Session | null> | null = null;
@@ -109,7 +111,7 @@ export async function apiRequest<T = unknown>(
   options: RequestOptions = {},
   _retry = false,
 ): Promise<T> {
-  const { method = "GET", body, auth = false, query, headers = {}, signal } = options;
+  const { method = "GET", body, auth = false, query, headers = {}, signal, keepalive } = options;
   const init: RequestInit = {
     method,
     headers: {
@@ -117,6 +119,7 @@ export async function apiRequest<T = unknown>(
       ...headers,
     },
     signal,
+    keepalive,
   };
   if (body instanceof FormData) {
     init.body = body;
@@ -146,7 +149,16 @@ export async function apiRequest<T = unknown>(
   const data = await parseResponse(response);
 
   if (!response.ok) {
-    const payload = (data ?? {}) as { message?: string; code?: string; details?: unknown };
+    // The API wraps errors as {"error": {"code", "message", "details"}};
+    // flat {"code", "message"} bodies are accepted too. Reading only the flat
+    // shape dropped every server message and error code.
+    const raw = (data ?? {}) as {
+      message?: string;
+      code?: string;
+      details?: unknown;
+      error?: { message?: string; code?: string; details?: unknown };
+    };
+    const payload = raw.error && typeof raw.error === "object" ? raw.error : raw;
     throw new ApiError(payload.message ?? response.statusText ?? "Request failed", {
       status: response.status,
       code: payload.code,
@@ -155,4 +167,12 @@ export async function apiRequest<T = unknown>(
   }
 
   return data as T;
+}
+
+/** Resolve API-relative media paths (/v1/...) against the API host. */
+export function resolveAssetUrl(url: string): string {
+  if (!url) return url;
+  if (/^(https?:|data:|blob:)/i.test(url)) return url;
+  if (url.startsWith("/v1/")) return `${API_BASE_URL}${url}`;
+  return url;
 }

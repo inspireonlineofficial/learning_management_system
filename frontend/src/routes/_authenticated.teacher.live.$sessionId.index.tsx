@@ -8,6 +8,7 @@ import { DetailGrid } from "@/components/layout/data-page";
 import {
   cancelLiveSession,
   endLiveSession,
+  getLiveSessionAttendance,
   getTeacherLiveSession,
   startLiveSession,
 } from "@/lib/api/live";
@@ -24,6 +25,11 @@ function Page() {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["teacher-live-session", sessionId],
     queryFn: () => getTeacherLiveSession(sessionId),
+  });
+  const { data: attendance = [] } = useQuery({
+    queryKey: ["teacher-live-attendance", sessionId],
+    queryFn: () => getLiveSessionAttendance(sessionId),
+    enabled: Boolean(data) && data?.status !== "scheduled",
   });
 
   const invalidate = () => {
@@ -79,7 +85,6 @@ function Page() {
   const isLive = data.status === "live";
   const isEnded = data.status === "ended";
   const isCancelled = data.status === "cancelled";
-  const attendees = data.attendees ?? [];
 
   return (
     <AppShell eyebrow="Session" title={data.title}>
@@ -172,15 +177,22 @@ function Page() {
       )}
 
       <section className="mt-10">
-        <h2 className="font-serif text-xl mb-4">Attendees ({attendees.length})</h2>
-        {attendees.length === 0 ? (
-          <p className="text-sm text-brand/55">No one registered yet.</p>
+        <h2 className="font-serif text-xl mb-4">Attendance ({attendance.length})</h2>
+        {attendance.length === 0 ? (
+          <p className="text-sm text-brand/55">No one has joined this session yet.</p>
         ) : (
           <ul className="divide-y divide-brand/10 border-y border-brand/10 max-w-xl">
-            {attendees.map((a) => (
-              <li key={a.id} className="py-3 px-2 flex justify-between text-sm">
-                <span>{a.full_name}</span>
-                <span className="text-xs eyebrow text-brand/55">{a.status}</span>
+            {attendance.map((a) => (
+              <li
+                key={`${a.student_id}-${a.joined_at}`}
+                className="py-3 px-2 flex justify-between gap-4 text-sm"
+              >
+                <span className="font-mono text-xs truncate">
+                  Student {a.student_id.slice(0, 8)}
+                </span>
+                <span className="text-xs text-brand/55 whitespace-nowrap">
+                  Joined {new Date(a.joined_at).toLocaleTimeString()} · {a.duration_minutes} min
+                </span>
               </li>
             ))}
           </ul>

@@ -1,11 +1,12 @@
 /**
  * HLSPlayer
  *
- * A drop-in replacement for the existing <VideoPlayer> that prefers HLS
- * (when the signed-URL response has has_hls=true) and gracefully falls
- * back to progressive MP4. The native HLS path is used in Safari/iOS; on
- * Chrome/Firefox/Edge we attach the manifest to a MediaSource and feed
- * segments in via fetch — no third-party runtime required.
+ * Prefers adaptive HLS (when the signed-URL response has has_hls=true) and
+ * gracefully falls back to progressive MP4. Chrome/Firefox/Edge/Android use
+ * hls.js (Media Source Extensions) for adaptive bitrate, seeking and network
+ * recovery; Safari/iOS use native HLS. The previous hand-written MSE loader
+ * pushed MPEG-TS segments into an MP4 SourceBuffer (always failing), and
+ * downloaded every segment of the lowest rendition up front.
  *
  * This version implements a fully custom YouTube-style control overlay:
  *   - Auto-hiding timeline controls on mouse inactivity.
@@ -16,6 +17,8 @@
  *   - Native hotkey listeners (Arrows, Space, M, F).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import Hls from "hls.js/light";
+import { API_BASE_URL } from "@/lib/api/client";
 import {
   ChevronLeft,
   ChevronRight,
@@ -40,9 +43,29 @@ interface HLSPlayerProps {
   onError?: (message: string) => void;
   hasInteracted: boolean;
   onProgress?: (currentTime: number, duration: number) => void;
+  /** Resume position in seconds (ignored when within the last 5 seconds). */
+  startPosition?: number;
+  /** Called on playback events relevant for progress persistence. */
+  onPlaybackEvent?: (
+    event: "pause" | "ended" | "seeked",
+    currentTime: number,
+    duration: number,
+  ) => void;
 }
 
-const SEGMENT_RETRY = 3;
+type QualityLevel = { index: number; height: number; bitrate: number };
+
+/** Resolve backend-relative HLS URLs (/v1/stream/...) against the API host. */
+function resolveMediaUrl(url: string): string {
+  if (/^https?:\/\//i.test(url)) return url;
+  try {
+    return new URL(url, API_BASE_URL).toString();
+  } catch {
+    return url;
+  }
+}
+
+const MAX_NETWORK_RECOVERIES = 6;
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
 export function HLSPlayer({
@@ -52,6 +75,8 @@ export function HLSPlayer({
   onError,
   hasInteracted,
   onProgress,
+  startPosition,
+  onPlaybackEvent,
 }: HLSPlayerProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -64,6 +89,17 @@ export function HLSPlayer({
   const [usingHls, setUsingHls] = useState(false);
   const [hlsFailed, setHlsFailed] = useState(false);
   const userInteractedRef = useRef(false);
+  const hlsRef = useRef<Hls | null>(null);
+  const startPositionRef = useRef(startPosition);
+  startPositionRef.current = startPosition;
+  const onPlaybackEventRef = useRef(onPlaybackEvent);
+  onPlaybackEventRef.current = onPlaybackEvent;
+  // Position/playing state carried across a source refresh (renewed signed
+  // URLs) so playback continues where it was instead of restarting.
+  const carryOverRef = useRef<{ time: number; playing: boolean } | null>(null);
+  const [levels, setLevels] = useState<QualityLevel[]>([]);
+  const [selectedLevel, setSelectedLevel] = useState(-1); // -1 = auto
+  const [activeLevel, setActiveLevel] = useState(-1);
 
   // Custom Controls States
   const [isPlaying, setIsPlaying] = useState(false);
@@ -321,16 +357,15 @@ export function HLSPlayer({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [togglePlay, toggleMute, toggleFullscreen, showIndicator, resetControlsTimeout, playbackRate]);
 
-  // When the mp4Url changes, we load a new video, so reset the fallback tracking
+  // A new source (e.g. renewed signed URLs) gets a fresh chance at HLS. The
+  // player is keyed by lesson, so lesson switches remount it entirely.
   useEffect(() => {
     setHlsFailed(false);
-    userInteractedRef.current = false;
-    setIsPlaying(false);
-    setCurrentTime(0);
-    setNeedsTap(true);
   }, [mp4Url]);
 
-  // Handle source setup
+  // Handle source setup (re-runs when the lesson changes; tears down the
+  // previous hls.js instance and media element source to free memory and
+  // stop any in-flight segment downloads).
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -338,69 +373,154 @@ export function HLSPlayer({
     setFailed(false);
     setBuffering(false);
     setNeedsTap(true);
+    setLevels([]);
+    setSelectedLevel(-1);
+    setActiveLevel(-1);
 
-    if (!hlsUrl || hlsFailed) {
-      // Progressive MP4 path
-      video.src = mp4Url;
-      video.load();
-      setUsingHls(false);
-      if (userInteractedRef.current) {
-        video.play().catch(() => {});
-      }
-      return;
-    }
-
-    // Try HLS natively first (Safari/iOS)
-    const canNative = video.canPlayType("application/vnd.apple.mpegurl");
-    if (canNative) {
-      video.src = hlsUrl;
-      setUsingHls(true);
-      if (userInteractedRef.current) {
-        video.play().catch(() => {});
-      }
-      return;
-    }
-
-    // MSE HLS path (Chrome/Firefox)
-    let cancelled = false;
-    const ms = new MediaSource();
-    video.src = URL.createObjectURL(ms);
-
-    ms.addEventListener("sourceopen", async () => {
-      if (cancelled) return;
-      try {
-        const sb = ms.addSourceBuffer('video/mp4; codecs="avc1.4d401f,mp4a.40.2"');
-        await ingestManifest(ms, sb, hlsUrl, video);
-        if (!cancelled) {
-          setUsingHls(true);
-          if (userInteractedRef.current) {
-            video.play().catch(() => {});
-          }
-        }
-      } catch (err) {
-        if (cancelled) return;
-        // eslint-disable-next-line no-console
-        console.warn("HLS MSE playback failed; falling back to MP4", err);
-        setHlsFailed(true);
-      }
-    });
-
-    return () => {
-      cancelled = true;
-      if (video.src.startsWith("blob:")) {
-        try {
-          URL.revokeObjectURL(video.src);
-        } catch {
-          /* ignore */
-        }
+    const carry = carryOverRef.current;
+    carryOverRef.current = null;
+    const resume = carry ? carry.time : (startPositionRef.current ?? 0);
+    if (carry?.playing) userInteractedRef.current = true;
+    const applyResume = () => {
+      if (resume > 1 && video.duration && resume < video.duration - 5) {
+        video.currentTime = resume;
       }
     };
+
+    let hls: Hls | null = null;
+    let detachPlayListener = () => {};
+    const src = hlsUrl && !hlsFailed ? resolveMediaUrl(hlsUrl) : null;
+
+    if (src && Hls.isSupported()) {
+      hls = new Hls({
+        // Conservative initial estimate (~800 kbps) suits mobile networks;
+        // ABR ramps up after the first segments are measured.
+        abrEwmaDefaultEstimate: 800_000,
+        startLevel: -1,
+        capLevelToPlayerSize: true,
+        maxBufferLength: 30,
+        maxMaxBufferLength: 60,
+        backBufferLength: 30,
+        startPosition: resume > 1 ? resume : -1,
+        // Fetch only the playlists until the student presses play: no
+        // segment downloads (mobile data) for lessons that are just opened.
+        autoStartLoad: false,
+        enableWorker: true,
+        fragLoadPolicy: {
+          default: {
+            maxTimeToFirstByteMs: 10_000,
+            maxLoadTimeMs: 60_000,
+            timeoutRetry: { maxNumRetry: 4, retryDelayMs: 500, maxRetryDelayMs: 8_000 },
+            errorRetry: { maxNumRetry: 6, retryDelayMs: 1_000, maxRetryDelayMs: 8_000 },
+          },
+        },
+      });
+      hlsRef.current = hls;
+      let networkRecoveries = 0;
+      let mediaRecoveries = 0;
+      hls.on(Hls.Events.MANIFEST_PARSED, (_event, data) => {
+        setLevels(
+          data.levels
+            .map((level, index) => ({ index, height: level.height, bitrate: level.bitrate }))
+            .sort((x, y) => y.height - x.height),
+        );
+        setUsingHls(true);
+        if (userInteractedRef.current) video.play().catch(() => {});
+      });
+      hls.on(Hls.Events.LEVEL_SWITCHED, (_event, data) => setActiveLevel(data.level));
+      hls.on(Hls.Events.FRAG_LOADED, () => {
+        networkRecoveries = 0;
+      });
+      hls.on(Hls.Events.ERROR, (_event, data) => {
+        if (!data.fatal || !hls) return;
+        if (data.type === Hls.ErrorTypes.NETWORK_ERROR && !navigator.onLine) {
+          // Offline: keep playing what is buffered and resume loading from the
+          // current position when the "online" event fires (see below).
+          setBuffering(true);
+          return;
+        }
+        if (
+          data.type === Hls.ErrorTypes.NETWORK_ERROR &&
+          networkRecoveries < MAX_NETWORK_RECOVERIES
+        ) {
+          networkRecoveries++;
+          setBuffering(true);
+          const delay = Math.min(5000, 1000 * networkRecoveries);
+          window.setTimeout(() => hls?.startLoad(video.currentTime || -1), delay);
+        } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR && mediaRecoveries < 2) {
+          mediaRecoveries++;
+          hls.recoverMediaError();
+        } else {
+          console.warn("HLS playback failed; falling back to progressive MP4", data.details);
+          setHlsFailed(true);
+        }
+      });
+      hls.loadSource(src);
+      hls.attachMedia(video);
+      const startLoadOnPlay = () => hls?.startLoad(resume > 1 ? resume : -1);
+      video.addEventListener("play", startLoadOnPlay, { once: true });
+      detachPlayListener = () => video.removeEventListener("play", startLoadOnPlay);
+    } else if (src && video.canPlayType("application/vnd.apple.mpegurl")) {
+      // Safari / iOS native HLS
+      video.src = src;
+      setUsingHls(true);
+      video.addEventListener("loadedmetadata", applyResume, { once: true });
+    } else {
+      // Progressive MP4 fallback (range requests; preload metadata only)
+      video.src = mp4Url;
+      setUsingHls(false);
+      video.addEventListener("loadedmetadata", applyResume, { once: true });
+    }
+    if (!hls && userInteractedRef.current) {
+      video.play().catch(() => {});
+    }
+
+    // Resume downloading when connectivity returns.
+    const onOnline = () => {
+      if (hlsRef.current) {
+        hlsRef.current.startLoad(video.currentTime || -1);
+        if (!video.paused) video.play().catch(() => {});
+      } else if (video.error || video.networkState === video.NETWORK_NO_SOURCE) {
+        // Progressive MP4: reload and continue from the same position.
+        const at = video.currentTime;
+        video.load();
+        video.addEventListener("loadedmetadata", () => (video.currentTime = at), { once: true });
+        video.play().catch(() => {});
+      }
+    };
+    window.addEventListener("online", onOnline);
+
+    return () => {
+      if (video.currentTime > 0) {
+        carryOverRef.current = { time: video.currentTime, playing: !video.paused };
+      }
+      window.removeEventListener("online", onOnline);
+      video.removeEventListener("loadedmetadata", applyResume);
+      detachPlayListener();
+      if (hls) {
+        hls.destroy();
+      }
+      hlsRef.current = null;
+      video.removeAttribute("src");
+      video.load();
+    };
   }, [hlsUrl, mp4Url, hlsFailed]);
+
+  const selectQuality = (index: number) => {
+    setSelectedLevel(index);
+    if (hlsRef.current) {
+      // currentLevel switches immediately (flushes buffer); -1 restores ABR.
+      hlsRef.current.currentLevel = index;
+    }
+  };
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    video.preload = hasInteracted ? "auto" : "metadata";
+    // Never preload whole files: metadata only until the student presses
+    // play; afterwards the browser / hls.js buffer just ahead of playback.
+    void hasInteracted;
+    video.preload = "metadata";
   }, [hasInteracted]);
 
   // Video Tag event hooks
@@ -433,6 +553,13 @@ export function HLSPlayer({
     const onPause = () => {
       setIsPlaying(false);
       setControlsVisible(true);
+      onPlaybackEventRef.current?.("pause", video.currentTime, video.duration || 0);
+    };
+    const onEnded = () => {
+      onPlaybackEventRef.current?.("ended", video.currentTime, video.duration || 0);
+    };
+    const onSeeked = () => {
+      onPlaybackEventRef.current?.("seeked", video.currentTime, video.duration || 0);
     };
     const onTimeUpdate = () => {
       setCurrentTime(video.currentTime);
@@ -464,6 +591,8 @@ export function HLSPlayer({
     video.addEventListener("playing", onPlaying);
     video.addEventListener("canplay", onPlaying);
     video.addEventListener("progress", updateBuffer);
+    video.addEventListener("ended", onEnded);
+    video.addEventListener("seeked", onSeeked);
 
     return () => {
       video.removeEventListener("play", onPlay);
@@ -475,6 +604,8 @@ export function HLSPlayer({
       video.removeEventListener("playing", onPlaying);
       video.removeEventListener("canplay", onPlaying);
       video.removeEventListener("progress", updateBuffer);
+      video.removeEventListener("ended", onEnded);
+      video.removeEventListener("seeked", onSeeked);
     };
   }, [playbackRate, onProgress, resetControlsTimeout]);
 
@@ -488,7 +619,7 @@ export function HLSPlayer({
   }, []);
 
   // Timeline Progress Scrubber seek
-  const handleScrubberSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleScrubberSeek = (e: React.PointerEvent<HTMLDivElement>) => {
     const rect = progressRef.current?.getBoundingClientRect();
     const video = videoRef.current;
     if (!rect || !video || !video.duration) return;
@@ -498,7 +629,7 @@ export function HLSPlayer({
     video.currentTime = percent * video.duration;
   };
 
-  const handleScrubberMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleScrubberMouseMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const rect = progressRef.current?.getBoundingClientRect();
     if (!rect || !duration) return;
     const clientX = e.clientX;
@@ -509,7 +640,7 @@ export function HLSPlayer({
     setHoverTooltipTime(formatTime(hoverTime));
     setHoverTooltipLeft(percent * 100);
 
-    if (e.buttons === 1) {
+    if (e.buttons === 1 || e.currentTarget.hasPointerCapture?.(e.pointerId)) {
       if (videoRef.current) {
         videoRef.current.currentTime = hoverTime;
       }
@@ -684,10 +815,20 @@ export function HLSPlayer({
           {/* Custom Timeline Scrubber */}
           <div
             ref={progressRef}
-            onClick={handleScrubberSeek}
-            onMouseMove={handleScrubberMouseMove}
-            onMouseLeave={handleScrubberMouseLeave}
-            className="group/scrub h-1 hover:h-1.5 bg-white/20 cursor-pointer relative mb-4 transition-all rounded-full overflow-visible"
+            role="slider"
+            tabIndex={0}
+            aria-label="Seek"
+            aria-valuemin={0}
+            aria-valuemax={Math.round(duration) || 0}
+            aria-valuenow={Math.round(currentTime)}
+            aria-valuetext={`${formatTime(currentTime)} of ${formatTime(duration)}`}
+            onPointerDown={(e) => {
+              e.currentTarget.setPointerCapture(e.pointerId);
+              handleScrubberSeek(e);
+            }}
+            onPointerMove={handleScrubberMouseMove}
+            onPointerLeave={handleScrubberMouseLeave}
+            className="group/scrub h-1.5 sm:h-1 hover:h-1.5 touch-none py-0 before:absolute before:-inset-y-3 before:inset-x-0 before:content-[''] bg-white/20 cursor-pointer relative mb-4 transition-all rounded-full overflow-visible"
           >
             {/* Buffered track (translucent gray) */}
             <div
@@ -718,7 +859,7 @@ export function HLSPlayer({
           {/* Lower Row Controls */}
           <div className="flex items-center justify-between text-white text-sm">
             {/* Left Hand Controls */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <button
                 type="button"
                 onClick={togglePlay}
@@ -755,35 +896,87 @@ export function HLSPlayer({
                   step="0.05"
                   value={isMuted ? 0 : volume}
                   onChange={handleVolumeSlider}
-                  className="w-0 group-hover/volume:w-16 h-1 bg-white/30 accent-red-600 transition-all cursor-pointer overflow-hidden rounded-sm"
+                  className="hidden sm:block w-0 group-hover/volume:w-16 focus:w-16 h-1 bg-white/30 accent-red-600 transition-all cursor-pointer overflow-hidden rounded-sm"
                   aria-label="Volume slider"
                 />
               </div>
 
               {/* Video Timeline Duration */}
-              <span className="text-xs font-medium tracking-wide">
+              <span className="text-[11px] sm:text-xs font-medium tracking-wide tabular-nums whitespace-nowrap">
                 {formatTime(currentTime)} / {formatTime(duration)}
               </span>
             </div>
 
             {/* Right Hand Controls */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
               {/* Playback speed selector */}
               <div className="relative" ref={speedContainerRef}>
                 <button
                   type="button"
                   onClick={() => setShowSpeedMenu(!showSpeedMenu)}
                   className="hover:text-red-500 transition-colors p-1"
-                  aria-label="Playback speed"
+                  aria-label="Playback settings"
+                  aria-haspopup="menu"
+                  aria-expanded={showSpeedMenu}
                 >
                   <Settings className="h-5 w-5" />
                 </button>
                 {showSpeedMenu && (
-                  <div className="absolute right-0 bottom-8 mb-2 bg-brand border border-white/10 shadow-2xl z-30 py-1 w-28">
+                  <div
+                    role="menu"
+                    className="absolute right-0 bottom-8 mb-2 bg-brand border border-white/10 shadow-2xl z-30 py-1 w-36 max-h-[60vh] overflow-y-auto"
+                  >
+                    {levels.length > 1 && (
+                      <>
+                        <p className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-wider text-white/50">
+                          Quality
+                        </p>
+                        <button
+                          type="button"
+                          role="menuitemradio"
+                          aria-checked={selectedLevel === -1}
+                          onClick={() => {
+                            selectQuality(-1);
+                            setShowSpeedMenu(false);
+                          }}
+                          className={`w-full text-left px-4 py-2 text-xs font-semibold transition-colors hover:bg-white/10 ${
+                            selectedLevel === -1 ? "text-red-500" : "text-white"
+                          }`}
+                        >
+                          Auto
+                          {selectedLevel === -1 && activeLevel >= 0
+                            ? ` (${levels.find((l) => l.index === activeLevel)?.height ?? ""}p)`
+                            : ""}
+                        </button>
+                        {levels.map((level) => (
+                          <button
+                            key={level.index}
+                            type="button"
+                            role="menuitemradio"
+                            aria-checked={selectedLevel === level.index}
+                            onClick={() => {
+                              selectQuality(level.index);
+                              setShowSpeedMenu(false);
+                            }}
+                            className={`w-full text-left px-4 py-2 text-xs font-semibold transition-colors hover:bg-white/10 ${
+                              selectedLevel === level.index ? "text-red-500" : "text-white"
+                            }`}
+                          >
+                            {level.height}p
+                          </button>
+                        ))}
+                        <div className="my-1 border-t border-white/10" />
+                      </>
+                    )}
+                    <p className="px-4 pt-1 pb-1 text-[10px] uppercase tracking-wider text-white/50">
+                      Speed
+                    </p>
                     {SPEEDS.map((s) => (
                       <button
                         key={s}
                         type="button"
+                        role="menuitemradio"
+                        aria-checked={s === playbackRate}
                         onClick={() => {
                           setPlaybackRate(s);
                           setShowSpeedMenu(false);
@@ -803,7 +996,7 @@ export function HLSPlayer({
               <button
                 type="button"
                 onClick={togglePiP}
-                className="hover:text-red-500 transition-colors p-1"
+                className="hidden sm:inline-flex hover:text-red-500 transition-colors p-1"
                 aria-label="Picture-in-picture"
               >
                 <Tv className="h-5 w-5" />
@@ -824,143 +1017,4 @@ export function HLSPlayer({
       )}
     </div>
   );
-}
-
-/**
- * ingestManifest walks the master playlist, picks the lowest-bandwidth
- * rendition (good for starting quickly), downloads its media playlist, and
- * pipes each .ts segment into the source buffer.
- */
-async function ingestManifest(
-  ms: MediaSource,
-  sb: SourceBuffer,
-  manifestUrl: string,
-  video: HTMLVideoElement,
-): Promise<void> {
-  const masterText = await fetchTextWithRetry(manifestUrl);
-  const master = parseM3U8(masterText);
-  let bestBandwidth = Number.POSITIVE_INFINITY;
-  let bestUri = "";
-  for (const entry of master.variants) {
-    if (entry.bandwidth > 0 && entry.bandwidth < bestBandwidth) {
-      bestBandwidth = entry.bandwidth;
-      bestUri = entry.uri;
-    }
-  }
-  if (!bestUri) {
-    bestUri = manifestUrl;
-  }
-  const absoluteMediaUrl = absolutize(manifestUrl, bestUri);
-  const mediaText = await fetchTextWithRetry(absoluteMediaUrl);
-  const media = parseM3U8(mediaText);
-  const segmentUrls = media.segments.map((s) => absolutize(absoluteMediaUrl, s.uri));
-
-  for (const segUrl of segmentUrls) {
-    await appendSegment(sb, segUrl);
-  }
-  if (ms.readyState === "open") {
-    ms.endOfStream();
-  }
-}
-
-async function appendSegment(sb: SourceBuffer, url: string): Promise<void> {
-  let attempt = 0;
-  while (true) {
-    try {
-      const buf = await fetchArrayBufferWithRetry(url);
-      await appendBuffer(sb, buf);
-      return;
-    } catch (err) {
-      if (++attempt >= SEGMENT_RETRY) throw err;
-      await new Promise((r) => setTimeout(r, 250 * 2 ** (attempt - 1)));
-    }
-  }
-}
-
-function appendBuffer(sb: SourceBuffer, buf: ArrayBuffer): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const onUpdate = () => {
-      sb.removeEventListener("updateend", onUpdate);
-      sb.removeEventListener("error", onErr);
-      resolve();
-    };
-    const onErr = () => {
-      sb.removeEventListener("updateend", onUpdate);
-      sb.removeEventListener("error", onErr);
-      reject(new Error("SourceBuffer error"));
-    };
-    sb.addEventListener("updateend", onUpdate);
-    sb.addEventListener("error", onErr);
-    try {
-      sb.appendBuffer(buf);
-    } catch (e) {
-      reject(e as Error);
-    }
-  });
-}
-
-async function fetchTextWithRetry(url: string): Promise<string> {
-  let attempt = 0;
-  while (true) {
-    try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.text();
-    } catch (err) {
-      if (++attempt >= SEGMENT_RETRY) throw err;
-      await new Promise((r) => setTimeout(r, 250 * 2 ** (attempt - 1)));
-    }
-  }
-}
-
-async function fetchArrayBufferWithRetry(url: string): Promise<ArrayBuffer> {
-  let attempt = 0;
-  while (true) {
-    try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.arrayBuffer();
-    } catch (err) {
-      if (++attempt >= SEGMENT_RETRY) throw err;
-      await new Promise((r) => setTimeout(r, 250 * 2 ** (attempt - 1)));
-    }
-  }
-}
-
-type M3U8 = {
-  variants: Array<{ bandwidth: number; uri: string }>;
-  segments: Array<{ uri: string }>;
-};
-
-function parseM3U8(text: string): M3U8 {
-  const lines = text
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean);
-  const result: M3U8 = { variants: [], segments: [] };
-  let isMaster = false;
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (line.startsWith("#EXT-X-STREAM-INF")) {
-      const m = /BANDWIDTH=(\d+)/.exec(line);
-      const bandwidth = m ? Number(m[1]) : 0;
-      const uri = lines[i + 1] ?? "";
-      if (uri) result.variants.push({ bandwidth, uri });
-      isMaster = true;
-      i++;
-    } else if (!line.startsWith("#")) {
-      result.segments.push({ uri: line });
-    }
-  }
-  if (isMaster) result.segments = [];
-  return result;
-}
-
-function absolutize(base: string, relative: string): string {
-  if (/^https?:\/\//.test(relative)) return relative;
-  try {
-    return new URL(relative, base).toString();
-  } catch {
-    return relative;
-  }
 }

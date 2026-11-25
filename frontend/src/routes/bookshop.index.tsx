@@ -7,7 +7,7 @@ import { z } from "zod";
 import { PublicHeader } from "@/components/layout/public-header";
 import { formatPrice, listBooks, type BookSummary } from "@/lib/api/bookshop";
 
-type Sort = "popular" | "newest" | "price_asc" | "price_desc";
+type Sort = "newest" | "price_asc" | "price_desc" | "title";
 
 const searchSchema = z.object({
   q: z.string().optional(),
@@ -25,7 +25,7 @@ function PublicBookshopIndex() {
   const routeSearch = Route.useSearch();
   const [search, setSearch] = useState(routeSearch.q ?? "");
   const [category, setCategory] = useState(routeSearch.category ?? "");
-  const [sort, setSort] = useState<Sort>("popular");
+  const [sort, setSort] = useState<Sort>("newest");
 
   const books = useQuery({
     queryKey: ["public-bookshop-books", { search, category, sort }],
@@ -62,8 +62,8 @@ function PublicBookshopIndex() {
               onChange={(e) => setSort(e.target.value as Sort)}
               className="w-full sm:w-auto px-4 py-3 text-sm border border-brand/15 bg-white/50 focus:outline-none focus:border-brand/40 focus:bg-white transition-all"
             >
-              <option value="popular">Most popular</option>
               <option value="newest">Newest</option>
+              <option value="title">Title A–Z</option>
               <option value="price_asc">Price: low to high</option>
               <option value="price_desc">Price: high to low</option>
             </select>

@@ -48,7 +48,8 @@ export type LeaderboardEntry = {
   is_me?: boolean;
 };
 
-export type LeaderboardScope = "weekly" | "monthly" | "all_time";
+// The backend supports two periods only: weekly and all-time.
+export type LeaderboardScope = "weekly" | "all_time";
 
 export function getGamificationOverview() {
   return apiRequest<{

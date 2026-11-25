@@ -1,6 +1,6 @@
-import { apiRequest } from "./client";
+import { apiRequest, resolveAssetUrl } from "./client";
 import type { Chapter, CourseDetail, CourseNote, CourseSummary, Lesson, Module } from "./courses";
-import { normalizeCourseDetail } from "./courses";
+import { normalizeCourseDetail, type RawCourseDetail } from "./courses";
 
 export type TeacherCourse = CourseSummary & {
   status: "draft" | "published" | "archived";
@@ -66,7 +66,7 @@ export function createCourse(input: CourseInput) {
 }
 
 export function getTeacherCourse(courseId: string) {
-  return apiRequest<CourseDetail & { status: string }>(
+  return apiRequest<RawCourseDetail>(
     `/v1/teacher/courses/${encodeURIComponent(courseId)}/preview`,
     { auth: true },
   ).then(normalizeCourseDetail);
@@ -283,16 +283,26 @@ export type UploadedFile = {
   file_id: string;
   presigned_url: string;
   expires_at: string;
+  file_url?: string;
+  /**
+   * URL to store in content. Prefers the stable /v1/media path: presigned
+   * URLs expire after 24 hours, which used to break question diagrams and
+   * note attachments a day after upload.
+   */
+  url: string;
 };
 
 export function uploadLessonFile(file: File) {
   const formData = new FormData();
   formData.append("file", file);
-  return apiRequest<UploadedFile>("/v1/uploads/file", {
+  return apiRequest<Omit<UploadedFile, "url">>("/v1/uploads/file", {
     method: "POST",
     auth: true,
     body: formData,
-  });
+  }).then((result) => ({
+    ...result,
+    url: result.file_url ? resolveAssetUrl(result.file_url) : result.presigned_url,
+  }));
 }
 
 export function reorderContent(input: {

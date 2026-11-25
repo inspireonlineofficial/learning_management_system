@@ -1,0 +1,26 @@
+# Git
+.git/
+
+# Test files and coverage artifacts
+**/*_test.go
+**/testdata/
+coverage.out
+coverage.html
+
+# Environment and secrets
+.env
+*.env
+keys/
+
+# Compiled binaries
+*.exe
+*.test.exe
+bin/
+server
+
+# Editor and IDE directories
+.vscode/
+.idea/
+
+# Documentation
+*.md

@@ -49,7 +49,7 @@ function Page() {
           ))}
         </div>
       ) : !quizzes.data || quizzes.data.data.length === 0 ? (
-        <p className="text-sm text-brand/55 border border-dashed border-brand/15 p-8 text-center">
+        <p className="text-sm text-brand/70 border border-dashed border-brand/15 p-8 text-center">
           No quizzes yet.
         </p>
       ) : (
@@ -59,22 +59,47 @@ function Page() {
               <Link
                 to="/teacher/quiz-builder/$quizId/edit"
                 params={{ quizId: q.id }}
-                className="flex-1 hover:text-accent"
+                className="flex-1 hover:text-accent-ink"
               >
                 <p className="font-serif text-lg">{q.title}</p>
-                <p className="text-xs text-brand/55">
-                  {q.course_title ?? "Standalone"} · {q.total_questions} questions · passing{" "}
-                  {q.passing_score}%
+                <p className="text-xs text-brand/70">
+                  {q.course_title ?? "Course"} · {q.total_questions} questions · {q.total_points}{" "}
+                  marks · passing {q.passing_score}%
                 </p>
-                <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-brand/40">
-                  {q.is_free ? "Free" : "Paid"} · {q.is_published === false ? "Draft" : "Published"}
+                <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-brand/70">
+                  {q.lifecycle} · {q.mode} · {q.is_free ? "Free" : "Paid"} · {q.submitted_count}{" "}
+                  submitted
+                  {q.in_progress_count > 0 ? ` · ${q.in_progress_count} in progress` : ""}
                 </p>
+              </Link>
+              {q.pending_grading_count > 0 && (
+                <Link
+                  to="/teacher/quiz-builder/$quizId/attempts"
+                  params={{ quizId: q.id }}
+                  search={{ status: "pending_grading" }}
+                  className="bg-accent-ink px-2 py-1 text-[11px] font-medium text-white tabular-nums"
+                >
+                  {q.pending_grading_count} to mark
+                </Link>
+              )}
+              <Link
+                to="/teacher/quiz-builder/$quizId/attempts"
+                params={{ quizId: q.id }}
+                className="border border-brand/15 px-2.5 py-1.5 text-xs hover:bg-brand/[0.03]"
+              >
+                Attempts
               </Link>
               <button
                 onClick={() => {
-                  if (confirm("Delete quiz and all questions?")) remove.mutate(q.id);
+                  if (
+                    confirm(
+                      "Delete this quiz and all its questions? Quizzes with student attempts can only be unpublished.",
+                    )
+                  )
+                    remove.mutate(q.id);
                 }}
-                className="p-1.5 text-brand/45 hover:text-destructive"
+                className="p-1.5 text-brand/70 hover:text-destructive"
+                aria-label={`Delete ${q.title}`}
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>

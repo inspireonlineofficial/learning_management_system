@@ -33,7 +33,7 @@ function Page() {
     const fromTs = from ? new Date(from).getTime() : null;
     const toTs = to ? new Date(to).getTime() + 86_400_000 : null;
     return data.items.filter((it) => {
-      if (a && !it.actor.full_name.toLowerCase().includes(a)) return false;
+      if (a && !(it.actor?.full_name ?? "").toLowerCase().includes(a)) return false;
       if (action && it.action !== action) return false;
       const ts = new Date(it.created_at).getTime();
       if (fromTs != null && ts < fromTs) return false;
@@ -107,7 +107,7 @@ function Page() {
             <ListTable<AuditLog>
               rows={filtered}
               columns={[
-                { key: "actor", label: "Actor", render: (r) => r.actor.full_name },
+                { key: "actor", label: "Actor", render: (r) => r.actor?.full_name ?? "System" },
                 {
                   key: "action",
                   label: "Action",

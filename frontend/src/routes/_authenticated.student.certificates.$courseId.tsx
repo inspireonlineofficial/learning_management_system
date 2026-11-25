@@ -22,7 +22,7 @@ function Page() {
   const handleDownload = async () => {
     try {
       const r = await downloadCertificatePdf(courseId);
-      window.open(r.url, "_blank");
+      window.open(r.url, "_blank", "noopener,noreferrer");
     } catch (e) {
       toast.error((e as Error).message);
     }

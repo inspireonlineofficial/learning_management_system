@@ -22,7 +22,7 @@ function CreateAssignmentPage() {
     title: "",
     description: "",
     due_at: "",
-    submission_type: "both" as const,
+    submission_type: "both" as "text" | "file" | "both",
     max_file_size_mb: 50,
     allow_late_submission: false,
     total_marks: 100,

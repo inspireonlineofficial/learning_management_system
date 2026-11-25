@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, Clock3, XCircle } from "lucide-react";
 
+import { AttemptReview } from "@/components/assessment/attempt-review";
 import { AppShell } from "@/components/layout/app-shell";
-import { getQuizAttempt, type QuizResult } from "@/lib/api/quizzes";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
+import { getQuizResult, type QuizResult } from "@/lib/api/quizzes";
 
 export const Route = createFileRoute(
   "/_authenticated/student/assessments/$quizId/result/$attemptId",
@@ -11,124 +13,175 @@ export const Route = createFileRoute(
   component: QuizResultPage,
 });
 
+function formatDuration(seconds?: number | null) {
+  if (seconds == null) return "—";
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return m ? `${m} min ${s} s` : `${s} s`;
+}
+
 function QuizResultPage() {
   const { quizId, attemptId } = Route.useParams();
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["quiz-attempt", quizId, attemptId],
-    queryFn: () => getQuizAttempt(attemptId),
+    queryFn: () => getQuizResult(quizId, attemptId),
+    // Pending manual grading: refresh occasionally while the page is open.
+    refetchInterval: (query) => (query.state.data?.grading_status === "pending" ? 60_000 : false),
   });
 
   if (isLoading) {
     return (
-      <AppShell eyebrow="Result" title="Loading your result...">
-        <div className="h-40 bg-white/30 border border-brand/10 animate-pulse" />
+      <AppShell eyebrow="Result" title="Loading your result…">
+        <div className="h-40 animate-pulse border border-brand/10 bg-white/30" />
       </AppShell>
     );
   }
-
   if (isError || !data) {
     return (
-      <AppShell eyebrow="Result" title="Couldn't load this result">
-        <p className="text-sm text-brand/55">{(error as Error)?.message}</p>
+      <AppShell eyebrow="Result" title="Result unavailable">
+        <QueryErrorPanel
+          error={error}
+          title="Couldn't load this result"
+          onRetry={() => refetch()}
+        />
       </AppShell>
     );
   }
+  return <ResultView result={data} quizId={quizId} />;
+}
 
-  const result = data as QuizResult;
-  const hasGrade = typeof result.percentage === "number";
+function ResultView({ result, quizId }: { result: QuizResult; quizId: string }) {
+  const pending = result.grading_status === "pending";
+  const percent =
+    result.score_percent ??
+    (result.max_points
+      ? Math.round(((result.score_points ?? 0) / result.max_points) * 1000) / 10
+      : 0);
+  const counts = result.review.reduce(
+    (acc, q) => {
+      if (q.pending) acc.pending++;
+      else if (!q.answered) acc.unanswered++;
+      else if (q.status === "correct") acc.correct++;
+      else if (q.status === "incorrect") acc.incorrect++;
+      else if (q.status === "partial") acc.partial++;
+      return acc;
+    },
+    { correct: 0, incorrect: 0, partial: 0, unanswered: 0, pending: 0 },
+  );
 
   return (
-    <AppShell
-      eyebrow="Quiz result"
-      title={
-        hasGrade ? (result.passed ? "You passed." : "Not passing yet.") : "Submission received"
-      }
-    >
-      {hasGrade && (
-        <div className="grid sm:grid-cols-3 gap-4 max-w-2xl">
-          <Stat label="Score" value={`${result.score} / ${result.max_score}`} />
-          <Stat label="Percentage" value={`${Math.round(result.percentage)}%`} />
-          <Stat
-            label="Outcome"
-            value={result.passed ? "Passed" : "Failed"}
-            tone={result.passed ? "good" : "bad"}
-          />
+    <AppShell eyebrow="Result" title={result.quiz_title ?? "Assessment result"}>
+      <section
+        className={`border p-6 sm:p-8 ${
+          pending
+            ? "border-brand/15 bg-white/60"
+            : result.passed
+              ? "border-emerald-600/30 bg-emerald-50/60"
+              : "border-amber-600/30 bg-amber-50/50"
+        }`}
+        aria-labelledby="score-heading"
+      >
+        <div className="flex flex-wrap items-start gap-5">
+          {pending ? (
+            <Clock3 className="h-10 w-10 text-brand/70" aria-hidden />
+          ) : result.passed ? (
+            <CheckCircle2 className="h-10 w-10 text-emerald-700" aria-hidden />
+          ) : (
+            <XCircle className="h-10 w-10 text-amber-700" aria-hidden />
+          )}
+          <div className="min-w-0 flex-1">
+            <h2 id="score-heading" className="font-serif text-3xl sm:text-4xl">
+              {pending
+                ? "Submitted — awaiting marking"
+                : result.passed
+                  ? "Passed"
+                  : "Not passed yet"}
+            </h2>
+            <p className="mt-2 text-sm text-brand/70">
+              {pending
+                ? "Some written answers are marked by your teacher. Your final score appears here once marking is complete."
+                : result.passing_score_percent != null
+                  ? `Passing score: ${result.passing_score_percent}%`
+                  : null}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="font-serif text-5xl tabular-nums">{percent}%</p>
+            <p className="text-sm tabular-nums text-brand/65">
+              {result.score_points ?? 0} / {result.max_points ?? 0} marks{pending ? " so far" : ""}
+            </p>
+          </div>
         </div>
-      )}
-
-      {result.feedback && (
-        <section className="mt-10 max-w-2xl">
-          <h2 className="font-serif text-xl mb-2">Feedback</h2>
-          <p className="text-sm text-brand/70 leading-relaxed whitespace-pre-line">
-            {result.feedback}
+        <dl className="mt-6 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+          <div>
+            <dt className="text-xs text-brand/70">Time taken</dt>
+            <dd className="tabular-nums">{formatDuration(result.time_taken_seconds)}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-brand/70">Submitted</dt>
+            <dd>{result.submitted_at ? new Date(result.submitted_at).toLocaleString() : "—"}</dd>
+          </div>
+          {result.answers_released && (
+            <div>
+              <dt className="text-xs text-brand/70">Correct / partly</dt>
+              <dd className="tabular-nums">
+                {counts.correct} / {counts.partial}
+              </dd>
+            </div>
+          )}
+          <div>
+            <dt className="text-xs text-brand/70">Unanswered</dt>
+            <dd className="tabular-nums">{counts.unanswered}</dd>
+          </div>
+          {result.points_awarded > 0 && (
+            <div>
+              <dt className="text-xs text-brand/70">Points earned</dt>
+              <dd className="tabular-nums">+{result.points_awarded}</dd>
+            </div>
+          )}
+        </dl>
+        {result.status === "auto_submitted" && (
+          <p className="mt-4 text-xs text-brand/70">
+            Submitted automatically when the time ran out, using your saved answers.
           </p>
-        </section>
-      )}
+        )}
+      </section>
 
-      <div className="mt-10 flex gap-3">
-        <Link to="/student/assessments" className="bg-brand text-white px-6 py-3 text-sm">
-          Back to assessments
-        </Link>
+      <section className="mt-10">
+        <h2 className="font-serif text-2xl">Review</h2>
+        {!result.answers_released && (
+          <p className="mt-2 text-sm text-brand/65">
+            Your teacher has not released correct answers for this assessment. You can see your own
+            answers below.
+          </p>
+        )}
+        {result.review_available ? (
+          <div className="mt-5">
+            <AttemptReview review={result.review} released={result.answers_released} />
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-brand/70">
+            A question-by-question review isn't available for attempts submitted before the
+            assessment upgrade.
+          </p>
+        )}
+      </section>
+
+      <div className="mt-10 flex flex-wrap gap-3">
         <Link
           to="/student/assessments/$quizId"
           params={{ quizId }}
-          className="border border-brand/15 px-6 py-3 text-sm"
+          className="bg-brand px-6 py-3 text-sm font-medium text-white hover:bg-brand/90"
         >
-          Quiz details
+          Back to the assessment
+        </Link>
+        <Link
+          to="/student/assessments"
+          className="border border-brand/15 px-6 py-3 text-sm hover:border-brand/40"
+        >
+          All assessments
         </Link>
       </div>
-
-      {result.questions && result.questions.length > 0 && (
-        <section className="mt-12">
-          <h2 className="font-serif text-2xl mb-6">Review</h2>
-          <ol className="space-y-5">
-            {result.questions.map((question, index) => {
-              const perQuestion = result.per_question?.find(
-                (item) => item.question_id === question.id,
-              );
-              return (
-                <li key={question.id} className="border border-brand/10 bg-white/50 p-5">
-                  <div className="flex items-start gap-3">
-                    {perQuestion?.correct ? (
-                      <CheckCircle2 className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
-                    ) : (
-                      <XCircle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
-                    )}
-                    <div>
-                      <p className="text-xs text-brand/45">
-                        Q{index + 1} · {perQuestion?.awarded ?? 0} /{" "}
-                        {perQuestion?.max ?? question.points}
-                      </p>
-                      <p className="mt-1 font-serif text-lg">{question.prompt}</p>
-                      {question.image_url && (
-                        <img
-                          src={question.image_url}
-                          alt=""
-                          className="mt-3 max-h-64 w-full max-w-xl object-contain border border-brand/10 bg-white"
-                        />
-                      )}
-                      {question.explanation && (
-                        <p className="mt-3 text-xs text-brand/60">{question.explanation}</p>
-                      )}
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-        </section>
-      )}
     </AppShell>
-  );
-}
-
-function Stat({ label, value, tone }: { label: string; value: string; tone?: "good" | "bad" }) {
-  const toneClass =
-    tone === "good" ? "text-emerald-700" : tone === "bad" ? "text-destructive" : "text-brand";
-  return (
-    <div className="border border-brand/10 bg-white/40 p-5">
-      <p className="eyebrow text-brand/45">{label}</p>
-      <p className={`mt-2 font-serif text-3xl ${toneClass}`}>{value}</p>
-    </div>
   );
 }

@@ -37,7 +37,9 @@ export const Route = createFileRoute("/courses/$courseId")({
       <div className="max-w-md text-center">
         <p className="eyebrow text-destructive">Error</p>
         <h1 className="mt-4 font-serif text-3xl">Couldn't load this course</h1>
-        <p className="mt-2 text-sm text-brand/55">{error.message}</p>
+        <p className="mt-2 text-sm text-brand/55">
+          {error instanceof Error ? error.message : "Something went wrong."}
+        </p>
       </div>
     </div>
   ),

@@ -38,6 +38,7 @@ export type Lesson = {
   is_free?: boolean;
   is_downloadable?: boolean;
   status?: string;
+  position?: number;
   video_url?: string | null;
   body_html?: string | null;
   resources?: { id: string; title: string; url: string }[];
@@ -104,6 +105,8 @@ export type CourseDetail = CourseSummary & {
   notes?: CourseNote[];
   comments?: CourseComment[];
   is_enrolled?: boolean;
+  /** Lifecycle status (draft, pending_review, published, ...). */
+  status?: string;
 };
 
 export type Paginated<T> = {
@@ -160,7 +163,7 @@ export function listCourses(params: CourseListParams = {}) {
 }
 
 export function getCourse(idOrSlug: string) {
-  return apiRequest<CourseDetail>(`/v1/courses/${encodeURIComponent(idOrSlug)}`, {
+  return apiRequest<RawCourseDetail>(`/v1/courses/${encodeURIComponent(idOrSlug)}`, {
     auth: true,
   }).then(normalizeCourseDetail);
 }
@@ -261,20 +264,30 @@ export function deleteCourseComment(commentId: string) {
 
 export type LessonPreview = {
   url: string;
+  hls_url?: string;
+  poster_url?: string;
   mime_type?: string;
-  duration_seconds?: number;
-  captions_url?: string | null;
 };
 
-export function getLessonPreview(courseId: string, lessonId: string) {
+export function getLessonPreview(courseId: string, lessonId: string): Promise<LessonPreview> {
   void courseId;
-  return apiRequest<{ signed_url: string; expires_in?: number }>(
-    `/v1/stream/lessons/${encodeURIComponent(lessonId)}/signed-url`,
-    { auth: true },
-  ).then((result) => ({ url: result.signed_url }));
+  return apiRequest<{
+    signed_url: string;
+    hls_url?: string;
+    poster_url?: string;
+    content_type?: string;
+  }>(`/v1/stream/lessons/${encodeURIComponent(lessonId)}/signed-url`, { auth: true }).then(
+    (result) => ({
+      url: result.signed_url,
+      hls_url: result.hls_url || undefined,
+      poster_url: result.poster_url || undefined,
+      mime_type: result.content_type || undefined,
+    }),
+  );
 }
 
-type RawCourseDetail = Omit<CourseDetail, "modules" | "outcomes" | "requirements"> & {
+export type RawCourseDetail = Omit<CourseDetail, "modules" | "outcomes" | "requirements"> & {
+  outcomes?: string[];
   short_description?: string;
   subject?: string;
   thumbnail_url?: string | null;
@@ -288,12 +301,7 @@ type RawCourseDetail = Omit<CourseDetail, "modules" | "outcomes" | "requirements
     Omit<Module, "lessons"> & {
       chapters?: Array<
         Omit<Chapter, "lessons"> & {
-          lessons?: Array<
-            Omit<Lesson, "duration_minutes" | "is_preview"> & {
-              duration_seconds?: number;
-              is_free_preview?: boolean;
-            }
-          >;
+          lessons?: Array<Lesson>;
         }
       >;
     }

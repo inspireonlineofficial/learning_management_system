@@ -27,7 +27,13 @@ import { VideoPlayer } from "@/components/course/video-player";
 import { HLSPlayer } from "@/components/course/hls-player";
 import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { useAuth } from "@/context/auth-context";
-import { completeLesson, getCourseProgress, getLesson } from "@/lib/api/student";
+import {
+  completeLesson,
+  getCourseProgress,
+  getEnrollmentProgress,
+  getLesson,
+} from "@/lib/api/student";
+import { useLessonProgressSync } from "@/hooks/use-lesson-progress-sync";
 import { useVideoReadyPolling } from "@/hooks/use-video-ready-polling";
 import { downloadLesson, isLessonDownloaded, removeOfflineLesson } from "@/lib/offline-lessons";
 
@@ -104,6 +110,12 @@ function PlayerPage() {
       };
     },
     enabled: Boolean(activeLessonId && activeLessonHasVideo),
+    // Signed playback URLs are valid for 2 hours. Refetching them on window
+    // focus / reconnect produced new URLs, which reloaded the player from the
+    // beginning every time a student switched tabs or the network blipped.
+    staleTime: 90 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const {
@@ -116,9 +128,44 @@ function PlayerPage() {
     refetch: () => refetchLesson(),
   });
 
+  // Saved playback positions (resume) and watched percentages.
+  const { data: lessonProgress, isFetched: lessonProgressFetched } = useQuery({
+    queryKey: ["lesson-progress", courseId],
+    queryFn: () => getEnrollmentProgress(courseId),
+    staleTime: 30_000,
+  });
+  const savedProgress = useMemo(
+    () => lessonProgress?.lessons.find((item) => item.lesson_id === activeLessonId),
+    [lessonProgress, activeLessonId],
+  );
+
+  const progressSync = useLessonProgressSync({
+    courseId,
+    lessonId: activeLessonId,
+    enabled: Boolean(activeLessonId && activeLessonHasVideo),
+    initialWatchedPercent: savedProgress?.watched_percent ?? 0,
+    alreadyCompleted: activeLessonId ? completedSet.has(activeLessonId) : false,
+    onCompleted: () => {
+      toast.success("Lesson completed.");
+      qc.invalidateQueries({ queryKey: ["progress", courseId] });
+      qc.invalidateQueries({ queryKey: ["lesson-progress", courseId] });
+      qc.invalidateQueries({ queryKey: ["enrollments"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+
   const completeMutation = useMutation({
     mutationFn: (lessonId: string) => completeLesson(courseId, lessonId),
-    onSuccess: (_data, lessonId) => {
+    onSuccess: (data, lessonId) => {
+      if (!data?.completed) {
+        // The server records completion only after enough of the video has
+        // been watched; keep the student on this lesson.
+        toast.info(
+          "Keep watching — this lesson is marked complete once you've watched most of it.",
+        );
+        return;
+      }
+      qc.invalidateQueries({ queryKey: ["lesson-progress", courseId] });
       toast.success("Lesson complete.");
       qc.invalidateQueries({ queryKey: ["progress", courseId] });
       qc.invalidateQueries({ queryKey: ["enrollments"] });
@@ -466,12 +513,21 @@ function PlayerPage() {
         ) : (
           <article className="max-w-4xl mx-auto px-6 md:px-10 lg:px-16 py-10">
             {/* Player surface */}
-            {lesson?.video_url ? (
+            {lesson?.video_url && !lessonProgressFetched ? (
+              // Wait for the saved position so playback resumes correctly.
+              <div className="aspect-video bg-black grid place-items-center" aria-busy="true">
+                <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin" />
+              </div>
+            ) : lesson?.video_url ? (
               <HLSPlayer
+                key={activeLessonId ?? undefined}
                 mp4Url={lesson.video_url}
                 hlsUrl={lesson.hls_url ?? undefined}
                 posterUrl={lesson.poster_url ?? undefined}
                 hasInteracted={hasInteracted}
+                startPosition={activeCompleted ? 0 : savedProgress?.position_seconds}
+                onProgress={progressSync.onProgress}
+                onPlaybackEvent={progressSync.onPlaybackEvent}
               />
             ) : (
               <div className="aspect-video bg-brand/10 text-brand/55 grid place-items-center">

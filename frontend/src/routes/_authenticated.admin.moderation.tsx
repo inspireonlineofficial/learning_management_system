@@ -248,10 +248,20 @@ function Page() {
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                     <div className="min-w-0 flex-1">
                       <h3 className="font-serif text-lg font-medium text-brand">{post.title}</h3>
-                      <div
-                        className="mt-2 text-sm whitespace-pre-line text-brand/85 max-h-40 overflow-y-auto pl-3 border-l-2 border-brand/15"
-                        dangerouslySetInnerHTML={{ __html: post.body_html || post.body_markdown }}
-                      />
+                      {/* Only the server-sanitised HTML may be rendered as markup.
+                          The raw markdown is user input and is shown as text
+                          (it used to be injected as HTML when body_html was
+                          empty — a stored XSS against moderators). */}
+                      {post.body_html ? (
+                        <div
+                          className="mt-2 text-sm whitespace-pre-line text-brand/85 max-h-40 overflow-y-auto pl-3 border-l-2 border-brand/15"
+                          dangerouslySetInnerHTML={{ __html: post.body_html }}
+                        />
+                      ) : (
+                        <div className="mt-2 text-sm whitespace-pre-line text-brand/85 max-h-40 overflow-y-auto pl-3 border-l-2 border-brand/15">
+                          {post.body_markdown}
+                        </div>
+                      )}
                       <p className="mt-3 text-xs text-brand/45">
                         Submitted at {new Date(post.created_at).toLocaleString()}
                       </p>
