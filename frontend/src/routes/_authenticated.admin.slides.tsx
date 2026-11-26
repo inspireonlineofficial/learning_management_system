@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowDown, ArrowUp, Plus, Save, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -83,10 +83,19 @@ function SlidesAdminPage() {
 
   return (
     <AppShell eyebrow="Homepage" title="Slide management">
-      <p className="text-sm text-brand/60 -mt-2 mb-8 max-w-2xl">
-        Upload homepage slides, control their order, and keep inactive items hidden from the public
-        carousel.
-      </p>
+      <div className="-mt-2 mb-8 flex flex-wrap items-center justify-between gap-4">
+        <p className="text-sm text-brand/60 max-w-2xl">
+          Upload homepage slides, control their order, and keep inactive items hidden from the
+          public carousel.
+        </p>
+        <Link
+          to="/admin/system"
+          search={{ tab: "homepage" }}
+          className="border border-brand/15 bg-white/60 px-4 py-2 text-xs font-medium text-brand hover:bg-white transition-colors"
+        >
+          Configure homepage sections →
+        </Link>
+      </div>
 
       <div className="space-y-10">
         {activeSlides.length > 0 && (

@@ -23,6 +23,7 @@ type UpdateSettingsCommand struct {
 	OAuthProvidersEnabled []string
 	MaintenanceMode       *bool
 	FeatureFlags          json.RawMessage
+	HomepageConfig        json.RawMessage
 }
 
 // GetSettingsHistoryCommand retrieves paginated settings history.

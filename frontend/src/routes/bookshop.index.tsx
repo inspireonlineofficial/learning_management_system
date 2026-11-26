@@ -6,6 +6,7 @@ import { z } from "zod";
 
 import { PublicHeader } from "@/components/layout/public-header";
 import { formatPrice, listBooks, type BookSummary } from "@/lib/api/bookshop";
+import { DEFAULT_HOMEPAGE_CONFIG, getPublicHomepage } from "@/lib/api/homepage";
 
 type Sort = "newest" | "price_asc" | "price_desc" | "title";
 
@@ -13,8 +14,6 @@ const searchSchema = z.object({
   q: z.string().optional(),
   category: z.string().optional(),
 });
-
-const subjects = ["Physics", "Chemistry", "Biology", "Mathematics", "ICT", "Exam Prep"];
 
 export const Route = createFileRoute("/bookshop/")({
   validateSearch: searchSchema,
@@ -26,6 +25,15 @@ function PublicBookshopIndex() {
   const [search, setSearch] = useState(routeSearch.q ?? "");
   const [category, setCategory] = useState(routeSearch.category ?? "");
   const [sort, setSort] = useState<Sort>("newest");
+
+  const { data: homepageData } = useQuery({
+    queryKey: ["homepage", "public"],
+    queryFn: getPublicHomepage,
+    retry: false,
+    staleTime: 5 * 60_000,
+  });
+  const subjects =
+    homepageData?.homepage_config?.bookshop_subjects ?? DEFAULT_HOMEPAGE_CONFIG.bookshop_subjects;
 
   const books = useQuery({
     queryKey: ["public-bookshop-books", { search, category, sort }],

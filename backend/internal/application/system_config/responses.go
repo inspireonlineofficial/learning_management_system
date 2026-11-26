@@ -17,8 +17,16 @@ type SettingsResponse struct {
 	OAuthProvidersEnabled []string        `json:"oauth_providers_enabled"`
 	MaintenanceMode       bool            `json:"maintenance_mode"`
 	FeatureFlags          json.RawMessage `json:"feature_flags" swaggertype:"object"`
+	HomepageConfig        json.RawMessage `json:"homepage_config" swaggertype:"object"`
 	UpdatedAt             time.Time       `json:"updated_at"`
 	UpdatedBy             *uuid.UUID      `json:"updated_by,omitempty"`
+}
+
+// PublicHomepageResponse is the unauthenticated payload used by the public frontend.
+type PublicHomepageResponse struct {
+	PlatformName   string          `json:"platform_name"`
+	HomepageConfig json.RawMessage `json:"homepage_config" swaggertype:"object"`
+	UpdatedAt      time.Time       `json:"updated_at"`
 }
 
 // SettingsHistoryItem represents a single entry in the settings change history.

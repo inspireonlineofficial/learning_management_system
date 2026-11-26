@@ -18,6 +18,16 @@
   --color-accent-ink: var(--accent-ink);
   --color-accent-foreground: var(--accent-foreground);
 
+  /* Inspire Online upgraded palette tokens */
+  --color-canvas: #faf9f6;
+  --color-stoneband: #f2efe9;
+  --color-navy: #0f172a;
+  --color-navy-light: #1e293b;
+  --color-bronze: #8a4b08;
+  --color-gold: #d97706;
+  --color-slatebody: #475569;
+  --color-borderui: #cbd5e1;
+
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
@@ -43,30 +53,29 @@
 
   /* Academic Editorial palette */
   --brand: #0f172a;
-  --accent: #b59410;
-  /* Same gold, darkened for text: #b59410 on the surface is 2.9:1 (fails
-     WCAG AA for normal text); this is about 5.3:1. */
-  --accent-ink: #806508;
-  --accent-foreground: #fdfcfb;
-  --surface: #fdfcfb;
+  --accent: #d97706;
+  /* Warm bronze darkened for WCAG AA text contrast (>6:1 on #FAF9F6 & #FFFFFF) */
+  --accent-ink: #8a4b08;
+  --accent-foreground: #faf9f6;
+  --surface: #faf9f6;
 
-  --background: #fdfcfb;
+  --background: #faf9f6;
   --foreground: #0f172a;
   --card: #ffffff;
   --card-foreground: #0f172a;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
   --primary: #0f172a;
-  --primary-foreground: #fdfcfb;
-  --secondary: #f3eee6;
+  --primary-foreground: #faf9f6;
+  --secondary: #f2efe9;
   --secondary-foreground: #0f172a;
-  --muted: #f3eee6;
-  --muted-foreground: #6b675f;
+  --muted: #f2efe9;
+  --muted-foreground: #475569;
   --destructive: #b1442a;
-  --destructive-foreground: #fdfcfb;
-  --border: rgba(15, 23, 42, 0.1);
-  --input: rgba(15, 23, 42, 0.12);
-  --ring: #b59410;
+  --destructive-foreground: #faf9f6;
+  --border: #cbd5e1;
+  --input: #cbd5e1;
+  --ring: #d97706;
 }
 
 @layer base {
@@ -98,9 +107,37 @@
   }
 
   ::selection {
-    background: color-mix(in oklab, var(--accent) 35%, transparent);
+    background: color-mix(in oklab, var(--accent) 25%, transparent);
     color: var(--brand);
   }
+
+  /* Remove default disclosure triangle for custom accessible SVG chevron */
+  details > summary {
+    list-style: none;
+  }
+  details > summary::-webkit-details-marker {
+    display: none;
+  }
+}
+
+/* Respect user reduced-motion preferences globally */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Subtle warm atmospheric academic glow */
+.hero-atmosphere {
+  background-color: #0f172a;
+  background-image:
+    radial-gradient(ellipse 75% 65% at 85% 20%, rgba(217, 119, 6, 0.18), transparent 65%),
+    radial-gradient(ellipse 60% 55% at 15% 85%, rgba(30, 41, 59, 0.85), transparent 70%);
 }
 
 @utility eyebrow {

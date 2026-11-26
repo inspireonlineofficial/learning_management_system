@@ -27,7 +27,7 @@ func NewSystemSettingRepository(db *sql.DB) *SystemSettingRepository {
 func (r *SystemSettingRepository) Get(ctx context.Context) (*domainsysconfig.SystemSetting, error) {
 	row := r.db.QueryRowContext(ctx, `
 		SELECT id, platform_name, default_timezone, oauth_providers_enabled,
-		       maintenance_mode, feature_flags, updated_at, updated_by
+		       maintenance_mode, feature_flags, homepage_config, updated_at, updated_by
 		FROM system_settings
 		WHERE id = 1`)
 	return scanSystemSetting(row)
@@ -39,6 +39,10 @@ func (r *SystemSettingRepository) Update(ctx context.Context, s *domainsysconfig
 	if err != nil {
 		flagsJSON = []byte("{}")
 	}
+	homepageJSON := []byte(s.HomepageConfig)
+	if len(homepageJSON) == 0 || !json.Valid(homepageJSON) {
+		homepageJSON = []byte("{}")
+	}
 	_, err = r.db.ExecContext(ctx, `
 		UPDATE system_settings
 		SET platform_name = $1,
@@ -46,14 +50,16 @@ func (r *SystemSettingRepository) Update(ctx context.Context, s *domainsysconfig
 		    oauth_providers_enabled = $3,
 		    maintenance_mode = $4,
 		    feature_flags = $5,
-		    updated_at = $6,
-		    updated_by = $7
+		    homepage_config = $6,
+		    updated_at = $7,
+		    updated_by = $8
 		WHERE id = 1`,
 		s.PlatformName,
 		s.DefaultTimezone,
 		pq.Array(s.OAuthProvidersEnabled),
 		s.MaintenanceMode,
 		flagsJSON,
+		homepageJSON,
 		s.UpdatedAt,
 		s.UpdatedBy,
 	)
@@ -63,6 +69,7 @@ func (r *SystemSettingRepository) Update(ctx context.Context, s *domainsysconfig
 func scanSystemSetting(row *sql.Row) (*domainsysconfig.SystemSetting, error) {
 	var s domainsysconfig.SystemSetting
 	var featureFlagsRaw []byte
+	var homepageConfigRaw []byte
 	var updatedBy sql.NullString
 
 	err := row.Scan(
@@ -72,6 +79,7 @@ func scanSystemSetting(row *sql.Row) (*domainsysconfig.SystemSetting, error) {
 		pq.Array(&s.OAuthProvidersEnabled),
 		&s.MaintenanceMode,
 		&featureFlagsRaw,
+		&homepageConfigRaw,
 		&s.UpdatedAt,
 		&updatedBy,
 	)
@@ -82,6 +90,7 @@ func scanSystemSetting(row *sql.Row) (*domainsysconfig.SystemSetting, error) {
 		return nil, err
 	}
 	s.FeatureFlags = featureFlagsRaw
+	s.HomepageConfig = homepageConfigRaw
 	if updatedBy.Valid {
 		id, _ := uuid.Parse(updatedBy.String)
 		s.UpdatedBy = &id

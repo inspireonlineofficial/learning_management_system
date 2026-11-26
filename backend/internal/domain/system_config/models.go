@@ -16,6 +16,7 @@ type SystemSetting struct {
 	OAuthProvidersEnabled []string        `json:"oauth_providers_enabled"`
 	MaintenanceMode       bool            `json:"maintenance_mode"`
 	FeatureFlags          json.RawMessage `json:"feature_flags"`
+	HomepageConfig        json.RawMessage `json:"homepage_config"`
 	UpdatedAt             time.Time       `json:"updated_at"`
 	UpdatedBy             *uuid.UUID      `json:"updated_by"`
 }

@@ -21,6 +21,17 @@ func NewSystemConfigHandler(service appsysconfig.Service) *SystemConfigHandler {
 	return &SystemConfigHandler{service: service}
 }
 
+// GetPublicHomepage handles GET /v1/public/homepage
+// Returns the public homepage/storefront configuration without requiring authentication.
+func (h *SystemConfigHandler) GetPublicHomepage(w http.ResponseWriter, r *http.Request) {
+	result, err := h.service.GetPublicHomepage(r.Context())
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	writeJSONResponse(w, http.StatusOK, result)
+}
+
 // GetSettings handles GET /v1/admin/system/settings
 // Returns the current platform settings. Requirements: 25.1
 //
@@ -71,6 +82,7 @@ func (h *SystemConfigHandler) UpdateSettings(w http.ResponseWriter, r *http.Requ
 		OAuthProvidersEnabled []string         `json:"oauth_providers_enabled"`
 		MaintenanceMode       *bool            `json:"maintenance_mode"`
 		FeatureFlags          *json.RawMessage `json:"feature_flags"`
+		HomepageConfig        *json.RawMessage `json:"homepage_config"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeErrorResponse(w, apperrors.NewSimpleValidationError("VALIDATION_ERROR", "invalid request body"))
@@ -88,6 +100,9 @@ func (h *SystemConfigHandler) UpdateSettings(w http.ResponseWriter, r *http.Requ
 	}
 	if req.FeatureFlags != nil {
 		cmd.FeatureFlags = *req.FeatureFlags
+	}
+	if req.HomepageConfig != nil {
+		cmd.HomepageConfig = *req.HomepageConfig
 	}
 
 	result, err := h.service.UpdateSettings(r.Context(), cmd)

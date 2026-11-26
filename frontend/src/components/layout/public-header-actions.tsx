@@ -8,12 +8,17 @@ import { useAuth } from "@/context/auth-context";
  * When the visitor is signed in, it shows a compact user pill with their
  * initials and a "Dashboard" link that points to the role-appropriate home
  * (admin → /admin, teacher → /teacher, student → /student). When signed out,
- * it shows a "Sign in" text link and a "Register" CTA button.
- *
- * Use this anywhere we previously had an unconditional "Sign in" link so the
- * header stays consistent across public pages.
+ * it shows a "Sign in" button and a "Register" CTA button.
  */
-export function PublicHeaderActions({ compact = false }: { compact?: boolean }) {
+export function PublicHeaderActions({
+  compact = false,
+  mobile = false,
+  onNavigate,
+}: {
+  compact?: boolean;
+  mobile?: boolean;
+  onNavigate?: () => void;
+}) {
   const { isAuthenticated, isHydrated, user } = useAuth();
   const dashboardTo =
     user?.role === "admin" ? "/admin" : user?.role === "teacher" ? "/teacher" : "/student";
@@ -21,26 +26,53 @@ export function PublicHeaderActions({ compact = false }: { compact?: boolean }) 
   // Before hydration we don't know who the visitor is. Render the signed-out
   // shape to avoid showing a flash of "Dashboard" to a logged-out user.
   if (!isHydrated || !isAuthenticated) {
+    if (mobile) {
+      return (
+        <div className="flex flex-col sm:flex-row gap-2.5">
+          <Link
+            to="/login"
+            onClick={onNavigate}
+            className="flex-1 inline-flex items-center justify-center min-h-[44px] px-4 rounded-lg border border-borderui text-sm font-semibold text-navy hover:bg-stoneband transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-navy"
+          >
+            Sign in
+          </Link>
+          <Link
+            to="/register"
+            onClick={onNavigate}
+            className="flex-1 inline-flex items-center justify-center min-h-[44px] px-4 rounded-lg bg-navy text-sm font-semibold text-white hover:bg-navy-light shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-navy"
+          >
+            Register
+          </Link>
+        </div>
+      );
+    }
+
     return (
       <div
         className={
           compact
             ? "flex flex-nowrap items-center gap-2 text-xs"
-            : "flex flex-wrap items-center gap-x-4 gap-y-2"
+            : "flex flex-wrap items-center gap-3"
         }
       >
         <Link
           to="/login"
-          className="whitespace-nowrap text-brand/60 transition-colors hover:text-brand"
+          onClick={onNavigate}
+          className={
+            compact
+              ? "inline-flex items-center justify-center min-h-[40px] px-3 whitespace-nowrap rounded-lg font-semibold text-navy hover:bg-stoneband transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+              : "inline-flex items-center justify-center min-h-[44px] px-4 whitespace-nowrap rounded-lg text-sm font-semibold text-navy hover:bg-stoneband transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+          }
         >
           Sign in
         </Link>
         <Link
           to="/register"
+          onClick={onNavigate}
           className={
             compact
-              ? "whitespace-nowrap bg-brand px-3 py-2 text-white transition-colors hover:bg-brand/90"
-              : "whitespace-nowrap bg-brand px-4 py-2.5 text-white transition-colors hover:bg-brand/90"
+              ? "inline-flex items-center justify-center min-h-[40px] px-3.5 whitespace-nowrap rounded-lg bg-navy font-semibold text-white hover:bg-navy-light shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+              : "inline-flex items-center justify-center min-h-[44px] px-5 whitespace-nowrap rounded-lg bg-navy text-sm font-semibold text-white hover:bg-navy-light shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
           }
         >
           Register
@@ -59,15 +91,18 @@ export function PublicHeaderActions({ compact = false }: { compact?: boolean }) 
   return (
     <Link
       to={dashboardTo}
-      className={`inline-flex items-center gap-2 py-1 transition-colors hover:bg-brand/[0.03] ${
-        compact ? "px-1" : "px-2"
+      onClick={onNavigate}
+      className={`inline-flex items-center gap-2.5 min-h-[44px] rounded-lg transition-colors hover:bg-stoneband focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy ${
+        mobile ? "w-full px-3 border border-borderui" : compact ? "px-1.5" : "px-2.5"
       }`}
       aria-label={`Open ${displayName}'s dashboard`}
     >
-      <span className="h-9 w-9 grid place-items-center rounded-full bg-brand text-white text-xs font-semibold">
+      <span className="h-9 w-9 grid place-items-center rounded-full bg-navy text-white text-xs font-semibold shrink-0">
         {initials || "U"}
       </span>
-      <span className="hidden sm:inline text-sm font-medium text-brand max-w-[160px] truncate">
+      <span
+        className={`${mobile ? "inline" : "hidden sm:inline"} text-sm font-semibold text-navy max-w-[180px] truncate`}
+      >
         {displayName}
       </span>
     </Link>

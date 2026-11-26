@@ -234,6 +234,7 @@ func (s *Server) RegisterRoutes() {
 	s.mux.HandleFunc("PATCH /v1/courses/comments/{commentId}", s.withAuth(s.coursesHandler.UpdateCourseComment))
 	s.mux.HandleFunc("DELETE /v1/courses/comments/{commentId}", s.withAuth(s.coursesHandler.DeleteCourseComment))
 	s.mux.HandleFunc("GET /v1/public/slides", s.slidesHandler.ListPublicSlides)
+	s.mux.HandleFunc("GET /v1/public/homepage", s.systemConfigHandler.GetPublicHomepage)
 
 	// Teacher course endpoints (require JWT + teacher role)
 	s.mux.HandleFunc("GET /v1/teacher/courses", s.withAuthAndRole("teacher", nil, s.coursesHandler.ListTeacherCourses))

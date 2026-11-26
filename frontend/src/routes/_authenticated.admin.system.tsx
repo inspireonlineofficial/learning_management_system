@@ -2,7 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 
+import { HomepageConfigEditor } from "@/components/admin/homepage-config-editor";
 import { AppShell, StatCard } from "@/components/layout/app-shell";
 import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { apiRequest } from "@/lib/api/client";
@@ -31,14 +33,24 @@ type SysHealth = {
   problems: string[];
 };
 
+const searchSchema = z.object({
+  tab: z.enum(["health", "general", "homepage", "points"]).optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/admin/system")({
+  validateSearch: searchSchema,
   component: Page,
 });
 
-type Tab = "health" | "general" | "points";
+type Tab = "health" | "general" | "homepage" | "points";
 
 function Page() {
-  const [tab, setTab] = useState<Tab>("health");
+  const { tab: initialTab } = Route.useSearch();
+  const [tab, setTab] = useState<Tab>(initialTab ?? "health");
+
+  useEffect(() => {
+    if (initialTab) setTab(initialTab);
+  }, [initialTab]);
 
   return (
     <AppShell eyebrow="System" title="System & settings">
@@ -47,6 +59,7 @@ function Page() {
           [
             ["health", "Health"],
             ["general", "General"],
+            ["homepage", "Homepage"],
             ["points", "Points & levels"],
           ] as [Tab, string][]
         ).map(([t, label]) => (
@@ -66,6 +79,7 @@ function Page() {
 
       {tab === "health" && <HealthTab />}
       {tab === "general" && <GeneralTab />}
+      {tab === "homepage" && <HomepageConfigEditor />}
       {tab === "points" && <PointsTab />}
     </AppShell>
   );

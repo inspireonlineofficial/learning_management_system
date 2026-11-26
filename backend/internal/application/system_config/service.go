@@ -27,6 +27,9 @@ type Service interface {
 	// GetSettings returns the current platform settings. Requirements: 25.1
 	GetSettings(ctx context.Context) (*SettingsResponse, error)
 
+	// GetPublicHomepage returns the public storefront/homepage configuration.
+	GetPublicHomepage(ctx context.Context) (*PublicHomepageResponse, error)
+
 	// UpdateSettings applies a partial update, records a diff, and appends history.
 	// Records audit log entry with action "config_changed". Requirements: 25.2
 	UpdateSettings(ctx context.Context, cmd UpdateSettingsCommand) (*SettingsResponse, error)
@@ -74,6 +77,23 @@ func (s *service) GetSettings(ctx context.Context) (*SettingsResponse, error) {
 	return toSettingsResponse(setting), nil
 }
 
+// GetPublicHomepage returns the public storefront/homepage configuration.
+func (s *service) GetPublicHomepage(ctx context.Context) (*PublicHomepageResponse, error) {
+	setting, err := s.settingRepo.Get(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get public homepage: %w", err)
+	}
+	homepage := setting.HomepageConfig
+	if len(homepage) == 0 || !json.Valid(homepage) {
+		homepage = json.RawMessage("{}")
+	}
+	return &PublicHomepageResponse{
+		PlatformName:   setting.PlatformName,
+		HomepageConfig: homepage,
+		UpdatedAt:      setting.UpdatedAt,
+	}, nil
+}
+
 // UpdateSettings applies a partial update, computes a field-level diff, appends history,
 // and records an audit log entry with action "config_changed".
 // Requirements: 25.2
@@ -105,6 +125,14 @@ func (s *service) UpdateSettings(ctx context.Context, cmd UpdateSettingsCommand)
 	if cmd.FeatureFlags != nil {
 		diff["feature_flags"] = map[string]interface{}{"from": string(current.FeatureFlags), "to": string(cmd.FeatureFlags)}
 		current.FeatureFlags = cmd.FeatureFlags
+	}
+	if cmd.HomepageConfig != nil {
+		var obj map[string]interface{}
+		if err := json.Unmarshal(cmd.HomepageConfig, &obj); err != nil {
+			return nil, apperrors.NewSimpleValidationError("VALIDATION_ERROR", "homepage_config must be a valid JSON object")
+		}
+		diff["homepage_config"] = map[string]interface{}{"from": string(current.HomepageConfig), "to": string(cmd.HomepageConfig)}
+		current.HomepageConfig = cmd.HomepageConfig
 	}
 
 	if len(diff) == 0 {
@@ -245,8 +273,12 @@ func (s *service) IsMaintenanceMode(ctx context.Context) bool {
 
 func toSettingsResponse(s *domainsysconfig.SystemSetting) *SettingsResponse {
 	flags := s.FeatureFlags
-	if flags == nil {
+	if len(flags) == 0 || !json.Valid(flags) {
 		flags = json.RawMessage("{}")
+	}
+	homepage := s.HomepageConfig
+	if len(homepage) == 0 || !json.Valid(homepage) {
+		homepage = json.RawMessage("{}")
 	}
 	return &SettingsResponse{
 		PlatformName:          s.PlatformName,
@@ -254,6 +286,7 @@ func toSettingsResponse(s *domainsysconfig.SystemSetting) *SettingsResponse {
 		OAuthProvidersEnabled: s.OAuthProvidersEnabled,
 		MaintenanceMode:       s.MaintenanceMode,
 		FeatureFlags:          flags,
+		HomepageConfig:        homepage,
 		UpdatedAt:             s.UpdatedAt,
 		UpdatedBy:             s.UpdatedBy,
 	}

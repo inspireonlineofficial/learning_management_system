@@ -274,3 +274,34 @@ func TestProperty61_DisabledFeatureFlagsReturn403Or404(t *testing.T) {
 		}
 	})
 }
+
+func TestHomepageConfigUpdateAndPublicFetch(t *testing.T) {
+	ctx := context.Background()
+	settingRepo := newMockSettingRepo(false, map[string]bool{})
+	historyRepo := &mockHistoryRepo{}
+	svc := NewService(ServiceDeps{
+		SettingRepo: settingRepo,
+		HistoryRepo: historyRepo,
+	})
+
+	payload := json.RawMessage(`{"course_catalog":{"enabled":true,"title":"Custom Tracks"}}`)
+	updated, err := svc.UpdateSettings(ctx, UpdateSettingsCommand{
+		ActorID:        uuid.New(),
+		ActorName:      "admin",
+		HomepageConfig: payload,
+	})
+	if err != nil {
+		t.Fatalf("UpdateSettings failed: %v", err)
+	}
+	if string(updated.HomepageConfig) != string(payload) {
+		t.Fatalf("expected homepage_config %s, got %s", payload, updated.HomepageConfig)
+	}
+
+	pub, err := svc.GetPublicHomepage(ctx)
+	if err != nil {
+		t.Fatalf("GetPublicHomepage failed: %v", err)
+	}
+	if string(pub.HomepageConfig) != string(payload) {
+		t.Fatalf("expected public homepage_config %s, got %s", payload, pub.HomepageConfig)
+	}
+}
