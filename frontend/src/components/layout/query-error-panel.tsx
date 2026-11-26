@@ -52,7 +52,7 @@ export function QueryErrorPanel({
 
   if (variant === "compact") {
     return (
-      <p className={`text-sm text-destructive ${className}`.trim()}>
+      <p className={`text-sm text-red-700 ${className}`.trim()}>
         {text}
         {retry && (
           <>
@@ -60,7 +60,7 @@ export function QueryErrorPanel({
             <button
               type="button"
               onClick={retry}
-              className="underline underline-offset-2 hover:text-destructive/80"
+              className="font-semibold underline underline-offset-2 hover:text-red-900"
             >
               {retryLabel}
             </button>
@@ -72,16 +72,16 @@ export function QueryErrorPanel({
 
   return (
     <div
-      className={`border border-destructive/20 bg-destructive/5 p-6 text-sm ${className}`.trim()}
+      className={`rounded-xl border border-red-200 bg-red-50/80 p-5 sm:p-6 text-sm ${className}`.trim()}
       role="alert"
     >
-      <p className="font-medium text-destructive">{title}</p>
-      <p className="mt-1 text-brand/60">{text}</p>
+      <p className="font-semibold text-red-900">{title}</p>
+      <p className="mt-1 text-red-800/80">{text}</p>
       {retry && (
         <button
           type="button"
           onClick={retry}
-          className="mt-3 bg-brand px-4 py-2 text-xs text-white"
+          className="mt-4 inline-flex items-center justify-center min-h-[40px] rounded-lg bg-navy px-4 py-2 text-xs font-semibold text-white hover:bg-navy-light transition-colors"
         >
           {retryLabel}
         </button>

@@ -19,14 +19,14 @@ export function BookshopNav() {
         <Link
           key={l.to}
           to={l.to}
-          className="border border-brand/15 bg-white/50 px-3 py-1.5 hover:bg-white"
+          className="inline-flex items-center min-h-[40px] rounded-lg border border-white/25 bg-white/10 px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-white hover:bg-white hover:text-navy transition-colors"
         >
           {l.label}
         </Link>
       ))}
       <Link
         to="/student/bookshop/cart"
-        className="border border-brand/15 bg-white/50 px-3 py-1.5 hover:bg-white"
+        className="inline-flex items-center min-h-[40px] rounded-lg border border-amber-300/45 bg-white/15 px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-amber-100 hover:bg-white hover:text-navy transition-colors"
       >
         Cart{count > 0 ? ` (${count})` : ""}
       </Link>

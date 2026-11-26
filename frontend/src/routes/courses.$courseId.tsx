@@ -5,7 +5,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { PreviewPlayerDialog } from "@/components/course/preview-player-dialog";
+import { PublicFooter } from "@/components/layout/public-footer";
 import { PublicHeader } from "@/components/layout/public-header";
+import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import { useAuth } from "@/context/auth-context";
 import {
   createCourseComment,
@@ -138,20 +140,26 @@ function CourseDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-surface text-brand font-sans">
-        <div className="px-6 md:px-12 lg:px-20 py-16 animate-pulse">
-          <div className="h-3 w-24 bg-brand/10" />
-          <div className="mt-6 h-12 w-2/3 bg-brand/10" />
-          <div className="mt-4 h-4 w-1/2 bg-brand/10" />
+      <div className="min-h-screen bg-canvas text-navy font-sans flex flex-col">
+        <PublicHeader active="courses" />
+        <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-pulse">
+          <div className="h-3 w-24 rounded bg-stoneband" />
+          <div className="mt-6 h-12 w-2/3 rounded bg-stoneband" />
+          <div className="mt-4 h-4 w-1/2 rounded bg-stoneband" />
         </div>
+        <PublicFooter />
       </div>
     );
   }
 
   if (isError || !course) {
     return (
-      <div className="min-h-screen grid place-items-center bg-surface text-brand font-sans">
-        <p className="text-sm text-brand/55">{(error as Error)?.message ?? "Not found"}</p>
+      <div className="min-h-screen bg-canvas text-navy font-sans flex flex-col">
+        <PublicHeader active="courses" />
+        <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-16">
+          <QueryErrorPanel error={error} title="Course not found" />
+        </main>
+        <PublicFooter />
       </div>
     );
   }
@@ -160,65 +168,72 @@ function CourseDetailPage() {
   const canEnrollAsStudent = isHydrated && isAuthenticated && user?.role === "student";
 
   return (
-    <div className="min-h-screen bg-surface text-brand font-sans">
+    <div className="min-h-screen overflow-x-hidden bg-canvas text-navy-light font-sans antialiased flex flex-col">
       <PublicHeader active="courses" />
 
-      <div className="px-6 md:px-12 lg:px-20 py-12 lg:py-16 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-12">
-        <article className="order-2 lg:order-1">
+      <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 lg:py-16 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-10 lg:gap-12">
+        <article className="order-2 lg:order-1 min-w-0">
           {course.category?.name && (
-            <p className="eyebrow text-accent mb-4">{course.category.name}</p>
+            <p className="text-xs font-bold tracking-[0.16em] uppercase text-bronze mb-3">
+              {course.category.name}
+            </p>
           )}
-          <h1 className="font-serif text-4xl lg:text-6xl leading-[1.05] text-balance">
+          <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-navy leading-[1.12] text-balance">
             {course.title}
           </h1>
           {course.subtitle && (
-            <p className="mt-6 text-xl text-brand/65 leading-relaxed max-w-2xl">
+            <p className="mt-4 text-base sm:text-lg text-slatebody leading-relaxed max-w-2xl">
               {course.subtitle}
             </p>
           )}
 
-          <div className="mt-8 flex flex-wrap items-center gap-6 text-sm text-brand/60">
+          <div className="mt-6 flex flex-wrap items-center gap-4 sm:gap-6 text-sm text-slatebody pb-6 border-b border-borderui">
             {course.teacher?.full_name && (
               <span>
-                Taught by <span className="text-brand">{course.teacher.full_name}</span>
+                Taught by{" "}
+                <span className="font-semibold text-navy">{course.teacher.full_name}</span>
               </span>
             )}
             {typeof course.rating === "number" && (
-              <span className="inline-flex items-center gap-1.5">
-                <Star className="h-3.5 w-3.5 fill-accent text-accent" />
+              <span className="inline-flex items-center gap-1.5 font-semibold text-navy">
+                <Star className="h-4 w-4 fill-gold text-gold" aria-hidden="true" />
                 {course.rating.toFixed(1)} rating
               </span>
             )}
             {typeof course.enrollment_count === "number" && (
               <span className="inline-flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5" />
+                <Users className="h-4 w-4" aria-hidden="true" />
                 {course.enrollment_count.toLocaleString()} enrolled
               </span>
             )}
             {typeof course.duration_minutes === "number" && (
               <span className="inline-flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5" />
+                <Clock className="h-4 w-4" aria-hidden="true" />
                 {Math.round(course.duration_minutes / 60)} hours
               </span>
             )}
           </div>
 
           {course.description && (
-            <section className="mt-12">
-              <h2 className="font-serif text-2xl mb-4">About this course</h2>
-              <p className="text-brand/70 leading-relaxed whitespace-pre-line">
+            <section className="mt-10">
+              <h2 className="font-serif text-2xl font-bold text-navy mb-3">About this course</h2>
+              <p className="text-slatebody leading-relaxed whitespace-pre-line">
                 {course.description}
               </p>
             </section>
           )}
 
           {course.outcomes && course.outcomes.length > 0 && (
-            <section className="mt-12">
-              <h2 className="font-serif text-2xl mb-6">What you'll learn</h2>
+            <section className="mt-10 rounded-xl border border-borderui bg-white p-6 shadow-sm">
+              <h2 className="font-serif text-2xl font-bold text-navy mb-5">
+                What you&apos;ll learn
+              </h2>
               <ul className="grid sm:grid-cols-2 gap-3">
                 {course.outcomes.map((o, i) => (
-                  <li key={i} className="flex gap-3 text-sm text-brand/75">
-                    <span className="text-accent mt-1">✦</span>
+                  <li key={i} className="flex gap-2.5 text-sm text-navy-light">
+                    <span className="text-bronze font-bold mt-0.5" aria-hidden="true">
+                      ✓
+                    </span>
                     <span>{o}</span>
                   </li>
                 ))}
@@ -227,54 +242,56 @@ function CourseDetailPage() {
           )}
 
           {course.modules && course.modules.length > 0 && (
-            <section className="mt-12">
-              <h2 className="font-serif text-2xl mb-2">Syllabus</h2>
-              <p className="text-sm text-brand/55 mb-6">
-                {course.modules.length} module{course.modules.length === 1 ? "" : "s"} ·{" "}
+            <section className="mt-10">
+              <h2 className="font-serif text-2xl font-bold text-navy mb-1.5">Syllabus</h2>
+              <p className="text-sm text-slatebody mb-6">
+                {course.modules.length} module{course.modules.length === 1 ? "" : "s"} &bull;{" "}
                 {totalLessons} lesson{totalLessons === 1 ? "" : "s"}
               </p>
-              <div className="space-y-4">
+              <div className="space-y-3.5">
                 {course.modules.map((m, idx) => (
                   <details
                     key={m.id}
                     open={idx === 0}
-                    className="border border-brand/10 bg-white/40 group"
+                    className="rounded-xl border border-borderui bg-white open:border-navy shadow-sm overflow-hidden group transition-colors"
                   >
-                    <summary className="px-5 py-4 cursor-pointer flex items-center justify-between hover:bg-brand/[0.02]">
+                    <summary className="px-5 py-4 cursor-pointer flex items-center justify-between gap-4 hover:bg-canvas transition-colors">
                       <div>
-                        <p className="eyebrow text-brand/40">Module {idx + 1}</p>
-                        <p className="font-serif text-lg mt-1">{m.title}</p>
+                        <p className="text-xs font-bold tracking-[0.14em] uppercase text-bronze">
+                          Module {idx + 1}
+                        </p>
+                        <p className="font-serif text-lg font-bold text-navy mt-0.5">{m.title}</p>
                       </div>
-                      <span className="text-xs text-brand/45">
+                      <span className="text-xs font-semibold text-slatebody shrink-0">
                         {m.lessons.length} lesson{m.lessons.length === 1 ? "" : "s"}
                       </span>
                     </summary>
-                    <ul className="border-t border-brand/10 divide-y divide-brand/5">
+                    <ul className="border-t border-borderui/70 divide-y divide-borderui/50">
                       {m.lessons.map((l) => {
                         const canPreview = l.is_preview && !course.is_enrolled;
                         return (
                           <li
                             key={l.id}
-                            className="px-5 py-3 flex items-center justify-between text-sm gap-3"
+                            className="px-5 py-3.5 flex items-center justify-between text-sm gap-3"
                           >
-                            <span className="flex items-center gap-3 text-brand/75 min-w-0">
+                            <span className="flex items-center gap-3 text-navy-light min-w-0">
                               {l.is_preview ? (
-                                <PlayCircle className="h-4 w-4 text-accent shrink-0" />
+                                <PlayCircle className="h-4 w-4 text-bronze shrink-0" />
                               ) : course.is_enrolled ? (
-                                <PlayCircle className="h-4 w-4 text-brand/30 shrink-0" />
+                                <PlayCircle className="h-4 w-4 text-navy/40 shrink-0" />
                               ) : (
-                                <Lock className="h-3.5 w-3.5 text-brand/30 shrink-0" />
+                                <Lock className="h-3.5 w-3.5 text-slatebody/60 shrink-0" />
                               )}
-                              <span className="truncate">{l.title}</span>
+                              <span className="truncate font-medium">{l.title}</span>
                               {l.is_preview && (
-                                <span className="text-[10px] uppercase tracking-wider text-accent shrink-0">
+                                <span className="px-2 py-0.5 rounded bg-stoneband text-[10px] font-bold uppercase tracking-wider text-bronze shrink-0">
                                   Preview
                                 </span>
                               )}
                             </span>
                             <span className="flex items-center gap-3 shrink-0">
                               {typeof l.duration_minutes === "number" && (
-                                <span className="text-xs text-brand/40">
+                                <span className="text-xs text-slatebody">
                                   {l.duration_minutes} min
                                 </span>
                               )}
@@ -288,7 +305,7 @@ function CourseDetailPage() {
                                       duration: l.duration_minutes,
                                     })
                                   }
-                                  className="text-xs font-medium text-accent hover:underline underline-offset-4"
+                                  className="text-xs font-semibold text-navy underline underline-offset-4 decoration-gold decoration-2 hover:text-bronze"
                                 >
                                   Watch preview
                                 </button>
@@ -337,8 +354,8 @@ function CourseDetailPage() {
         </article>
 
         {/* Enrollment card */}
-        <aside className="lg:sticky lg:top-8 lg:self-start order-1 lg:order-2">
-          <div className="border border-brand/10 bg-white/60 overflow-hidden">
+        <aside className="lg:sticky lg:top-24 lg:self-start order-1 lg:order-2">
+          <div className="rounded-2xl border border-borderui bg-white shadow-md overflow-hidden">
             {course.cover_url ? (
               <img
                 src={course.cover_url}
@@ -346,12 +363,12 @@ function CourseDetailPage() {
                 className="aspect-[16/10] w-full object-cover"
               />
             ) : (
-              <div className="aspect-[16/10] bg-brand/5 grid place-items-center font-serif italic text-5xl text-brand/20">
+              <div className="aspect-[16/10] bg-stoneband grid place-items-center font-serif italic text-5xl text-navy/20">
                 {course.title.slice(0, 1)}
               </div>
             )}
             <div className="p-6">
-              <p className="font-serif text-3xl">
+              <p className="font-serif text-3xl font-bold text-navy">
                 {course.price === 0
                   ? "Free"
                   : `${course.currency ?? "BDT"} ${course.price?.toLocaleString() ?? "—"}`}
@@ -360,7 +377,7 @@ function CourseDetailPage() {
                 <Link
                   to="/student/player/$courseId"
                   params={{ courseId: course.id }}
-                  className="mt-6 block text-center bg-brand text-white py-4 text-sm font-medium hover:bg-brand/90 transition-colors"
+                  className="mt-5 flex items-center justify-center min-h-[48px] rounded-lg bg-navy text-white py-3 text-sm font-semibold hover:bg-navy-light shadow-sm transition-colors"
                 >
                   Continue learning
                 </Link>
@@ -369,15 +386,16 @@ function CourseDetailPage() {
                   <Link
                     to="/student/courses/$courseId/request-access"
                     params={{ courseId: course.id }}
-                    className="mt-6 block text-center bg-brand text-white py-4 text-sm font-medium hover:bg-brand/90 transition-colors"
+                    className="mt-5 flex items-center justify-center min-h-[48px] rounded-lg bg-navy text-white py-3 text-sm font-semibold hover:bg-navy-light shadow-sm transition-colors"
                   >
                     Request approval
                   </Link>
                 ) : (
                   <button
+                    type="button"
                     onClick={() => enrollMutation.mutate()}
                     disabled={enrollMutation.isPending}
-                    className="mt-6 w-full bg-brand text-white py-4 text-sm font-medium hover:bg-brand/90 transition-colors disabled:opacity-60"
+                    className="mt-5 w-full inline-flex items-center justify-center min-h-[48px] rounded-lg bg-navy text-white py-3 text-sm font-semibold hover:bg-navy-light shadow-sm transition-colors disabled:opacity-60"
                   >
                     {enrollMutation.isPending ? "Enrolling…" : "Enroll for free"}
                   </button>
@@ -386,25 +404,27 @@ function CourseDetailPage() {
                 <Link
                   to="/login"
                   search={{ return: `/courses/${courseId}` } as never}
-                  className="mt-6 block text-center bg-brand text-white py-4 text-sm font-medium hover:bg-brand/90 transition-colors"
+                  className="mt-5 flex items-center justify-center min-h-[48px] rounded-lg bg-navy text-white py-3 text-sm font-semibold hover:bg-navy-light shadow-sm transition-colors"
                 >
                   {isHydrated && isAuthenticated
                     ? "Sign in as student to enroll"
                     : "Sign in to enroll"}
                 </Link>
               )}
-              <ul className="mt-6 space-y-2 text-xs text-brand/60">
+              <ul className="mt-6 pt-5 border-t border-borderui/70 space-y-2 text-xs text-slatebody">
                 {typeof course.duration_minutes === "number" && (
-                  <li>· {Math.round(course.duration_minutes / 60)} hours of content</li>
+                  <li>&bull; {Math.round(course.duration_minutes / 60)} hours of content</li>
                 )}
-                {totalLessons > 0 && <li>· {totalLessons} lessons</li>}
-                {course.level && <li>· {course.level} level</li>}
-                <li>· Certificate on completion</li>
+                {totalLessons > 0 && <li>&bull; {totalLessons} lessons</li>}
+                {course.level && <li className="capitalize">&bull; {course.level} level</li>}
+                <li>&bull; Certificate on completion</li>
               </ul>
             </div>
           </div>
         </aside>
       </div>
+
+      <PublicFooter />
 
       {previewLesson && (
         <PreviewPlayerDialog

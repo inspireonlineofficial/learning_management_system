@@ -30,13 +30,20 @@ export function DataPage<T>({
 
   return (
     <AppShell eyebrow={eyebrow} title={title}>
-      {description && <p className="max-w-2xl text-brand/65 leading-relaxed">{description}</p>}
+      {description && (
+        <p className="max-w-2xl text-sm sm:text-base text-slatebody leading-relaxed">
+          {description}
+        </p>
+      )}
       {toolbar && <div className="mt-6">{toolbar}</div>}
 
       {isLoading && (
-        <div className="mt-10 grid sm:grid-cols-2 gap-4">
+        <div className="mt-8 grid sm:grid-cols-2 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-24 border border-brand/10 bg-white/30 animate-pulse" />
+            <div
+              key={i}
+              className="h-24 rounded-xl border border-borderui bg-white animate-pulse"
+            />
           ))}
         </div>
       )}
@@ -46,12 +53,12 @@ export function DataPage<T>({
           error={error}
           title="Couldn't load data"
           onRetry={() => refetch()}
-          className="mt-10"
+          className="mt-8"
         />
       )}
 
       {data != null && !isLoading && !isError && (
-        <div className="mt-10">
+        <div className="mt-8">
           {isEmpty && empty ? (
             <EmptyState title={empty.title} description={empty.description} action={empty.action} />
           ) : (
@@ -73,14 +80,14 @@ export function ListTable<T extends { id: string }>({
   onRowHref?: (row: T) => string;
 }) {
   return (
-    <div className="border border-brand/10 bg-white/40">
-      <table className="w-full text-sm">
-        <thead className="border-b border-brand/10 bg-brand/[0.02]">
+    <div className="rounded-xl border border-borderui bg-white shadow-sm overflow-x-auto">
+      <table className="w-full min-w-[540px] text-sm">
+        <thead className="border-b border-borderui bg-stoneband/70">
           <tr>
             {columns.map((c) => (
               <th
                 key={c.key}
-                className="text-left px-4 py-3 font-medium text-brand/60 eyebrow"
+                className="text-left px-4 py-3.5 text-xs font-bold tracking-[0.14em] uppercase text-bronze"
                 style={c.width ? { width: c.width } : undefined}
               >
                 {c.label}
@@ -88,16 +95,16 @@ export function ListTable<T extends { id: string }>({
             ))}
           </tr>
         </thead>
-        <tbody>
+        <tbody className="divide-y divide-borderui/60">
           {rows.map((row) => (
-            <tr
-              key={row.id}
-              className="border-b border-brand/5 last:border-b-0 hover:bg-brand/[0.02]"
-            >
+            <tr key={row.id} className="hover:bg-canvas transition-colors">
               {columns.map((c) => (
-                <td key={c.key} className="px-4 py-3 align-top">
+                <td key={c.key} className="px-4 py-3.5 align-top text-navy-light">
                   {onRowHref && c.key === columns[0].key ? (
-                    <a href={onRowHref(row)} className="font-medium text-brand hover:text-accent">
+                    <a
+                      href={onRowHref(row)}
+                      className="font-semibold text-navy hover:text-bronze hover:underline underline-offset-4"
+                    >
                       {c.render(row)}
                     </a>
                   ) : (
@@ -115,11 +122,11 @@ export function ListTable<T extends { id: string }>({
 
 export function DetailGrid({ items }: { items: Array<{ label: string; value: ReactNode }> }) {
   return (
-    <dl className="grid sm:grid-cols-2 gap-x-10 gap-y-4 border border-brand/10 bg-white/40 p-6">
+    <dl className="grid sm:grid-cols-2 gap-x-8 gap-y-4 rounded-xl border border-borderui bg-white p-5 sm:p-6 shadow-sm">
       {items.map((it) => (
         <div key={it.label}>
-          <dt className="eyebrow text-brand/70">{it.label}</dt>
-          <dd className="mt-1 text-brand">{it.value}</dd>
+          <dt className="text-xs font-bold tracking-[0.14em] uppercase text-bronze">{it.label}</dt>
+          <dd className="mt-1 text-sm sm:text-base text-navy font-medium">{it.value}</dd>
         </div>
       ))}
     </dl>
@@ -136,7 +143,7 @@ export function Section({
   action?: ReactNode;
 }) {
   return (
-    <section className="mt-14">
+    <section className="mt-10 sm:mt-12">
       <SectionHeading title={title} action={action} />
       {children}
     </section>

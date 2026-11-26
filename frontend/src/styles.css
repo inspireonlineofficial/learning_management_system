@@ -149,13 +149,7 @@
 
 @layer components {
   .auth-form-shell {
-    max-width: min(100%, 16rem);
-  }
-
-  @media (min-width: 640px) {
-    .auth-form-shell {
-      max-width: 28rem;
-    }
+    max-width: 28rem;
   }
 }
 

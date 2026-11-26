@@ -100,9 +100,9 @@ function SlidesAdminPage() {
       <div className="space-y-10">
         {activeSlides.length > 0 && (
           <section>
-            <h2 className="font-serif text-xl mb-3">Live preview</h2>
-            <div className="border border-brand/10 bg-white/60 overflow-hidden">
-              <SlideCarousel slides={activeSlides} />
+            <h2 className="font-serif text-xl font-bold text-navy mb-3">Live preview</h2>
+            <div className="rounded-xl border border-borderui bg-white shadow-sm overflow-hidden">
+              <SlideCarousel slides={activeSlides} headingAs="h2" />
             </div>
           </section>
         )}

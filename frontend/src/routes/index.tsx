@@ -25,7 +25,7 @@ import { toast } from "sonner";
 import libraryHero from "@/assets/library-hero.jpg";
 import { BookCard } from "@/components/bookshop/book-card";
 import { CourseCard, CourseCardSkeleton } from "@/components/course/course-card";
-import { BrandLogo } from "@/components/layout/brand-logo";
+import { PublicFooter } from "@/components/layout/public-footer";
 import { PublicHeader } from "@/components/layout/public-header";
 import { SlideCarousel } from "@/components/marketing/ad-carousel";
 import { listBooks } from "@/lib/api/bookshop";
@@ -680,13 +680,17 @@ function Landing() {
                 {/* Left Column: Interactive Sample Lesson Checklist */}
                 <div className="lg:col-span-7 p-6 sm:p-10 lg:p-12 border-b lg:border-b-0 lg:border-r border-borderui">
                   <p className="text-xs font-bold tracking-[0.16em] uppercase text-bronze mb-2">
-                    Guided Learning Flow
+                    {featuredCourses.length > 0
+                      ? "Guided Learning Flow"
+                      : cfg.featured_courses.eyebrow}
                   </p>
                   <h2
                     id="guided-heading"
                     className="font-serif text-2xl sm:text-3xl font-bold text-navy tracking-tight"
                   >
-                    Start with guided lessons
+                    {featuredCourses.length > 0
+                      ? "Start with guided lessons"
+                      : cfg.featured_courses.title}
                   </h2>
                   <p className="mt-3 text-slatebody text-base leading-relaxed max-w-[58ch]">
                     Every module follows a repeatable four-step study cycle. Toggle the sample steps
@@ -752,12 +756,14 @@ function Landing() {
                     Early Access
                   </p>
                   <h3 className="font-serif text-2xl font-bold text-navy">
-                    New cohorts opening soon
+                    {featuredCourses.length === 0
+                      ? cfg.featured_courses.empty_title
+                      : "New cohorts opening soon"}
                   </h3>
                   <p className="mt-2.5 text-sm sm:text-base text-slatebody leading-relaxed">
-                    Instructors are finalizing upcoming SSC, HSC, and Admission cohorts. Select your
-                    primary track to receive an instant email alert as soon as approved courses
-                    publish.
+                    {featuredCourses.length === 0
+                      ? cfg.featured_courses.empty_body
+                      : "Instructors are finalizing upcoming SSC, HSC, and Admission cohorts. Select your primary track to receive an instant email alert as soon as approved courses publish."}
                   </p>
 
                   <form onSubmit={handleEarlyAccessSubmit} noValidate className="mt-6 space-y-4">
@@ -993,11 +999,14 @@ function Landing() {
                     </span>
                     <div>
                       <p className="font-semibold text-navy text-base">
-                        Curated books are reviewed by faculty before listing
+                        {featuredBooks.length === 0
+                          ? cfg.featured_books.empty_title
+                          : "Curated books are reviewed by faculty before listing"}
                       </p>
                       <p className="text-sm text-slatebody mt-0.5">
-                        Our faculty verifies every textbook and lab manual against the current board
-                        syllabus. Request the upcoming book list for your class.
+                        {featuredBooks.length === 0
+                          ? cfg.featured_books.empty_body
+                          : "Our faculty verifies every textbook and lab manual against the current board syllabus. Request the upcoming book list for your class."}
                       </p>
                     </div>
                   </div>
@@ -1196,144 +1205,15 @@ function Landing() {
       </main>
 
       {/* 9. UTILITY FOOTER (Dark Navy 4-Column, preserving Inspire Logo) */}
-      <footer className="bg-navy text-slate-200 border-t border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
-            {/* Column 1: Brand Summary (existing Inspire logo on crisp pill for dark footer contrast) */}
-            <div>
-              <div className="inline-flex rounded-lg bg-white/95 px-3 py-2 shadow-xs">
-                <BrandLogo imageClassName="max-h-9 max-w-[160px]" />
-              </div>
-              <p className="mt-4 text-sm text-slate-300 leading-relaxed">
-                Practical, teacher-led science tutoring and curated study materials designed for
-                high school, college, and admission learners.
-              </p>
-            </div>
-
-            {/* Column 2: Science Tracks */}
-            <div>
-              <h3 className="font-sans text-xs font-bold tracking-[0.16em] uppercase text-amber-300 mb-4">
-                Science Tracks
-              </h3>
-              <ul className="space-y-1.5 text-sm">
-                {cfg.course_catalog.tracks.map((track) => (
-                  <li key={track.title}>
-                    <a
-                      href="#courses"
-                      onClick={() => {
-                        setSearchQuery(track.title);
-                        setActiveLevel("all");
-                      }}
-                      className="inline-flex items-center min-h-[36px] text-slate-200 hover:text-white hover:underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold rounded"
-                    >
-                      {track.title}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Column 3: Bookshop & Community */}
-            <div>
-              <h3 className="font-sans text-xs font-bold tracking-[0.16em] uppercase text-amber-300 mb-4">
-                Bookshop &amp; Community
-              </h3>
-              <ul className="space-y-1.5 text-sm">
-                <li>
-                  <Link
-                    to="/bookshop"
-                    className="inline-flex items-center min-h-[36px] text-slate-200 hover:text-white hover:underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold rounded"
-                  >
-                    Textbooks &amp; Workbooks
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/bookshop"
-                    className="inline-flex items-center min-h-[36px] text-slate-200 hover:text-white hover:underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold rounded"
-                  >
-                    Lab Manuals &amp; Solution Guides
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/forum"
-                    className="inline-flex items-center min-h-[36px] text-slate-200 hover:text-white hover:underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold rounded"
-                  >
-                    Student Science Forum
-                  </Link>
-                </li>
-                <li>
-                  <a
-                    href="#outcomes"
-                    className="inline-flex items-center min-h-[36px] text-slate-200 hover:text-white hover:underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold rounded"
-                  >
-                    Learning Outcomes
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#faq"
-                    className="inline-flex items-center min-h-[36px] text-slate-200 hover:text-white hover:underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold rounded"
-                  >
-                    FAQ
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* Column 4: Support & Contact */}
-            <div>
-              <h3 className="font-sans text-xs font-bold tracking-[0.16em] uppercase text-amber-300 mb-4">
-                Support &amp; Contact
-              </h3>
-              <ul className="space-y-2.5 text-sm text-slate-300">
-                <li>
-                  <span className="block text-xs uppercase tracking-wider text-slate-400">
-                    Student Support Email
-                  </span>
-                  <a
-                    href="mailto:support@inspireonlinebd.com"
-                    className="text-white hover:underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold rounded"
-                  >
-                    support@inspireonlinebd.com
-                  </a>
-                </li>
-                <li>
-                  <span className="block text-xs uppercase tracking-wider text-slate-400">
-                    Academic Helpdesk (Sat–Thu, 10 AM – 8 PM BST)
-                  </span>
-                  <span className="text-white">+880 1700-000000 (WhatsApp &amp; Phone)</span>
-                </li>
-                <li className="pt-1 flex flex-wrap gap-4 text-xs">
-                  <a
-                    href="#faq"
-                    className="text-slate-300 hover:text-white underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold rounded"
-                  >
-                    Terms of Use
-                  </a>
-                  <a
-                    href="#faq"
-                    className="text-slate-300 hover:text-white underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold rounded"
-                  >
-                    Privacy Policy
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Bottom Copyright Bar */}
-          <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-slate-300">
-            <p>
-              &copy; {new Date().getFullYear()} {cfg.footer.brand_name}. {cfg.footer.tagline}
-            </p>
-            <p className="text-slate-400 text-xs">
-              Built with WCAG 2.1 AA accessibility standards.
-            </p>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter
+        brandName={cfg.footer.brand_name}
+        tagline={cfg.footer.tagline}
+        tracks={cfg.course_catalog.tracks}
+        onTrackSelect={(title) => {
+          setSearchQuery(title);
+          setActiveLevel("all");
+        }}
+      />
 
       {/* ACCESSIBLE TRACK PREVIEW MODAL */}
       {selectedTrack && (

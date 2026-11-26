@@ -13,58 +13,78 @@ type AuthShellProps = {
 
 export function AuthShell({ eyebrow, heading, subheading, children, footer }: AuthShellProps) {
   return (
-    <div className="min-h-screen overflow-x-hidden bg-surface text-brand flex flex-col md:flex-row font-sans">
-      {/* Left: brand panel */}
-      <aside className="hidden md:flex md:w-1/2 lg:w-3/5 bg-brand relative overflow-hidden p-12 lg:p-16 flex-col justify-between text-white">
+    <div className="min-h-screen overflow-x-hidden bg-canvas text-navy flex flex-col md:flex-row font-sans antialiased">
+      {/* Left: atmospheric navy brand panel */}
+      <aside className="hidden md:flex md:w-[46%] lg:w-[54%] hero-atmosphere relative overflow-hidden p-12 lg:p-16 flex-col justify-between text-white">
         <div className="relative z-10">
-          <BrandLogo imageClassName="max-h-16 max-w-[240px]" />
-          <h1 className="font-serif text-5xl lg:text-6xl mt-10 leading-[1.05] max-w-lg text-balance">
+          <div className="inline-flex rounded-lg bg-white/95 px-3.5 py-2 shadow-sm">
+            <BrandLogo imageClassName="max-h-11 max-w-[190px]" />
+          </div>
+          <p className="mt-10 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-amber-300/35 text-amber-200 text-xs font-semibold tracking-[0.14em] uppercase">
+            <span className="w-2 h-2 rounded-full bg-gold" aria-hidden="true" />
+            SSC, HSC &amp; Admission Prep
+          </p>
+          <h1 className="font-serif text-4xl lg:text-5xl font-bold mt-6 leading-[1.12] max-w-lg text-balance">
             Science tutoring that keeps students on track.
           </h1>
-          <p className="mt-6 text-white/55 max-w-md leading-relaxed">
+          <p className="mt-5 text-slate-200 max-w-md leading-relaxed text-base">
             Courses, live classes, assessments, progress tracking, certificates, and curated study
             materials for high school and college learners.
           </p>
         </div>
 
-        <div className="relative z-10 flex items-center gap-4">
+        <div className="relative z-10 flex items-center gap-4 pt-8 border-t border-white/15">
           <div className="flex -space-x-2">
-            <div className="size-10 rounded-full border-2 border-brand bg-stone-200" />
-            <div className="size-10 rounded-full border-2 border-brand bg-stone-300" />
-            <div className="size-10 rounded-full border-2 border-brand bg-stone-400" />
+            <div className="size-10 rounded-full border-2 border-navy bg-amber-200 text-navy font-semibold text-xs grid place-items-center">
+              PH
+            </div>
+            <div className="size-10 rounded-full border-2 border-navy bg-stoneband text-navy font-semibold text-xs grid place-items-center">
+              CH
+            </div>
+            <div className="size-10 rounded-full border-2 border-navy bg-slate-200 text-navy font-semibold text-xs grid place-items-center">
+              MT
+            </div>
           </div>
-          <p className="text-white/55 text-sm max-w-xs leading-relaxed">
-            Join focused science learners building repeatable study habits.
+          <p className="text-slate-200 text-sm max-w-xs leading-relaxed">
+            Join focused science learners building repeatable weekly study habits.
           </p>
         </div>
 
-        <div className="absolute inset-0 opacity-25 mix-blend-overlay grayscale">
+        <div className="absolute inset-0 opacity-20 mix-blend-overlay grayscale pointer-events-none">
           <img src={libraryHero} alt="" className="w-full h-full object-cover" aria-hidden="true" />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-brand/20 via-transparent to-brand/60" />
+        <div className="absolute inset-0 bg-gradient-to-b from-navy/30 via-transparent to-navy/75 pointer-events-none" />
       </aside>
 
       {/* Right: form surface */}
-      <main className="min-w-0 flex-1 flex flex-col p-6 sm:p-10 md:p-16 lg:p-20 justify-center min-h-screen md:min-h-0">
-        <div className="auth-form-shell mx-auto w-full">
-          <div className="md:hidden mb-10">
-            <BrandLogo imageClassName="max-h-12 max-w-[190px]" />
+      <main className="min-w-0 flex-1 flex flex-col px-4 py-8 sm:px-8 sm:py-12 md:p-12 lg:p-16 justify-center min-h-screen md:min-h-0 bg-canvas">
+        <div className="auth-form-shell mx-auto w-full bg-white md:bg-transparent rounded-2xl md:rounded-none border border-borderui md:border-0 p-6 sm:p-8 md:p-0 shadow-sm md:shadow-none">
+          <div className="md:hidden mb-7 pb-5 border-b border-borderui flex items-center justify-between">
+            <BrandLogo imageClassName="max-h-10 max-w-[165px]" />
           </div>
 
-          <header className="mb-10">
-            {eyebrow ? <p className="eyebrow text-brand/40 mb-3">{eyebrow}</p> : null}
-            <h2 className="text-3xl sm:text-4xl font-serif mb-3 text-balance break-words">
+          <header className="mb-8">
+            {eyebrow ? (
+              <p className="text-xs font-bold tracking-[0.16em] uppercase text-bronze mb-2.5">
+                {eyebrow}
+              </p>
+            ) : null}
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-bold text-navy mb-2.5 text-balance break-words">
               {heading}
             </h2>
             {subheading ? (
-              <p className="text-brand/60 leading-relaxed break-words">{subheading}</p>
+              <p className="text-sm sm:text-base text-slatebody leading-relaxed break-words">
+                {subheading}
+              </p>
             ) : null}
           </header>
 
           {children}
 
           {footer ? (
-            <div className="mt-12 pt-8 border-t border-brand/5 text-center">{footer}</div>
+            <div className="mt-8 pt-6 border-t border-borderui text-center text-sm text-slatebody">
+              {footer}
+            </div>
           ) : null}
         </div>
       </main>
@@ -84,27 +104,29 @@ type FieldProps = {
 export function Field({ label, htmlFor, error, hint, trailing, children }: FieldProps) {
   return (
     <div>
-      <div className="flex justify-between items-center mb-2">
-        <label htmlFor={htmlFor} className="eyebrow text-brand/45">
+      <div className="flex justify-between items-center gap-2 mb-1.5">
+        <label htmlFor={htmlFor} className="text-sm font-semibold text-navy">
           {label}
         </label>
         {trailing}
       </div>
       {children}
       {error ? (
-        <p className="mt-2 text-xs text-destructive">{error}</p>
+        <p className="mt-1.5 text-xs font-medium text-red-700" role="alert">
+          {error}
+        </p>
       ) : hint ? (
-        <p className="mt-2 text-xs text-brand/45">{hint}</p>
+        <p className="mt-1.5 text-xs text-slatebody">{hint}</p>
       ) : null}
     </div>
   );
 }
 
 export const inputClass =
-  "w-full max-w-full min-w-0 bg-transparent border-b border-brand/20 py-3 focus:outline-none focus:border-accent transition-colors text-lg placeholder:text-brand/25 disabled:opacity-50";
+  "w-full max-w-full min-w-0 min-h-[46px] px-3.5 py-2.5 rounded-lg border border-borderui bg-canvas md:bg-white text-navy text-sm sm:text-base placeholder:text-slatebody/70 focus:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-navy transition-colors disabled:opacity-50";
 
 export const primaryButtonClass =
-  "box-border w-full max-w-full bg-brand text-white py-4 font-serif text-lg sm:text-xl hover:bg-brand/90 transition-all flex items-center justify-center gap-2 group disabled:opacity-60 disabled:cursor-not-allowed";
+  "box-border w-full max-w-full min-h-[48px] px-5 py-3 rounded-lg bg-navy text-white font-semibold text-sm sm:text-base hover:bg-navy-light shadow-sm transition-colors flex items-center justify-center gap-2 group disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy";
 
 export const ghostButtonClass =
-  "w-full border border-brand/15 text-brand py-3 text-sm font-medium hover:bg-brand/[0.03] transition-colors flex items-center justify-center gap-3 disabled:opacity-60";
+  "w-full min-h-[46px] px-4 py-2.5 rounded-lg border border-borderui bg-white text-navy text-sm font-semibold hover:bg-stoneband transition-colors flex items-center justify-center gap-3 disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy";
