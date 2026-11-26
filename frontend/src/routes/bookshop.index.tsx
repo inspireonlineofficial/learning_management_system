@@ -1,3 +1,4 @@
+import { usePublicSiteConfig } from "@/hooks/use-site-config";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BookOpen, Search, Star } from "lucide-react";
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/bookshop/")({
 });
 
 function PublicBookshopIndex() {
+  const page = usePublicSiteConfig().pages.bookshop;
   const routeSearch = Route.useSearch();
   const [search, setSearch] = useState(routeSearch.q ?? "");
   const [category, setCategory] = useState(routeSearch.category ?? "");
@@ -50,14 +52,13 @@ function PublicBookshopIndex() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
           <p className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-amber-300/35 text-amber-200 text-xs font-semibold tracking-[0.14em] uppercase mb-5">
             <span className="w-2 h-2 rounded-full bg-gold" aria-hidden="true" />
-            Inspire Bookshop
+            {page.eyebrow}
           </p>
           <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold leading-[1.14] text-balance max-w-3xl">
-            Expand your learning with curated reading materials.
+            {page.title}
           </h1>
           <p className="mt-4 max-w-xl text-slate-200 text-sm sm:text-base leading-relaxed">
-            Access textbooks, workbooks, solution guides, and lab manuals aligned with your academic
-            syllabus.
+            {page.body}
           </p>
 
           <div className="mt-8 bg-white rounded-xl p-3 sm:p-4 shadow-xl border border-borderui max-w-3xl space-y-3">

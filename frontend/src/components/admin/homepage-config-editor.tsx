@@ -4,6 +4,13 @@ import { ArrowDown, ArrowUp, Plus, RotateCcw, Save, Trash2 } from "lucide-react"
 import { useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
+import {
+  FaqSection,
+  FooterSection,
+  NavigationSection,
+  PageCopySection,
+  SiteIdentitySection,
+} from "@/components/admin/site-config-sections";
 import { QueryErrorPanel } from "@/components/layout/query-error-panel";
 import {
   DEFAULT_HOMEPAGE_CONFIG,
@@ -42,7 +49,7 @@ export function HomepageConfigEditor() {
     onSuccess: (saved) => {
       setForm(saved);
       setSubjectsText(saved.bookshop_subjects.join(", "));
-      toast.success("Homepage configuration saved");
+      toast.success("Website content saved");
       qc.invalidateQueries({ queryKey: ["admin-homepage-config"] });
       qc.invalidateQueries({ queryKey: ["homepage", "public"] });
     },
@@ -67,7 +74,7 @@ export function HomepageConfigEditor() {
   };
 
   const handleReset = () => {
-    if (!confirm("Reset all homepage sections to their default content? Remember to save.")) return;
+    if (!confirm("Reset all public website content to the defaults? Remember to save.")) return;
     setForm(DEFAULT_HOMEPAGE_CONFIG);
     setSubjectsText(DEFAULT_HOMEPAGE_CONFIG.bookshop_subjects.join(", "));
   };
@@ -76,10 +83,10 @@ export function HomepageConfigEditor() {
     <form onSubmit={handleSubmit} className="max-w-4xl space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4 border border-brand/10 bg-white/50 p-4">
         <div>
-          <p className="text-sm font-medium">Public storefront & homepage sections</p>
+          <p className="text-sm font-medium">Public website content</p>
           <p className="text-xs text-brand/60 mt-0.5">
-            Customize headings, course tracks, bookshop categories, empty states, stats, info
-            panels, and footer text.
+            Brand, logo, SEO, navigation, footer, contact details, FAQ, page headers and every
+            homepage section.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -107,6 +114,11 @@ export function HomepageConfigEditor() {
           </button>
         </div>
       </div>
+
+      <SiteIdentitySection form={form} setForm={setForm} />
+      <NavigationSection form={form} setForm={setForm} />
+      <FooterSection form={form} setForm={setForm} />
+      <PageCopySection form={form} setForm={setForm} />
 
       {/* 1. Course catalog / tracks */}
       <SectionCard
@@ -681,22 +693,7 @@ export function HomepageConfigEditor() {
         </div>
       </SectionCard>
 
-      {/* 7. Footer */}
-      <section className="border border-brand/10 bg-white/40 p-6 space-y-4">
-        <h3 className="font-serif text-xl">Footer</h3>
-        <div className="grid sm:grid-cols-2 gap-4">
-          <Field
-            label="Brand name"
-            value={form.footer.brand_name}
-            onChange={(brand_name) => setForm({ ...form, footer: { ...form.footer, brand_name } })}
-          />
-          <Field
-            label="Tagline"
-            value={form.footer.tagline}
-            onChange={(tagline) => setForm({ ...form, footer: { ...form.footer, tagline } })}
-          />
-        </div>
-      </section>
+      <FaqSection form={form} setForm={setForm} />
 
       <div className="flex justify-end">
         <button

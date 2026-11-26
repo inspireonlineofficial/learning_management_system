@@ -127,14 +127,7 @@ func (s *Server) Handler() http.Handler {
 
 	// Middleware chain
 	handler = s.rateLimiter.Limit(handler)
-	handler = middleware.CORS(corsAllowedOrigins(s.frontendBaseURL, []string{
-		"https://app.example.com",
-		"https://admin.example.com",
-		"http://localhost:3000",
-		"http://127.0.0.1:3000",
-		"http://localhost:5173",
-		"http://127.0.0.1:5173",
-	}))(handler)
+	handler = middleware.CORS(corsAllowedOrigins(s.frontendBaseURL, devCORSOrigins(s.frontendBaseURL)))(handler)
 	handler = middleware.SecurityHeaders(handler)
 	// Maintenance mode: returns 503 for all non-admin endpoints when enabled (Requirement 25.5)
 	handler = middleware.MaintenanceMode(func() bool {
@@ -145,6 +138,26 @@ func (s *Server) Handler() http.Handler {
 	handler = middleware.RequestID(handler)
 
 	return handler
+}
+
+// devCORSOrigins returns the local dev-server origins, but only when the
+// configured frontend itself runs on localhost. Production deployments allow
+// FRONTEND_BASE_URL alone.
+func devCORSOrigins(frontendBaseURL string) []string {
+	parsed, err := url.Parse(strings.TrimSpace(frontendBaseURL))
+	if err != nil {
+		return nil
+	}
+	switch parsed.Hostname() {
+	case "localhost", "127.0.0.1":
+		return []string{
+			"http://localhost:3000",
+			"http://127.0.0.1:3000",
+			"http://localhost:5173",
+			"http://127.0.0.1:5173",
+		}
+	}
+	return nil
 }
 
 func corsAllowedOrigins(frontendBaseURL string, defaults []string) []string {

@@ -1,30 +1,26 @@
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
 import { Menu, X } from "lucide-react";
 
 import { BrandLogo } from "@/components/layout/brand-logo";
 import { PublicHeaderActions } from "@/components/layout/public-header-actions";
+import { SiteNavLink } from "@/components/layout/site-nav-link";
+import { safeHref } from "@/lib/api/homepage";
+import { usePublicSiteConfig } from "@/hooks/use-site-config";
 
 type PublicHeaderSection = "courses" | "bookshop" | "forum";
 
-const navItems: Array<
-  | {
-      kind: "route";
-      to: "/courses" | "/bookshop" | "/forum";
-      label: string;
-      section: PublicHeaderSection;
-    }
-  | { kind: "anchor"; href: string; label: string }
-> = [
-  { kind: "route", to: "/courses", label: "Courses", section: "courses" },
-  { kind: "route", to: "/bookshop", label: "Bookshop", section: "bookshop" },
-  { kind: "anchor", href: "/#outcomes", label: "Outcomes" },
-  { kind: "anchor", href: "/#faq", label: "FAQ" },
-  { kind: "route", to: "/forum", label: "Forum", section: "forum" },
-];
+function isActiveLink(href: string, active?: PublicHeaderSection) {
+  if (!active) return false;
+  const path = href.split(/[?#]/)[0].replace(/\/+$/, "");
+  return path === `/${active}`;
+}
 
 export function PublicHeader({ active }: { active?: PublicHeaderSection }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const cfg = usePublicSiteConfig();
+  const navItems = cfg.site.nav_links
+    .map((l) => ({ label: l.label.trim(), href: safeHref(l.href) }))
+    .filter((l): l is { label: string; href: string } => !!l.label && !!l.href);
 
   useEffect(() => {
     if (!mobileMenuOpen) return;
@@ -57,17 +53,15 @@ export function PublicHeader({ active }: { active?: PublicHeaderSection }) {
             aria-label="Primary navigation"
             className="hidden md:flex items-center gap-1 lg:gap-2"
           >
-            {navItems.map((item) =>
-              item.kind === "route" ? (
-                <Link key={item.to} to={item.to} className={linkClass(active === item.section)}>
-                  {item.label}
-                </Link>
-              ) : (
-                <a key={item.href} href={item.href} className={linkClass(false)}>
-                  {item.label}
-                </a>
-              ),
-            )}
+            {navItems.map((item) => (
+              <SiteNavLink
+                key={`${item.label}-${item.href}`}
+                href={item.href}
+                className={linkClass(isActiveLink(item.href, active))}
+              >
+                {item.label}
+              </SiteNavLink>
+            ))}
           </nav>
 
           {/* Desktop Auth Actions */}
@@ -100,31 +94,20 @@ export function PublicHeader({ active }: { active?: PublicHeaderSection }) {
           className="md:hidden bg-white border-t border-borderui px-4 pt-3 pb-5 shadow-lg"
         >
           <nav aria-label="Mobile navigation" className="flex flex-col space-y-1">
-            {navItems.map((item) =>
-              item.kind === "route" ? (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center min-h-[44px] px-3 rounded-lg text-base font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-navy ${
-                    active === item.section
-                      ? "bg-stoneband text-navy font-semibold"
-                      : "text-navy-light hover:bg-stoneband"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              ) : (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center min-h-[44px] px-3 rounded-lg text-base font-medium text-navy-light hover:bg-stoneband transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-navy"
-                >
-                  {item.label}
-                </a>
-              ),
-            )}
+            {navItems.map((item) => (
+              <SiteNavLink
+                key={`${item.label}-${item.href}`}
+                href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center min-h-[44px] px-3 rounded-lg text-base font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-navy ${
+                  isActiveLink(item.href, active)
+                    ? "bg-stoneband text-navy font-semibold"
+                    : "text-navy-light hover:bg-stoneband"
+                }`}
+              >
+                {item.label}
+              </SiteNavLink>
+            ))}
           </nav>
           <div className="mt-4 pt-4 border-t border-borderui">
             <PublicHeaderActions mobile onNavigate={() => setMobileMenuOpen(false)} />

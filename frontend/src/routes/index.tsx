@@ -157,29 +157,6 @@ const GUIDED_LESSON_STEPS = [
   },
 ];
 
-const FAQ_ITEMS = [
-  {
-    question: "How do free previews and approval-based paid courses work?",
-    answer:
-      "Every course track offers public syllabus outlines and free preview lessons so you can evaluate teaching clarity first. Free courses unlock immediately after registration, while paid cohorts use a simple admin approval workflow once enrollment details are verified.",
-  },
-  {
-    question: "When are weekly live support classes held?",
-    answer:
-      "Live support sessions run every week in evening slots (BST) so they never clash with school or college hours. If you miss a live Q&A, the annotated recording and problem sheet appear directly inside your student dashboard.",
-  },
-  {
-    question: "How do bookshop orders and digital study materials work?",
-    answer:
-      "Digital notes and formula sheets become accessible inside your LMS library immediately upon approval. Printed textbooks, workbooks, and lab manuals can be requested through the Bookshop with nationwide courier delivery across Bangladesh.",
-  },
-  {
-    question: "Which science levels and curricula are supported?",
-    answer:
-      "Inspire Online currently supports SSC (Class 9–10), HSC (Class 11–12), and University Admission Preparation tracks across Physics, Chemistry, Biology, Higher Mathematics, and HSC ICT.",
-  },
-];
-
 const fallbackSlides: Slide[] = [
   {
     id: "fallback-science",
@@ -1163,45 +1140,49 @@ function Landing() {
         )}
 
         {/* 8. ACCESSIBLE FAQ SECTION (Native Semantic <details>/<summary>) */}
-        <section
-          id="faq"
-          className="py-16 sm:py-20 lg:py-24 bg-stoneband border-t border-borderui"
-          aria-labelledby="faq-heading"
-        >
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="mb-10">
-              <p className="text-xs font-bold tracking-[0.16em] uppercase text-bronze mb-2">
-                Frequently Asked Questions
-              </p>
-              <h2
-                id="faq-heading"
-                className="font-serif text-3xl sm:text-4xl font-bold text-navy tracking-tight"
-              >
-                Answers for students and parents
-              </h2>
-            </div>
-
-            <div className="space-y-3.5">
-              {FAQ_ITEMS.map((item) => (
-                <details
-                  key={item.question}
-                  className="group bg-white rounded-xl border border-borderui open:border-navy shadow-sm transition-colors"
+        {cfg.faq.enabled && cfg.faq.items.length > 0 && (
+          <section
+            id="faq"
+            className="py-16 sm:py-20 lg:py-24 bg-stoneband border-t border-borderui"
+            aria-labelledby="faq-heading"
+          >
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="mb-10">
+                <p className="text-xs font-bold tracking-[0.16em] uppercase text-bronze mb-2">
+                  {cfg.faq.eyebrow}
+                </p>
+                <h2
+                  id="faq-heading"
+                  className="font-serif text-3xl sm:text-4xl font-bold text-navy tracking-tight"
                 >
-                  <summary className="flex items-center justify-between gap-4 min-h-[56px] px-6 py-4 cursor-pointer font-semibold text-base sm:text-lg text-navy rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy">
-                    <span>{item.question}</span>
-                    <ChevronDown
-                      className="w-5 h-5 text-navy shrink-0 transition-transform duration-200 group-open:rotate-180"
-                      aria-hidden="true"
-                    />
-                  </summary>
-                  <div className="px-6 pb-5 pt-2 text-slatebody text-sm sm:text-base leading-relaxed border-t border-borderui/60">
-                    {item.answer}
-                  </div>
-                </details>
-              ))}
+                  {cfg.faq.title}
+                </h2>
+              </div>
+
+              <div className="space-y-3.5">
+                {cfg.faq.items
+                  .filter((item) => item.question.trim())
+                  .map((item) => (
+                    <details
+                      key={item.question}
+                      className="group bg-white rounded-xl border border-borderui open:border-navy shadow-sm transition-colors"
+                    >
+                      <summary className="flex items-center justify-between gap-4 min-h-[56px] px-6 py-4 cursor-pointer font-semibold text-base sm:text-lg text-navy rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy">
+                        <span>{item.question}</span>
+                        <ChevronDown
+                          className="w-5 h-5 text-navy shrink-0 transition-transform duration-200 group-open:rotate-180"
+                          aria-hidden="true"
+                        />
+                      </summary>
+                      <div className="px-6 pb-5 pt-2 text-slatebody text-sm sm:text-base leading-relaxed border-t border-borderui/60">
+                        {item.answer}
+                      </div>
+                    </details>
+                  ))}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
       </main>
 
       {/* 9. UTILITY FOOTER (Dark Navy 4-Column, preserving Inspire Logo) */}

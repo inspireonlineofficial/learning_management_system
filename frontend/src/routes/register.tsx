@@ -1,3 +1,4 @@
+import { usePublicSiteConfig } from "@/hooks/use-site-config";
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
@@ -68,11 +69,13 @@ function RegisterPage() {
     },
   });
 
+  const copy = usePublicSiteConfig().pages.register;
+
   return (
     <AuthShell
-      eyebrow="Enroll"
-      heading="Begin your study"
-      subheading="Create an account to browse courses, join live classes, and track progress."
+      eyebrow={copy.eyebrow}
+      heading={copy.heading}
+      subheading={copy.subheading}
       footer={
         <p className="text-sm text-brand/50">
           Already enrolled?{" "}

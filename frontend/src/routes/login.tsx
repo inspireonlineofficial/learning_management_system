@@ -1,3 +1,4 @@
+import { usePublicSiteConfig } from "@/hooks/use-site-config";
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
@@ -70,11 +71,13 @@ function LoginPage() {
     },
   });
 
+  const copy = usePublicSiteConfig().pages.login;
+
   return (
     <AuthShell
-      eyebrow="Sign in"
-      heading="Welcome back"
-      subheading="Enter your credentials to access your learning dashboard."
+      eyebrow={copy.eyebrow}
+      heading={copy.heading}
+      subheading={copy.subheading}
       footer={
         <p className="text-sm text-brand/50">
           New to Inspire?{" "}

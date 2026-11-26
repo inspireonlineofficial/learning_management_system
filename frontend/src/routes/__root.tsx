@@ -1,3 +1,4 @@
+import { SiteHead } from "@/components/layout/site-head";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -129,6 +130,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <SiteHead />
         <Outlet />
         <Toaster
           position="top-center"

@@ -1,3 +1,4 @@
+import { usePublicSiteConfig } from "@/hooks/use-site-config";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Search } from "lucide-react";
@@ -45,6 +46,7 @@ const levels: { value: CourseLevel; label: string }[] = [
 ];
 
 function CatalogPage() {
+  const page = usePublicSiteConfig().pages.courses;
   const search = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const [draft, setDraft] = useState(search.q ?? "");
@@ -81,14 +83,13 @@ function CatalogPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
           <p className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-amber-300/35 text-amber-200 text-xs font-semibold tracking-[0.14em] uppercase mb-5">
             <span className="w-2 h-2 rounded-full bg-gold" aria-hidden="true" />
-            Course Catalog
+            {page.eyebrow}
           </p>
           <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold leading-[1.14] max-w-3xl text-balance">
-            A curated science catalog.
+            {page.title}
           </h1>
           <p className="mt-4 max-w-xl text-slate-200 text-sm sm:text-base leading-relaxed">
-            Browse structured courses by subject, level, and instructor. Sign in to enroll and track
-            your weekly study progress.
+            {page.body}
           </p>
 
           <form
