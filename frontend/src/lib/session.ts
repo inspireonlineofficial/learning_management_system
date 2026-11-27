@@ -27,15 +27,18 @@ export function getStoredSession(): Session | null {
   }
 }
 
-export function setStoredSession(session: Session) {
+export function setStoredSession(session: Session, options?: { silent?: boolean }) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-  window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY }));
+  if (!options?.silent) {
+    window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY }));
+  }
 }
 
 export function clearStoredSession() {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(STORAGE_KEY);
+  window.localStorage.removeItem(IMPERSONATION_KEY);
   window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY }));
 }
 
@@ -45,23 +48,23 @@ export const SESSION_STORAGE_KEY = STORAGE_KEY;
 
 const IMPERSONATION_KEY = "inspire.impersonation.origin";
 
-export function startImpersonation(impersonated: Session) {
+export function startImpersonation(impersonated: Session, options?: { silent?: boolean }) {
   if (typeof window === "undefined") return;
   const current = getStoredSession();
   if (current && !isImpersonating()) {
     window.localStorage.setItem(IMPERSONATION_KEY, JSON.stringify(current));
   }
-  setStoredSession(impersonated);
+  setStoredSession(impersonated, options);
 }
 
-export function stopImpersonation(): Session | null {
+export function stopImpersonation(options?: { silent?: boolean }): Session | null {
   if (typeof window === "undefined") return null;
   const raw = window.localStorage.getItem(IMPERSONATION_KEY);
   if (!raw) return null;
   try {
     const origin = JSON.parse(raw) as Session;
     window.localStorage.removeItem(IMPERSONATION_KEY);
-    setStoredSession(origin);
+    setStoredSession(origin, options);
     return origin;
   } catch {
     window.localStorage.removeItem(IMPERSONATION_KEY);

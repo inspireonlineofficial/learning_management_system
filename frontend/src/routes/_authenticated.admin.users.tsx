@@ -54,24 +54,23 @@ function AdminUsersPage() {
   const impersonate = useMutation({
     mutationFn: (userId: string) => impersonateUser(userId),
     onSuccess: (tok) => {
-      startImpersonation({
-        accessToken: tok.access_token,
-        refreshToken: tok.refresh_token,
-        user: tok.user,
-      });
-      setSession({
-        accessToken: tok.access_token,
-        refreshToken: tok.refresh_token,
-        user: tok.user,
-      });
-      toast.success(`Viewing as ${tok.user.full_name}`);
+      startImpersonation(
+        {
+          accessToken: tok.access_token,
+          refreshToken: tok.refresh_token,
+          user: tok.user,
+        },
+        { silent: true },
+      );
       const dest =
         tok.user.role === "admin"
           ? "/admin"
           : tok.user.role === "teacher"
             ? "/teacher"
             : "/student";
-      navigate({ to: dest });
+      // Full navigation prevents the currently mounted AdminLayout guard from
+      // racing with the role change and redirecting to /403.
+      window.location.assign(dest);
     },
     onError: (e: Error) => toast.error(e.message),
   });

@@ -1,4 +1,7 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+
+import { isImpersonating, stopImpersonation } from "@/lib/session";
 
 export const Route = createFileRoute("/403")({
   head: () => ({
@@ -11,6 +14,19 @@ export const Route = createFileRoute("/403")({
 });
 
 function ForbiddenPage() {
+  const [impersonating, setImpersonating] = useState(false);
+
+  useEffect(() => {
+    setImpersonating(isImpersonating());
+  }, []);
+
+  const handleExitImpersonation = () => {
+    const origin = stopImpersonation({ silent: true });
+    if (origin) {
+      window.location.assign("/admin/users");
+    }
+  };
+
   return (
     <div className="min-h-screen grid place-items-center bg-canvas text-navy font-sans px-4 py-12">
       <div className="max-w-md w-full rounded-xl border border-borderui bg-white p-8 sm:p-10 text-center shadow-sm">
@@ -20,7 +36,16 @@ function ForbiddenPage() {
           You don't have permission to view this part of the platform. If you believe this is in
           error, please contact your administrator.
         </p>
-        <div className="mt-8">
+        <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+          {impersonating && (
+            <button
+              type="button"
+              onClick={handleExitImpersonation}
+              className="inline-flex items-center justify-center min-h-11 rounded-lg bg-bronze px-6 py-3 text-sm font-semibold text-white hover:opacity-90 shadow-sm transition-opacity"
+            >
+              Exit impersonation
+            </button>
+          )}
           <Link
             to="/"
             className="inline-flex items-center justify-center min-h-11 rounded-lg bg-navy px-6 py-3 text-sm font-semibold text-white hover:bg-navy-light shadow-sm transition-colors"

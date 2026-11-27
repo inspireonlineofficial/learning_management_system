@@ -140,11 +140,9 @@ export function AppShell({
   };
 
   const handleExitImpersonation = () => {
-    const origin = stopImpersonation();
+    const origin = stopImpersonation({ silent: true });
     if (origin) {
-      setSession(origin);
-      toast.success("Returned to your admin session");
-      navigate({ to: "/admin/users" });
+      window.location.assign("/admin/users");
     }
   };
 
