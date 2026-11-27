@@ -29,14 +29,14 @@ function PublicForumThreadPage() {
       <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <Link
           to="/forum"
-          className="inline-flex items-center gap-2 min-h-[44px] text-sm font-semibold text-navy hover:text-bronze underline underline-offset-4 decoration-gold decoration-2 mb-6"
+          className="inline-flex items-center gap-2 min-h-11 text-sm font-semibold text-navy hover:text-bronze underline underline-offset-4 decoration-gold decoration-2 mb-6"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Back to forum
         </Link>
 
         {thread.isLoading ? (
-          <div className="h-48 rounded-2xl border border-borderui bg-white animate-pulse" />
+          <div className="h-48 rounded-xl border border-borderui bg-white animate-pulse" />
         ) : thread.isError || !thread.data ? (
           <QueryErrorPanel
             error={thread.error}
@@ -45,9 +45,9 @@ function PublicForumThreadPage() {
           />
         ) : (
           <>
-            <article className="rounded-2xl border border-borderui bg-white p-6 sm:p-8 shadow-sm">
+            <article className="rounded-xl border border-borderui bg-white p-6 sm:p-8 shadow-sm">
               {thread.data.category_name && (
-                <p className="text-xs font-bold tracking-[0.16em] uppercase text-bronze mb-2.5">
+                <p className="text-xs font-bold tracking-[0.12em] uppercase text-bronze mb-2.5">
                   {thread.data.category_name}
                 </p>
               )}
@@ -83,7 +83,7 @@ function PublicForumThreadPage() {
                   ))}
                 </div>
               ) : (posts.data?.data.length ?? 0) === 0 ? (
-                <div className="rounded-xl border border-dashed border-borderui bg-white p-8 text-center text-sm text-slatebody">
+                <div className="rounded-lg border border-borderui bg-white p-8 text-center text-sm text-slatebody">
                   <MessageSquare className="h-7 w-7 mx-auto text-navy/30 mb-3" aria-hidden="true" />
                   No replies yet.
                 </div>

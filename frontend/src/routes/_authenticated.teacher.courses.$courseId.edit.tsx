@@ -93,7 +93,7 @@ export function CourseEditor({ courseId }: { courseId: string }) {
       <div className="flex items-center justify-between mb-2 flex-wrap gap-3">
         <h1 className="font-serif text-4xl lg:text-5xl text-balance">{c.title}</h1>
         <div className="flex items-center gap-2">
-          <span className="px-3 py-1 text-[11px] font-medium border border-brand/15 capitalize text-brand/60">
+          <span className="px-3 py-1 text-xs font-medium border border-brand/15 capitalize text-brand/60">
             {c.status}
           </span>
           <Link
@@ -338,7 +338,7 @@ function ContentEditor({
       )}
 
       {modules.length === 0 ? (
-        <p className="text-sm text-brand/55 border border-dashed border-brand/15 p-8 text-center">
+        <p className="text-sm text-slatebody rounded-lg border border-borderui bg-white p-8 text-center">
           No modules yet. Add one to start building your curriculum.
         </p>
       ) : (
@@ -553,11 +553,11 @@ function ModuleCard({
               {module.title}
             </button>
             <span className="text-xs text-brand/45">{chapters.length} chapters</span>
-            <span className="text-[11px] uppercase tracking-wider text-brand/40">
+            <span className="text-xs uppercase tracking-wider text-brand/40">
               {module.is_free ? "Free" : "Paid"}
             </span>
             {!module.is_published && (
-              <span className="text-[11px] uppercase tracking-wider text-brand/40">Hidden</span>
+              <span className="text-xs uppercase tracking-wider text-brand/40">Hidden</span>
             )}
             <button
               onClick={() => onMove(module.id, "up")}
@@ -1298,7 +1298,7 @@ function LessonRow({
               <div className="flex flex-wrap items-center gap-2">
                 <p className="font-medium text-sm">{lesson.title}</p>
                 <span
-                  className={`inline-flex items-center gap-1 border px-2 py-0.5 text-[11px] uppercase tracking-wider ${
+                  className={`inline-flex items-center gap-1 border px-2 py-0.5 text-xs uppercase tracking-wider ${
                     isPublished
                       ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                       : "border-amber-200 bg-amber-50 text-amber-700"
@@ -1312,7 +1312,7 @@ function LessonRow({
                   {isPublished ? "Published" : "Draft"}
                 </span>
               </div>
-              <p className="mt-1 text-[11px] text-brand/45 uppercase tracking-wider">
+              <p className="mt-1 text-xs text-brand/45 uppercase tracking-wider">
                 {lesson.type ?? "video"}
                 {lesson.is_free_preview ? " · preview" : ""}
                 {lesson.is_free === false ? " · paid" : " · free"}
@@ -1636,7 +1636,7 @@ function NotesEditor({
       </div>
 
       {notes.length === 0 ? (
-        <p className="text-sm text-brand/55 border border-dashed border-brand/15 p-8 text-center">
+        <p className="text-sm text-slatebody rounded-lg border border-borderui bg-white p-8 text-center">
           No notes yet.
         </p>
       ) : (
@@ -1801,7 +1801,7 @@ function NoteRow({
             <p className="mt-1 text-xs text-brand/55 line-clamp-2">
               {note.content || note.file_url}
             </p>
-            <p className="mt-2 text-[11px] uppercase tracking-wider text-brand/40">
+            <p className="mt-2 text-xs uppercase tracking-wider text-brand/40">
               {note.is_free ? "Free" : "Paid"} · {note.is_published ? "Published" : "Draft"}
             </p>
           </button>
@@ -2069,7 +2069,7 @@ function StudentsPanel({ courseId }: { courseId: string }) {
 
   if (!students.data || students.data.data.length === 0) {
     return (
-      <p className="text-sm text-brand/55 border border-dashed border-brand/15 p-8 text-center">
+      <p className="text-sm text-slatebody rounded-lg border border-borderui bg-white p-8 text-center">
         <Users className="h-6 w-6 mx-auto mb-3 text-brand/30" />
         No students enrolled yet.
       </p>
@@ -2089,7 +2089,7 @@ function StudentsPanel({ courseId }: { courseId: string }) {
           </div>
           <div className="text-right shrink-0">
             <p className="text-sm font-medium">{s.progress_percent}%</p>
-            <p className="text-[11px] text-brand/45">
+            <p className="text-xs text-brand/45">
               {s.last_active_at ? `Active ${new Date(s.last_active_at).toLocaleDateString()}` : "—"}
             </p>
           </div>

@@ -128,7 +128,7 @@ function SlidesAdminPage() {
           )}
 
           {!slidesQuery.isLoading && slides.length === 0 && (
-            <div className="border border-dashed border-brand/15 px-8 py-16 text-center">
+            <div className="rounded-lg border border-borderui bg-white px-8 py-16 text-center">
               <p className="font-serif text-xl">No slides yet</p>
               <p className="mt-2 text-sm text-brand/55">
                 Add the first slide to populate the homepage carousel.
@@ -208,7 +208,7 @@ function CreateSlideForm({
               className="mt-2"
               onChange={(e) => setMedia(e.target.files?.[0] ?? null)}
             />
-            <p className="mt-1 text-[11px] text-brand/45">JPEG, PNG, WebP, or GIF up to 5 MB.</p>
+            <p className="mt-1 text-xs text-brand/45">JPEG, PNG, WebP, or GIF up to 5 MB.</p>
           </div>
           <Button
             type="button"

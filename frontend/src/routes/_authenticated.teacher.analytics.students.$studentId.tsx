@@ -56,7 +56,7 @@ function TeacherStudentAnalyticsPage() {
 
           <SectionHeading title="Course progress" />
           {courses.length === 0 ? (
-            <p className="text-sm text-brand/55 border border-dashed border-brand/15 p-8 text-center">
+            <p className="text-sm text-slatebody rounded-lg border border-borderui bg-white p-8 text-center">
               No teacher-course progress is available for this student.
             </p>
           ) : (
@@ -90,7 +90,7 @@ function TeacherStudentAnalyticsPage() {
 
           <SectionHeading title="Points trend" />
           {points.length === 0 ? (
-            <p className="text-sm text-brand/55 border border-dashed border-brand/15 p-8 text-center">
+            <p className="text-sm text-slatebody rounded-lg border border-borderui bg-white p-8 text-center">
               No points history is available yet.
             </p>
           ) : (

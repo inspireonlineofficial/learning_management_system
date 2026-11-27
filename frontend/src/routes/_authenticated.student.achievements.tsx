@@ -151,7 +151,7 @@ function AchievementsPage() {
                 </div>
                 <div className="text-right">
                   <p className="font-serif text-lg text-accent">+{a.points}</p>
-                  <p className="text-[11px] text-brand/45">
+                  <p className="text-xs text-brand/45">
                     {new Date(a.earned_at).toLocaleDateString()}
                   </p>
                 </div>
@@ -192,7 +192,7 @@ function BadgeCard({ badge: b }: { badge: Badge }) {
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-serif text-base leading-snug">{b.name}</p>
-          <p className="text-[11px] uppercase tracking-wider text-brand/45 mt-0.5">{tier}</p>
+          <p className="text-xs uppercase tracking-wider text-brand/45 mt-0.5">{tier}</p>
         </div>
       </div>
       {b.description && <p className="text-xs text-brand/60 leading-relaxed">{b.description}</p>}
@@ -215,7 +215,7 @@ function BadgeCard({ badge: b }: { badge: Badge }) {
         </div>
       )}
       {earned && b.earned_at && (
-        <p className="mt-3 text-[11px] text-brand/45">
+        <p className="mt-3 text-xs text-brand/45">
           Earned {new Date(b.earned_at).toLocaleDateString()}
         </p>
       )}

@@ -344,7 +344,7 @@ function QuizDiscussion({
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                   {comment.is_pinned && (
-                    <p className="mb-1 text-[10px] uppercase tracking-[0.18em] text-accent-ink">
+                    <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-accent-ink">
                       Pinned
                     </p>
                   )}
@@ -358,7 +358,7 @@ function QuizDiscussion({
                   ) : (
                     <p className="text-sm text-brand/75 whitespace-pre-wrap">{comment.content}</p>
                   )}
-                  <p className="mt-2 text-[11px] text-brand/70">
+                  <p className="mt-2 text-xs text-brand/70">
                     {new Date(comment.created_at).toLocaleString()}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-3 text-xs">
@@ -445,7 +445,7 @@ function QuizDiscussion({
                           <p className="text-sm text-brand/70 whitespace-pre-wrap">
                             {child.content}
                           </p>
-                          <p className="mt-2 text-[11px] text-brand/70">
+                          <p className="mt-2 text-xs text-brand/70">
                             {new Date(child.created_at).toLocaleString()}
                           </p>
                         </li>

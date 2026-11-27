@@ -104,22 +104,12 @@ export function SlideCarousel({
               />
               {/* High-contrast atmospheric academic navy gradient */}
               <div className="absolute inset-0 bg-gradient-to-r from-navy/92 via-navy/75 to-navy/35" />
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  backgroundImage:
-                    "radial-gradient(ellipse 65% 60% at 85% 20%, rgba(217, 119, 6, 0.18), transparent 65%)",
-                }}
-              />
 
               <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16 lg:py-20">
                 <div className="max-w-3xl">
-                  <p className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-amber-300/35 text-amber-200 text-xs font-semibold tracking-[0.14em] uppercase mb-5 backdrop-blur-xs">
-                    <span className="w-2 h-2 rounded-full bg-gold" aria-hidden="true" />
-                    Science Tutoring LMS &bull; SSC, HSC &amp; Admission Prep
-                  </p>
+                  <p className="eyebrow text-amber-200/90 mb-4">SSC, HSC &amp; Admission Prep</p>
 
-                  <HeadingTag className="font-serif text-3xl sm:text-4xl lg:text-[3.25rem] font-bold tracking-tight text-white leading-[1.14] text-balance">
+                  <HeadingTag className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-tight text-pretty">
                     {item.title}
                   </HeadingTag>
 

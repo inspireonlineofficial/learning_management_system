@@ -174,7 +174,7 @@ export function AppShell({
         <div className="flex items-center gap-3 min-w-0">
           <BrandLogo imageClassName="max-h-9 max-w-[140px]" />
           {user?.role && user.role !== "student" && (
-            <span className="text-[11px] font-bold tracking-[0.14em] uppercase text-bronze border-l border-borderui pl-3 truncate">
+            <span className="text-xs font-bold tracking-[0.12em] uppercase text-bronze border-l border-borderui pl-3 truncate">
               {user.role}
             </span>
           )}
@@ -182,7 +182,7 @@ export function AppShell({
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-lg border border-borderui text-navy hover:bg-stoneband transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+          className="inline-flex items-center justify-center min-w-[44px] min-h-11 rounded-lg border border-borderui text-navy hover:bg-stoneband transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
           aria-expanded={isMobileMenuOpen}
           aria-label="Toggle navigation menu"
         >
@@ -204,12 +204,12 @@ export function AppShell({
           />
 
           {/* Drawer Content */}
-          <div className="relative flex w-[85%] max-w-xs flex-1 flex-col bg-white border-r border-borderui h-full p-5 shadow-2xl animate-in slide-in-from-left duration-200 ease-out z-50">
+          <div className="relative flex w-[85%] max-w-xs flex-1 flex-col bg-white border-r border-borderui h-full p-5 shadow-lg animate-in slide-in-from-left duration-200 ease-out z-50">
             <div className="flex items-center justify-between pb-4 border-b border-borderui">
               <div className="flex items-center gap-2.5 min-w-0">
                 <BrandLogo imageClassName="max-h-9 max-w-[135px]" />
                 {user?.role && user.role !== "student" && (
-                  <span className="text-[10px] font-bold tracking-[0.14em] uppercase text-bronze border-l border-borderui pl-2.5 truncate">
+                  <span className="text-[10px] font-bold tracking-[0.12em] uppercase text-bronze border-l border-borderui pl-2.5 truncate">
                     {user.role}
                   </span>
                 )}
@@ -236,7 +236,7 @@ export function AppShell({
                   <Link
                     key={to}
                     to={to}
-                    className={`flex items-center gap-3 min-h-[44px] px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    className={`flex items-center gap-3 min-h-11 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                       active
                         ? "bg-navy text-white shadow-xs"
                         : "text-navy-light hover:text-navy hover:bg-stoneband"
@@ -265,7 +265,7 @@ export function AppShell({
               <button
                 type="button"
                 onClick={handleSignOut}
-                className="mt-2 w-full inline-flex items-center justify-center gap-2 min-h-[44px] px-3 py-2 rounded-lg text-xs font-semibold text-navy border border-borderui hover:bg-stoneband transition-colors"
+                className="mt-2 w-full inline-flex items-center justify-center gap-2 min-h-11 px-3 py-2 rounded-lg text-xs font-semibold text-navy border border-borderui hover:bg-stoneband transition-colors"
               >
                 <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
                 Sign out
@@ -281,7 +281,7 @@ export function AppShell({
           <div className="px-6 py-6 border-b border-borderui/70">
             <BrandLogo imageClassName="max-h-11 max-w-[165px]" />
             {user?.role && user.role !== "student" && (
-              <p className="mt-2 text-[11px] font-bold tracking-[0.16em] uppercase text-bronze">
+              <p className="mt-2 text-xs font-bold tracking-[0.12em] uppercase text-bronze">
                 {user.role} portal
               </p>
             )}
@@ -336,7 +336,7 @@ export function AppShell({
           {(title || eyebrow) && (
             <header className="px-4 sm:px-6 md:px-10 lg:px-12 pt-8 lg:pt-12 pb-6 border-b border-borderui bg-white/70">
               {eyebrow && (
-                <p className="text-xs font-bold tracking-[0.16em] uppercase text-bronze mb-2">
+                <p className="text-xs font-bold tracking-[0.12em] uppercase text-bronze mb-2">
                   {eyebrow}
                 </p>
               )}
@@ -365,7 +365,7 @@ export function StatCard({
 }) {
   return (
     <div className="rounded-xl border border-borderui bg-white p-5 sm:p-6 shadow-sm">
-      <p className="text-xs font-bold tracking-[0.14em] uppercase text-bronze">{label}</p>
+      <p className="text-xs font-bold tracking-[0.12em] uppercase text-bronze">{label}</p>
       <p className="mt-2.5 font-serif text-3xl sm:text-4xl font-bold text-navy">{value}</p>
       {hint && <p className="mt-1.5 text-xs sm:text-sm text-slatebody">{hint}</p>}
     </div>
@@ -395,11 +395,9 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-dashed border-borderui bg-white px-6 py-12 sm:py-16 text-center">
-      <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-stoneband text-navy">
-        <Icon className="h-6 w-6" aria-hidden="true" />
-      </span>
-      <h3 className="mt-4 font-serif text-2xl font-bold text-navy">{title}</h3>
+    <div className="rounded-lg border border-borderui bg-white px-6 py-12 sm:py-14 text-center">
+      <Icon className="mx-auto h-7 w-7 text-slatebody/70" aria-hidden="true" />
+      <h3 className="mt-4 font-serif text-xl font-semibold text-navy">{title}</h3>
       {description && (
         <p className="mt-2 text-sm text-slatebody max-w-md mx-auto leading-relaxed">
           {description}

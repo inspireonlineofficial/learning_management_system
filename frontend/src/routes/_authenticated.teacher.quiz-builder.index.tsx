@@ -49,7 +49,7 @@ function Page() {
           ))}
         </div>
       ) : !quizzes.data || quizzes.data.data.length === 0 ? (
-        <p className="text-sm text-brand/70 border border-dashed border-brand/15 p-8 text-center">
+        <p className="text-sm text-slatebody rounded-lg border border-borderui bg-white p-8 text-center">
           No quizzes yet.
         </p>
       ) : (
@@ -66,7 +66,7 @@ function Page() {
                   {q.course_title ?? "Course"} · {q.total_questions} questions · {q.total_points}{" "}
                   marks · passing {q.passing_score}%
                 </p>
-                <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-brand/70">
+                <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-brand/70">
                   {q.lifecycle} · {q.mode} · {q.is_free ? "Free" : "Paid"} · {q.submitted_count}{" "}
                   submitted
                   {q.in_progress_count > 0 ? ` · ${q.in_progress_count} in progress` : ""}
@@ -77,7 +77,7 @@ function Page() {
                   to="/teacher/quiz-builder/$quizId/attempts"
                   params={{ quizId: q.id }}
                   search={{ status: "pending_grading" }}
-                  className="bg-accent-ink px-2 py-1 text-[11px] font-medium text-white tabular-nums"
+                  className="bg-accent-ink px-2 py-1 text-xs font-medium text-white tabular-nums"
                 >
                   {q.pending_grading_count} to mark
                 </Link>

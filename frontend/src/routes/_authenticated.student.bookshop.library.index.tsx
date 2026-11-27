@@ -64,9 +64,7 @@ function LibraryPage() {
                     </div>
                   )}
                 </div>
-                <p className="text-[11px] uppercase tracking-wider text-brand/65 mb-1">
-                  {b.author}
-                </p>
+                <p className="text-xs uppercase tracking-wider text-brand/65 mb-1">{b.author}</p>
                 <p className="font-serif text-base leading-snug group-hover:text-accent-ink">
                   {b.title}
                 </p>

@@ -7,7 +7,7 @@ import { usePublicSiteConfig } from "@/hooks/use-site-config";
 
 const linkClass =
   "inline-flex items-center min-h-[36px] text-slate-200 hover:text-white hover:underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold rounded";
-const headingClass = "font-sans text-xs font-bold tracking-[0.16em] uppercase text-amber-300 mb-4";
+const headingClass = "font-sans text-xs font-bold tracking-[0.12em] uppercase text-amber-300 mb-4";
 
 function usableLinks(list: SiteLink[]) {
   return list

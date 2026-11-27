@@ -597,7 +597,7 @@ function ExamWorkspace({ attempt, quizId }: { attempt: QuizAttempt; quizId: stri
           aria-label="Question navigator"
           className={`${
             navOpen
-              ? "fixed inset-x-0 bottom-0 z-40 max-h-[75vh] overflow-y-auto border-t border-brand/15 bg-white p-5 shadow-2xl"
+              ? "fixed inset-x-0 bottom-0 z-40 max-h-[75vh] overflow-y-auto border-t border-brand/15 bg-white p-5 shadow-lg"
               : "hidden"
           } lg:static lg:block lg:max-h-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none`}
         >

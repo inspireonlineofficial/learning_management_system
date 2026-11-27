@@ -105,7 +105,7 @@ function DashboardPage() {
                         style={{ width: `${Math.min(100, e.progress_percent)}%` }}
                       />
                     </div>
-                    <p className="mt-2 text-[11px] text-brand/45">
+                    <p className="mt-2 text-xs text-brand/45">
                       {Math.round(e.progress_percent)}% complete
                     </p>
                   </div>
@@ -131,7 +131,7 @@ function DashboardPage() {
         <section>
           <SectionHeading title="Upcoming live sessions" />
           {!isLoading && upcomingLive.length === 0 ? (
-            <div className="border border-dashed border-brand/15 p-8 text-sm text-brand/55">
+            <div className="rounded-lg border border-borderui bg-white p-8 text-sm text-slatebody">
               <Calendar className="h-5 w-5 text-brand/30 mb-3" />
               No live sessions scheduled.
             </div>
@@ -156,7 +156,7 @@ function DashboardPage() {
         <section>
           <SectionHeading title="Recent achievements" />
           {!isLoading && recentAchievements.length === 0 ? (
-            <div className="border border-dashed border-brand/15 p-8 text-sm text-brand/55">
+            <div className="rounded-lg border border-borderui bg-white p-8 text-sm text-slatebody">
               <Award className="h-5 w-5 text-brand/30 mb-3" />
               Earn your first badge by completing a lesson.
             </div>

@@ -236,7 +236,7 @@ function Page() {
                     {template.body_template}
                   </p>
                   {template.allowed_variables.length > 0 && (
-                    <p className="mt-2 text-[11px] text-brand/45">
+                    <p className="mt-2 text-xs text-brand/45">
                       Variables: {template.allowed_variables.map((v) => `{{${v}}}`).join(", ")}
                     </p>
                   )}

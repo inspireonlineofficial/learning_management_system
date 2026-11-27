@@ -462,7 +462,7 @@ function NumberField({
         onChange={(e) => onChange(Number(e.target.value))}
         className="mt-1.5 w-full p-3 bg-white border border-brand/15 text-sm focus:border-brand/40 focus:outline-none"
       />
-      {hint && <p className="mt-1 text-[11px] text-brand/45">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-brand/45">{hint}</p>}
     </label>
   );
 }

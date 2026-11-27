@@ -55,7 +55,7 @@ function Page() {
 
           <SectionHeading title="Course progress" />
           {courses.length === 0 ? (
-            <p className="text-sm text-brand/55 border border-dashed border-brand/15 p-8 text-center">
+            <p className="text-sm text-slatebody rounded-lg border border-borderui bg-white p-8 text-center">
               No course progress is available for this student.
             </p>
           ) : (

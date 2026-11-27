@@ -157,7 +157,7 @@ function Field({
     <label className="block">
       <span className="eyebrow text-brand/55">{label}</span>
       <div className="mt-1.5">{children}</div>
-      {hint && <p className="mt-1 text-[11px] text-brand/45">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-brand/45">{hint}</p>}
     </label>
   );
 }

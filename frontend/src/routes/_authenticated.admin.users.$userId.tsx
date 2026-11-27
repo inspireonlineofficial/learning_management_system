@@ -372,7 +372,7 @@ function ActivityTab({ userId }: { userId: string }) {
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-sm">{a.summary}</p>
-            <p className="text-[11px] text-brand/45">{new Date(a.created_at).toLocaleString()}</p>
+            <p className="text-xs text-brand/45">{new Date(a.created_at).toLocaleString()}</p>
           </div>
         </li>
       ))}

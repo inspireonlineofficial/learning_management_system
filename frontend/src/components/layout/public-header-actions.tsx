@@ -32,14 +32,14 @@ export function PublicHeaderActions({
           <Link
             to="/login"
             onClick={onNavigate}
-            className="flex-1 inline-flex items-center justify-center min-h-[44px] px-4 rounded-lg border border-borderui text-sm font-semibold text-navy hover:bg-stoneband transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-navy"
+            className="flex-1 inline-flex items-center justify-center min-h-11 px-4 rounded-lg border border-borderui text-sm font-semibold text-navy hover:bg-stoneband transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-navy"
           >
             Sign in
           </Link>
           <Link
             to="/register"
             onClick={onNavigate}
-            className="flex-1 inline-flex items-center justify-center min-h-[44px] px-4 rounded-lg bg-navy text-sm font-semibold text-white hover:bg-navy-light shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-navy"
+            className="flex-1 inline-flex items-center justify-center min-h-11 px-4 rounded-lg bg-navy text-sm font-semibold text-white hover:bg-navy-light shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-navy"
           >
             Register
           </Link>
@@ -61,7 +61,7 @@ export function PublicHeaderActions({
           className={
             compact
               ? "inline-flex items-center justify-center min-h-[40px] px-3 whitespace-nowrap rounded-lg font-semibold text-navy hover:bg-stoneband transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
-              : "inline-flex items-center justify-center min-h-[44px] px-4 whitespace-nowrap rounded-lg text-sm font-semibold text-navy hover:bg-stoneband transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+              : "inline-flex items-center justify-center min-h-11 px-4 whitespace-nowrap rounded-lg text-sm font-semibold text-navy hover:bg-stoneband transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
           }
         >
           Sign in
@@ -72,7 +72,7 @@ export function PublicHeaderActions({
           className={
             compact
               ? "inline-flex items-center justify-center min-h-[40px] px-3.5 whitespace-nowrap rounded-lg bg-navy font-semibold text-white hover:bg-navy-light shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
-              : "inline-flex items-center justify-center min-h-[44px] px-5 whitespace-nowrap rounded-lg bg-navy text-sm font-semibold text-white hover:bg-navy-light shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+              : "inline-flex items-center justify-center min-h-11 px-5 whitespace-nowrap rounded-lg bg-navy text-sm font-semibold text-white hover:bg-navy-light shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
           }
         >
           Register
@@ -92,7 +92,7 @@ export function PublicHeaderActions({
     <Link
       to={dashboardTo}
       onClick={onNavigate}
-      className={`inline-flex items-center gap-2.5 min-h-[44px] rounded-lg transition-colors hover:bg-stoneband focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy ${
+      className={`inline-flex items-center gap-2.5 min-h-11 rounded-lg transition-colors hover:bg-stoneband focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy ${
         mobile ? "w-full px-3 border border-borderui" : compact ? "px-1.5" : "px-2.5"
       }`}
       aria-label={`Open ${displayName}'s dashboard`}

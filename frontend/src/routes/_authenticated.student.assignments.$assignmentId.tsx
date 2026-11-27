@@ -400,7 +400,7 @@ function AttachmentField({
           Add link
         </button>
       </div>
-      <p className="mt-2 text-[11px] text-brand/45">
+      <p className="mt-2 text-xs text-brand/45">
         Paste a shareable link (Drive, Dropbox, etc.). Native file upload arrives with the storage
         slice.
       </p>

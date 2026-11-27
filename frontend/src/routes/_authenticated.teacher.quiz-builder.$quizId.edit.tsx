@@ -570,7 +570,7 @@ function QuestionsPanel({ quiz, onChanged }: { quiz: TeacherQuiz; onChanged: () 
       </div>
 
       {quiz.questions.length === 0 ? (
-        <p className="mt-5 border border-dashed border-brand/20 p-8 text-center text-sm text-brand/70">
+        <p className="mt-5 rounded-lg border border-borderui bg-white p-8 text-center text-sm text-slatebody">
           No questions yet. Choose a type and add the first question.
         </p>
       ) : (

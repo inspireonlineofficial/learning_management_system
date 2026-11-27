@@ -162,9 +162,7 @@ function StatusPill({ status, score }: { status: string; score?: number }) {
   };
   const m = map[status] ?? map.not_started;
   return (
-    <span
-      className={`inline-flex items-center px-3 py-1.5 text-[11px] font-medium border ${m.cls}`}
-    >
+    <span className={`inline-flex items-center px-3 py-1.5 text-xs font-medium border ${m.cls}`}>
       {m.label}
       {typeof score === "number" && ` · ${score}%`}
     </span>

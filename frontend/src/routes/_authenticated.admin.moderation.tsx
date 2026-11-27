@@ -233,7 +233,7 @@ function Page() {
 
           {!pendingPostsQuery.isLoading &&
             (!pendingPostsQuery.data?.data || pendingPostsQuery.data.data.length === 0) && (
-              <div className="border border-dashed border-brand/15 px-8 py-16 text-center bg-white/40">
+              <div className="rounded-lg border border-borderui bg-white px-8 py-16 text-center">
                 <h3 className="font-serif text-2xl">All clear</h3>
                 <p className="mt-2 text-sm text-brand/55">
                   No forum posts are awaiting pre-publication approval.

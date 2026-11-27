@@ -1,11 +1,14 @@
 import { usePublicSiteConfig } from "@/hooks/use-site-config";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Search } from "lucide-react";
+import { GraduationCap, Search } from "lucide-react";
 import { useState } from "react";
 import { z } from "zod";
 
 import { CourseCard, CourseCardSkeleton } from "@/components/course/course-card";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/layout/app-shell";
+import { FilterChip, HeroPanel, PageHero, fieldClass } from "@/components/layout/page-hero";
 import { PublicFooter } from "@/components/layout/public-footer";
 import { PublicHeader } from "@/components/layout/public-header";
 import { QueryErrorPanel } from "@/components/layout/query-error-panel";
@@ -79,49 +82,35 @@ function CatalogPage() {
     <div className="min-h-screen overflow-x-hidden bg-canvas text-navy-light font-sans antialiased flex flex-col">
       <PublicHeader active="courses" />
 
-      <section className="hero-atmosphere text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
-          <p className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-amber-300/35 text-amber-200 text-xs font-semibold tracking-[0.14em] uppercase mb-5">
-            <span className="w-2 h-2 rounded-full bg-gold" aria-hidden="true" />
-            {page.eyebrow}
-          </p>
-          <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold leading-[1.14] max-w-3xl text-balance">
-            {page.title}
-          </h1>
-          <p className="mt-4 max-w-xl text-slate-200 text-sm sm:text-base leading-relaxed">
-            {page.body}
-          </p>
+      <PageHero eyebrow={page.eyebrow} title={page.title} body={page.body}>
+        <HeroPanel
+          as="form"
+          onSubmit={submit}
+          className="max-w-2xl flex flex-col sm:flex-row gap-3"
+        >
+          <div className="relative flex-1 min-w-0">
+            <Search
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slatebody pointer-events-none"
+              aria-hidden="true"
+            />
+            <input
+              type="search"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Search subjects or courses…"
+              aria-label="Search courses"
+              className={`${fieldClass} pl-10`}
+            />
+          </div>
+          <Button type="submit" size="lg" className="min-h-11">
+            Search
+          </Button>
+        </HeroPanel>
+      </PageHero>
 
-          <form
-            onSubmit={submit}
-            className="mt-8 bg-white rounded-xl p-3 sm:p-4 shadow-xl border border-borderui max-w-2xl flex flex-col sm:flex-row gap-3"
-          >
-            <div className="relative flex-1 min-w-0">
-              <Search
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-slatebody pointer-events-none"
-                aria-hidden="true"
-              />
-              <input
-                type="search"
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                placeholder="Search subjects or courses…"
-                className="w-full min-h-[46px] pl-11 pr-4 py-2.5 rounded-lg bg-canvas border border-borderui text-navy text-sm sm:text-base placeholder:text-slatebody focus:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-navy"
-              />
-            </div>
-            <button
-              type="submit"
-              className="inline-flex items-center justify-center min-h-[46px] rounded-lg bg-navy text-white px-6 py-2.5 text-sm font-semibold hover:bg-navy-light shadow-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
-            >
-              Search
-            </button>
-          </form>
-        </div>
-      </section>
-
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+      <main className="flex-1 page-container py-10 sm:py-12">
         {/* Filters */}
-        <div className="bg-white rounded-xl border border-borderui p-4 sm:p-5 shadow-sm mb-8 space-y-3">
+        <div className="mb-8 space-y-3 border-b border-borderui pb-6">
           <div className="flex flex-wrap gap-2">
             <FilterChip
               active={!search.category}
@@ -196,17 +185,16 @@ function CatalogPage() {
         )}
 
         {!isLoading && data && data.data.length === 0 && (
-          <div className="rounded-xl border border-dashed border-borderui bg-white px-6 py-16 text-center">
-            <p className="font-serif text-2xl font-bold text-navy">No courses match your search</p>
-            <p className="mt-2 text-sm text-slatebody">
-              Try a different keyword or clear the active filters.
-            </p>
-          </div>
+          <EmptyState
+            icon={GraduationCap}
+            title="No courses match your search"
+            description="Try a different keyword or clear the active filters."
+          />
         )}
 
         {!isLoading && data && data.data.length > 0 && (
           <>
-            <p className="text-xs font-bold tracking-[0.14em] uppercase text-bronze mb-5">
+            <p className="mb-5 text-sm text-slatebody">
               {data.meta.total.toLocaleString()} course{data.meta.total === 1 ? "" : "s"}
               {isFetching && " · refreshing"}
             </p>
@@ -226,7 +214,7 @@ function CatalogPage() {
                       search: (p) => ({ ...p, page: Math.max(1, (p.page ?? 1) - 1) }),
                     })
                   }
-                  className="inline-flex items-center justify-center min-h-[44px] px-4 rounded-lg border border-borderui bg-white text-sm font-semibold text-navy disabled:opacity-40 hover:bg-stoneband transition-colors"
+                  className="inline-flex items-center justify-center min-h-10 px-4 rounded-md border border-borderui bg-white text-sm font-medium text-navy disabled:opacity-40 hover:border-navy transition-colors"
                 >
                   Previous
                 </button>
@@ -241,7 +229,7 @@ function CatalogPage() {
                       search: (p) => ({ ...p, page: (p.page ?? 1) + 1 }),
                     })
                   }
-                  className="inline-flex items-center justify-center min-h-[44px] px-4 rounded-lg border border-borderui bg-white text-sm font-semibold text-navy disabled:opacity-40 hover:bg-stoneband transition-colors"
+                  className="inline-flex items-center justify-center min-h-10 px-4 rounded-md border border-borderui bg-white text-sm font-medium text-navy disabled:opacity-40 hover:border-navy transition-colors"
                 >
                   Next
                 </button>
@@ -253,30 +241,5 @@ function CatalogPage() {
 
       <PublicFooter />
     </div>
-  );
-}
-
-function FilterChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`inline-flex items-center justify-center min-h-[40px] px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-colors border focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy ${
-        active
-          ? "bg-navy text-white border-navy"
-          : "bg-canvas text-navy-light border-borderui hover:border-navy hover:bg-white"
-      }`}
-    >
-      {children}
-    </button>
   );
 }

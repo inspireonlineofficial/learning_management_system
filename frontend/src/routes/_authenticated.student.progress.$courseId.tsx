@@ -67,7 +67,7 @@ function StudentCourseProgressPage() {
         <section className="mt-12">
           <h2 className="font-serif text-2xl mb-5">Requirements</h2>
           {modules.length === 0 ? (
-            <p className="border border-dashed border-brand/15 p-8 text-sm text-brand/55 text-center">
+            <p className="rounded-lg border border-borderui bg-white p-8 text-sm text-slatebody text-center">
               This course does not have published modules yet.
             </p>
           ) : (

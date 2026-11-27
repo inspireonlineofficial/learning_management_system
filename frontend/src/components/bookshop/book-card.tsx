@@ -7,7 +7,7 @@ export function BookCard({ book }: { book: BookSummary }) {
     <Link
       to="/bookshop/$bookId"
       params={{ bookId: book.id }}
-      className="group flex flex-col rounded-xl overflow-hidden border border-borderui bg-white p-3 shadow-sm hover:border-navy hover:-translate-y-0.5 hover:shadow-md transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+      className="group flex flex-col rounded-xl overflow-hidden border border-borderui bg-white p-3 shadow-sm hover:border-navy transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
     >
       <div className="aspect-[2/3] rounded-lg bg-stoneband overflow-hidden">
         {book.cover_url ? (
@@ -28,7 +28,7 @@ export function BookCard({ book }: { book: BookSummary }) {
           {book.title}
         </p>
         <p className="mt-1 text-xs text-slatebody">{book.author}</p>
-        <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-bronze/80">
+        <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-bronze/80">
           {book.category ?? "General science"}
           {book.format ? ` / ${book.format}` : ""}
         </p>

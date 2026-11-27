@@ -83,13 +83,13 @@ function ThreadPage() {
         <div className="flex items-center gap-2 mb-3">
           {t.is_pinned && <Pin className="h-3.5 w-3.5 text-accent" />}
           {t.is_resolved && (
-            <span className="flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200">
+            <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200">
               <CheckCircle2 className="h-3 w-3" />
               Resolved
             </span>
           )}
           {t.is_locked && (
-            <span className="flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium text-brand/55 border border-brand/15">
+            <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-brand/55 border border-brand/15">
               <Lock className="h-3 w-3" />
               Locked
             </span>
@@ -207,7 +207,7 @@ function PostItem({
           </p>
         </div>
         {post.is_answer && (
-          <span className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-emerald-700 bg-emerald-100 border border-emerald-300">
+          <span className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-emerald-700 bg-emerald-100 border border-emerald-300">
             <CheckCircle2 className="h-3 w-3" />
             Answer
           </span>

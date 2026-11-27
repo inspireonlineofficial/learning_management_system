@@ -59,7 +59,7 @@ function MyCoursesPage() {
           action={
             <Link
               to="/courses"
-              className="inline-flex items-center justify-center min-h-[44px] rounded-lg bg-navy text-white px-6 py-2.5 text-sm font-semibold hover:bg-navy-light shadow-sm transition-colors"
+              className="inline-flex items-center justify-center min-h-11 rounded-lg bg-navy text-white px-6 py-2.5 text-sm font-semibold hover:bg-navy-light shadow-sm transition-colors"
             >
               Browse catalog
             </Link>
@@ -83,7 +83,7 @@ function MyCoursesPage() {
                 action={
                   <Link
                     to="/courses"
-                    className="inline-flex items-center justify-center min-h-[44px] rounded-lg bg-navy text-white px-6 py-2.5 text-sm font-semibold hover:bg-navy-light shadow-sm transition-colors"
+                    className="inline-flex items-center justify-center min-h-11 rounded-lg bg-navy text-white px-6 py-2.5 text-sm font-semibold hover:bg-navy-light shadow-sm transition-colors"
                   >
                     Browse catalog
                   </Link>
@@ -100,7 +100,7 @@ function MyCoursesPage() {
                     key={e.id}
                     to="/student/player/$courseId"
                     params={{ courseId: course.id }}
-                    className="group flex flex-col rounded-xl overflow-hidden border border-borderui bg-white shadow-sm hover:border-navy hover:-translate-y-0.5 hover:shadow-md transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+                    className="group flex flex-col rounded-xl overflow-hidden border border-borderui bg-white shadow-sm hover:border-navy transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
                   >
                     <div className="aspect-[16/10] bg-stoneband overflow-hidden">
                       {course.cover_url ? (
@@ -118,7 +118,7 @@ function MyCoursesPage() {
                     </div>
                     <div className="p-5 flex flex-col flex-1">
                       {course.category?.name && (
-                        <p className="text-xs font-bold tracking-[0.14em] uppercase text-bronze mb-2">
+                        <p className="text-xs font-bold tracking-[0.12em] uppercase text-bronze mb-2">
                           {course.category.name}
                         </p>
                       )}

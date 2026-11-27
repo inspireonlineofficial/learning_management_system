@@ -114,7 +114,7 @@ function RankRow({ entry: e }: { entry: LeaderboardEntry }) {
       <div className="flex-1 min-w-0">
         <p className="font-medium text-brand truncate">
           {e.full_name}
-          {e.is_me && <span className="ml-2 text-[11px] text-accent">you</span>}
+          {e.is_me && <span className="ml-2 text-xs text-accent">you</span>}
         </p>
         <p className="text-xs text-brand/50">Level {e.level}</p>
       </div>

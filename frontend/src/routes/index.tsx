@@ -424,7 +424,7 @@ function Landing() {
       {/* 1. Skip to Main Content Link (WCAG 2.1 AA Bypass Blocks) */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:inline-flex focus:items-center focus:justify-center focus:min-h-[44px] focus:px-5 focus:py-2.5 focus:rounded-lg focus:bg-navy focus:text-white focus:font-semibold focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:inline-flex focus:items-center focus:justify-center focus:min-h-11 focus:px-5 focus:py-2.5 focus:rounded-lg focus:bg-navy focus:text-white focus:font-semibold focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-gold focus:ring-offset-2"
       >
         Skip to main content
       </a>
@@ -440,7 +440,7 @@ function Landing() {
 
           {/* Interactive Quick-Find Bar anchored at the bottom of the Hero */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-            <div className="bg-white rounded-xl p-4 sm:p-5 shadow-xl border border-borderui text-navy-light">
+            <div className="bg-white rounded-xl p-4 sm:p-5 border border-borderui text-navy-light">
               <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                 {/* Live Search Input */}
                 <div className="flex-1">
@@ -459,7 +459,7 @@ function Landing() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search subjects or topics (e.g., Physics, Organic, Calculus, ICT)..."
-                      className="w-full min-h-[46px] pl-11 pr-4 py-2.5 rounded-lg border border-borderui bg-canvas text-navy text-sm sm:text-base placeholder:text-slatebody focus:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-navy"
+                      className="w-full min-h-11 pl-11 pr-4 py-2.5 rounded-lg border border-borderui bg-canvas text-navy text-sm sm:text-base placeholder:text-slatebody focus:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-navy"
                       autoComplete="off"
                     />
                   </div>
@@ -486,7 +486,7 @@ function Landing() {
                         type="button"
                         onClick={() => setActiveLevel(pill.id)}
                         aria-pressed={isSelected}
-                        className={`inline-flex items-center justify-center min-h-[44px] px-4 rounded-lg text-sm font-semibold transition-colors border focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy ${
+                        className={`inline-flex items-center justify-center min-h-11 px-4 rounded-lg text-sm font-semibold transition-colors border focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy ${
                           isSelected
                             ? "bg-navy text-white border-navy"
                             : "bg-white text-navy-light border-borderui hover:border-navy"
@@ -512,7 +512,7 @@ function Landing() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
                 <div>
-                  <p className="text-xs font-bold tracking-[0.16em] uppercase text-bronze mb-2">
+                  <p className="text-xs font-bold tracking-[0.12em] uppercase text-bronze mb-2">
                     {cfg.course_catalog.eyebrow}
                   </p>
                   <h2
@@ -524,7 +524,7 @@ function Landing() {
                 </div>
                 <Link
                   to="/courses"
-                  className="self-start sm:self-auto inline-flex items-center gap-1.5 min-h-[44px] px-2 text-sm font-semibold text-navy underline underline-offset-4 decoration-gold decoration-2 hover:text-bronze rounded-lg transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+                  className="self-start sm:self-auto inline-flex items-center gap-1.5 min-h-11 px-2 text-sm font-semibold text-navy underline underline-offset-4 decoration-gold decoration-2 hover:text-bronze rounded-lg transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
                 >
                   {cfg.course_catalog.action_label}
                   <span aria-hidden="true">&rarr;</span>
@@ -549,7 +549,7 @@ function Landing() {
                         setModalFeedback(null);
                       }}
                       aria-label={`${track.title} track, ${track.countLabel}. Click to preview syllabus.`}
-                      className="group text-left bg-white rounded-xl p-6 border border-borderui hover:border-navy hover:-translate-y-0.5 hover:shadow-md transition-all flex flex-col justify-between min-h-[210px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+                      className="group text-left bg-white rounded-xl p-6 border border-borderui hover:border-navy transition-all flex flex-col justify-between min-h-[210px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
                     >
                       <div>
                         <div className="flex items-center justify-between gap-3 mb-4">
@@ -606,7 +606,7 @@ function Landing() {
                       resetTrackFilters();
                       searchInputRef.current?.focus();
                     }}
-                    className="mt-5 inline-flex items-center justify-center min-h-[44px] px-5 py-2.5 rounded-lg bg-navy text-white text-sm font-semibold hover:bg-navy-light transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+                    className="mt-5 inline-flex items-center justify-center min-h-11 px-5 py-2.5 rounded-lg bg-navy text-white text-sm font-semibold hover:bg-navy-light transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
                   >
                     Reset filters
                   </button>
@@ -625,7 +625,7 @@ function Landing() {
                 <div>
                   <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                      <p className="text-xs font-bold tracking-[0.16em] uppercase text-bronze mb-2">
+                      <p className="text-xs font-bold tracking-[0.12em] uppercase text-bronze mb-2">
                         {cfg.featured_courses.eyebrow}
                       </p>
                       <h2 className="font-serif text-3xl sm:text-4xl font-bold text-navy tracking-tight">
@@ -634,7 +634,7 @@ function Landing() {
                     </div>
                     <Link
                       to="/courses"
-                      className="self-start sm:self-auto inline-flex items-center gap-1.5 min-h-[44px] px-2 text-sm font-semibold text-navy underline underline-offset-4 decoration-gold decoration-2 hover:text-bronze rounded-lg transition-colors"
+                      className="self-start sm:self-auto inline-flex items-center gap-1.5 min-h-11 px-2 text-sm font-semibold text-navy underline underline-offset-4 decoration-gold decoration-2 hover:text-bronze rounded-lg transition-colors"
                     >
                       {cfg.featured_courses.action_label}
                       <span aria-hidden="true">&rarr;</span>
@@ -653,10 +653,10 @@ function Landing() {
               )}
 
               {/* Interactive Guided Learning Flow + Early Access Card */}
-              <div className="bg-white rounded-2xl border border-borderui shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12">
+              <div className="bg-white rounded-xl border border-borderui shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-12">
                 {/* Left Column: Interactive Sample Lesson Checklist */}
                 <div className="lg:col-span-7 p-6 sm:p-10 lg:p-12 border-b lg:border-b-0 lg:border-r border-borderui">
-                  <p className="text-xs font-bold tracking-[0.16em] uppercase text-bronze mb-2">
+                  <p className="text-xs font-bold tracking-[0.12em] uppercase text-bronze mb-2">
                     {featuredCourses.length > 0
                       ? "Guided Learning Flow"
                       : cfg.featured_courses.eyebrow}
@@ -729,7 +729,7 @@ function Landing() {
 
                 {/* Right Column: Early-Access Cohort Notification Form */}
                 <div className="lg:col-span-5 p-6 sm:p-10 lg:p-12 bg-stoneband/55 flex flex-col justify-center">
-                  <p className="text-xs font-bold tracking-[0.16em] uppercase text-bronze mb-2">
+                  <p className="text-xs font-bold tracking-[0.12em] uppercase text-bronze mb-2">
                     Early Access
                   </p>
                   <h3 className="font-serif text-2xl font-bold text-navy">
@@ -756,7 +756,7 @@ function Landing() {
                         name="track"
                         value={eaTrack}
                         onChange={(e) => setEaTrack(e.target.value)}
-                        className="w-full min-h-[46px] px-3.5 py-2.5 rounded-lg border border-borderui bg-white text-navy text-sm sm:text-base focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-navy"
+                        className="w-full min-h-11 px-3.5 py-2.5 rounded-lg border border-borderui bg-white text-navy text-sm sm:text-base focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-navy"
                       >
                         <option value="Physics">Physics (SSC / HSC / Admission)</option>
                         <option value="Chemistry">Chemistry (SSC / HSC / Admission)</option>
@@ -787,7 +787,7 @@ function Landing() {
                         placeholder="name@example.com"
                         aria-invalid={eaError ? "true" : undefined}
                         aria-describedby={eaError ? "ea-email-error" : undefined}
-                        className="w-full min-h-[46px] px-3.5 py-2.5 rounded-lg border border-borderui bg-white text-navy text-sm sm:text-base placeholder:text-slatebody focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-navy"
+                        className="w-full min-h-11 px-3.5 py-2.5 rounded-lg border border-borderui bg-white text-navy text-sm sm:text-base placeholder:text-slatebody focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-navy"
                       />
                       {eaError && (
                         <p
@@ -832,7 +832,7 @@ function Landing() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
                 <div>
-                  <p className="text-xs font-bold tracking-[0.16em] uppercase text-bronze mb-2">
+                  <p className="text-xs font-bold tracking-[0.12em] uppercase text-bronze mb-2">
                     {cfg.bookshop_catalog.eyebrow}
                   </p>
                   <h2
@@ -844,7 +844,7 @@ function Landing() {
                 </div>
                 <Link
                   to="/bookshop"
-                  className="self-start sm:self-auto inline-flex items-center gap-1.5 min-h-[44px] px-2 text-sm font-semibold text-navy underline underline-offset-4 decoration-gold decoration-2 hover:text-bronze rounded-lg transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+                  className="self-start sm:self-auto inline-flex items-center gap-1.5 min-h-11 px-2 text-sm font-semibold text-navy underline underline-offset-4 decoration-gold decoration-2 hover:text-bronze rounded-lg transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
                 >
                   {cfg.bookshop_catalog.action_label}
                   <span aria-hidden="true">&rarr;</span>
@@ -864,7 +864,7 @@ function Landing() {
                         key={`${category.label}-${idx}`}
                         to="/bookshop"
                         search={{ q: category.query?.trim() || category.label } as never}
-                        className="group text-left bg-white rounded-xl p-5 border border-borderui hover:border-navy hover:shadow-md transition-all flex items-center justify-between gap-4 min-h-[84px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+                        className="group text-left bg-white rounded-xl p-5 border border-borderui hover:border-navy transition-all flex items-center justify-between gap-4 min-h-[84px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
                       >
                         <div className="flex items-center gap-4">
                           <span className="w-11 h-11 rounded-lg bg-stoneband text-navy flex items-center justify-center shrink-0 group-hover:bg-navy group-hover:text-white transition-colors">
@@ -892,7 +892,7 @@ function Landing() {
                       key={`${category.label}-${idx}`}
                       type="button"
                       onClick={() => openBookRequestForCategory(category.label)}
-                      className="group text-left bg-white rounded-xl p-5 border border-borderui hover:border-navy hover:shadow-md transition-all flex items-center justify-between gap-4 min-h-[84px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+                      className="group text-left bg-white rounded-xl p-5 border border-borderui hover:border-navy transition-all flex items-center justify-between gap-4 min-h-[84px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
                     >
                       <div className="flex items-center gap-4">
                         <span className="w-11 h-11 rounded-lg bg-stoneband text-navy flex items-center justify-center shrink-0 group-hover:bg-navy group-hover:text-white transition-colors">
@@ -921,7 +921,7 @@ function Landing() {
                 <div className="mt-12">
                   <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                      <p className="text-xs font-bold tracking-[0.16em] uppercase text-bronze mb-1">
+                      <p className="text-xs font-bold tracking-[0.12em] uppercase text-bronze mb-1">
                         {cfg.featured_books.eyebrow}
                       </p>
                       <h3 className="font-serif text-2xl sm:text-3xl font-bold text-navy">
@@ -932,7 +932,7 @@ function Landing() {
                     </div>
                     <Link
                       to="/bookshop"
-                      className="self-start sm:self-auto inline-flex items-center gap-1.5 min-h-[44px] px-2 text-sm font-semibold text-navy underline underline-offset-4 decoration-gold decoration-2 hover:text-bronze rounded-lg transition-colors"
+                      className="self-start sm:self-auto inline-flex items-center gap-1.5 min-h-11 px-2 text-sm font-semibold text-navy underline underline-offset-4 decoration-gold decoration-2 hover:text-bronze rounded-lg transition-colors"
                     >
                       {cfg.featured_books.action_label}
                       <span aria-hidden="true">&rarr;</span>
@@ -992,7 +992,7 @@ function Landing() {
                     onClick={() => setBookPanelOpen((prev) => !prev)}
                     aria-expanded={bookPanelOpen}
                     aria-controls="book-request-panel"
-                    className="self-start sm:self-auto shrink-0 inline-flex items-center justify-center min-h-[44px] px-5 py-2.5 rounded-lg bg-navy text-white text-sm font-semibold hover:bg-navy-light transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+                    className="self-start sm:self-auto shrink-0 inline-flex items-center justify-center min-h-11 px-5 py-2.5 rounded-lg bg-navy text-white text-sm font-semibold hover:bg-navy-light transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
                   >
                     Request a Book List
                   </button>
@@ -1016,7 +1016,7 @@ function Landing() {
                           id="br-category"
                           value={brCategory}
                           onChange={(e) => setBrCategory(e.target.value)}
-                          className="w-full min-h-[44px] px-3.5 py-2 rounded-lg border border-borderui bg-canvas text-navy text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-navy"
+                          className="w-full min-h-11 px-3.5 py-2 rounded-lg border border-borderui bg-canvas text-navy text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-navy"
                         >
                           {cfg.bookshop_catalog.categories.map((cat) => (
                             <option key={cat.label} value={cat.label}>
@@ -1040,13 +1040,13 @@ function Landing() {
                           value={brEmail}
                           onChange={(e) => setBrEmail(e.target.value)}
                           placeholder="student@example.com"
-                          className="w-full min-h-[44px] px-3.5 py-2 rounded-lg border border-borderui bg-canvas text-navy text-sm placeholder:text-slatebody focus-visible:outline focus-visible:outline-2 focus-visible:outline-navy"
+                          className="w-full min-h-11 px-3.5 py-2 rounded-lg border border-borderui bg-canvas text-navy text-sm placeholder:text-slatebody focus-visible:outline focus-visible:outline-2 focus-visible:outline-navy"
                         />
                       </div>
                       <div>
                         <button
                           type="submit"
-                          className="w-full inline-flex items-center justify-center min-h-[44px] px-5 py-2.5 rounded-lg bg-bronze text-white text-sm font-semibold hover:bg-navy transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+                          className="w-full inline-flex items-center justify-center min-h-11 px-5 py-2.5 rounded-lg bg-bronze text-white text-sm font-semibold hover:bg-navy transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
                         >
                           Send Book List Request
                         </button>
@@ -1079,7 +1079,7 @@ function Landing() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
                 <div className="lg:col-span-5">
-                  <p className="text-xs font-bold tracking-[0.16em] uppercase text-bronze mb-2">
+                  <p className="text-xs font-bold tracking-[0.12em] uppercase text-bronze mb-2">
                     {cfg.outcomes.eyebrow}
                   </p>
                   <h2
@@ -1101,7 +1101,7 @@ function Landing() {
                         key={`${stat.label}-${idx}`}
                         className="bg-white rounded-xl p-6 border border-borderui shadow-sm"
                       >
-                        <p className="text-xs font-bold tracking-[0.14em] uppercase text-bronze">
+                        <p className="text-xs font-bold tracking-[0.12em] uppercase text-bronze">
                           {stat.label}
                         </p>
                         <p className="mt-3 font-serif text-4xl font-bold text-navy">{stat.value}</p>
@@ -1125,7 +1125,7 @@ function Landing() {
                     key={`${panel.eyebrow}-${idx}`}
                     className="bg-white rounded-xl p-7 border border-borderui shadow-sm flex flex-col"
                   >
-                    <p className="text-xs font-bold tracking-[0.16em] uppercase text-bronze mb-2.5">
+                    <p className="text-xs font-bold tracking-[0.12em] uppercase text-bronze mb-2.5">
                       {panel.eyebrow}
                     </p>
                     <h3 className="font-serif text-2xl font-bold text-navy">{panel.title}</h3>
@@ -1148,7 +1148,7 @@ function Landing() {
           >
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="mb-10">
-                <p className="text-xs font-bold tracking-[0.16em] uppercase text-bronze mb-2">
+                <p className="text-xs font-bold tracking-[0.12em] uppercase text-bronze mb-2">
                   {cfg.faq.eyebrow}
                 </p>
                 <h2
@@ -1210,11 +1210,11 @@ function Landing() {
             }
           }}
         >
-          <div className="bg-white rounded-2xl border border-borderui shadow-2xl max-w-xl w-full overflow-hidden my-auto">
+          <div className="bg-white rounded-xl border border-borderui shadow-lg max-w-xl w-full overflow-hidden my-auto">
             {/* Modal Header */}
             <div className="px-6 py-5 bg-stoneband/70 border-b border-borderui flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-bold tracking-[0.14em] uppercase text-bronze mb-1">
+                <p className="text-xs font-bold tracking-[0.12em] uppercase text-bronze mb-1">
                   {selectedTrack.countLabel} &bull; {selectedTrack.levels.join(" / ")}
                 </p>
                 <h3 id="modal-track-title" className="font-serif text-2xl font-bold text-navy">
@@ -1228,7 +1228,7 @@ function Landing() {
                   setSelectedTrack(null);
                   setModalFeedback(null);
                 }}
-                className="inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-lg text-navy hover:bg-white border border-transparent hover:border-borderui focus-visible:outline focus-visible:outline-2 focus-visible:outline-navy"
+                className="inline-flex items-center justify-center min-w-[44px] min-h-11 rounded-lg text-navy hover:bg-white border border-transparent hover:border-borderui focus-visible:outline focus-visible:outline-2 focus-visible:outline-navy"
                 aria-label="Close track preview modal"
               >
                 <X className="w-5 h-5" aria-hidden="true" />
@@ -1242,7 +1242,7 @@ function Landing() {
               </p>
 
               <div className="mt-5">
-                <h4 className="font-sans text-xs font-bold tracking-[0.14em] uppercase text-navy mb-3">
+                <h4 className="font-sans text-xs font-bold tracking-[0.12em] uppercase text-navy mb-3">
                   Sample Module Outline
                 </h4>
                 <ul className="space-y-2.5 text-sm text-navy-light">
@@ -1272,7 +1272,7 @@ function Landing() {
                 <Link
                   to="/courses"
                   search={{ q: selectedTrack.query } as never}
-                  className="flex-1 inline-flex items-center justify-center min-h-[46px] px-4 py-2.5 rounded-lg border border-navy text-navy font-semibold text-sm hover:bg-stoneband transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+                  className="flex-1 inline-flex items-center justify-center min-h-11 px-4 py-2.5 rounded-lg border border-navy text-navy font-semibold text-sm hover:bg-stoneband transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
                 >
                   Browse {selectedTrack.title} Courses
                 </Link>
@@ -1283,7 +1283,7 @@ function Landing() {
                       `Redirecting to registration for ${selectedTrack.title} enrollment.`,
                     )
                   }
-                  className="flex-1 inline-flex items-center justify-center min-h-[46px] px-4 py-2.5 rounded-lg bg-navy text-white font-semibold text-sm hover:bg-navy-light transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+                  className="flex-1 inline-flex items-center justify-center min-h-11 px-4 py-2.5 rounded-lg bg-navy text-white font-semibold text-sm hover:bg-navy-light transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
                 >
                   Request Enrollment
                 </Link>

@@ -86,12 +86,12 @@ function LiveSessionPage() {
             <div className="flex items-start justify-between mb-4">
               <p className="eyebrow text-brand/45">Session</p>
               {isLive ? (
-                <span className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-destructive bg-destructive/10 border border-destructive/30">
+                <span className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-destructive bg-destructive/10 border border-destructive/30">
                   <Radio className="h-3 w-3 animate-pulse" />
                   Live
                 </span>
               ) : (
-                <span className="px-2.5 py-1 text-[11px] font-medium border border-brand/15 text-brand/60 capitalize">
+                <span className="px-2.5 py-1 text-xs font-medium border border-brand/15 text-brand/60 capitalize">
                   {session.status}
                 </span>
               )}

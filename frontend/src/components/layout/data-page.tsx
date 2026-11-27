@@ -87,7 +87,7 @@ export function ListTable<T extends { id: string }>({
             {columns.map((c) => (
               <th
                 key={c.key}
-                className="text-left px-4 py-3.5 text-xs font-bold tracking-[0.14em] uppercase text-bronze"
+                className="text-left px-4 py-3.5 text-xs font-bold tracking-[0.12em] uppercase text-bronze"
                 style={c.width ? { width: c.width } : undefined}
               >
                 {c.label}
@@ -125,7 +125,7 @@ export function DetailGrid({ items }: { items: Array<{ label: string; value: Rea
     <dl className="grid sm:grid-cols-2 gap-x-8 gap-y-4 rounded-xl border border-borderui bg-white p-5 sm:p-6 shadow-sm">
       {items.map((it) => (
         <div key={it.label}>
-          <dt className="text-xs font-bold tracking-[0.14em] uppercase text-bronze">{it.label}</dt>
+          <dt className="text-xs font-bold tracking-[0.12em] uppercase text-bronze">{it.label}</dt>
           <dd className="mt-1 text-sm sm:text-base text-navy font-medium">{it.value}</dd>
         </div>
       ))}

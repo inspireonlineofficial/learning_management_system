@@ -109,7 +109,7 @@ function DownloadsPage() {
 
       {storage && storage.quota > 0 && (
         <div className="mb-6 max-w-md">
-          <div className="flex justify-between text-[11px] text-brand/55 mb-1">
+          <div className="flex justify-between text-xs text-brand/55 mb-1">
             <span>Device storage</span>
             <span>
               {formatBytes(storage.usage)} of {formatBytes(storage.quota)}

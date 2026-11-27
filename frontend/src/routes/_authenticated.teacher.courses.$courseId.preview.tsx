@@ -142,13 +142,13 @@ function Page() {
 function AccessBadge({ locked, free }: { locked: boolean; free?: boolean }) {
   if (locked) {
     return (
-      <span className="shrink-0 bg-brand/10 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-brand/55">
+      <span className="shrink-0 bg-brand/10 px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-brand/55">
         Locked
       </span>
     );
   }
   return (
-    <span className="shrink-0 bg-accent/10 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-accent">
+    <span className="shrink-0 bg-accent/10 px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-accent">
       {free ? "Free" : "Approved"}
     </span>
   );

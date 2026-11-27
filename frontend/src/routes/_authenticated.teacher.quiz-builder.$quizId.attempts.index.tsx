@@ -349,7 +349,7 @@ function AnalyticsTab({ quizId }: { quizId: string }) {
     return <div className="h-40 animate-pulse border border-brand/10 bg-white/30" />;
   if (data.submitted_attempts === 0) {
     return (
-      <p className="border border-dashed border-brand/20 p-8 text-center text-sm text-brand/70">
+      <p className="rounded-lg border border-borderui bg-white p-8 text-center text-sm text-slatebody">
         No submitted attempts yet. Analytics appear once students submit.
       </p>
     );

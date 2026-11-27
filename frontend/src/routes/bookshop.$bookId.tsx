@@ -32,18 +32,18 @@ function PublicBookDetailPage() {
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <Link
           to="/bookshop"
-          className="inline-flex items-center gap-2 min-h-[44px] text-sm font-semibold text-navy hover:text-bronze underline underline-offset-4 decoration-gold decoration-2 mb-6"
+          className="inline-flex items-center gap-2 min-h-11 text-sm font-semibold text-navy hover:text-bronze underline underline-offset-4 decoration-gold decoration-2 mb-6"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Back to bookshop
         </Link>
 
         {isLoading ? (
-          <div className="h-96 rounded-2xl border border-borderui bg-white animate-pulse" />
+          <div className="h-96 rounded-xl border border-borderui bg-white animate-pulse" />
         ) : isError || !book ? (
           <QueryErrorPanel error={error} title="Book not found" onRetry={() => refetch()} />
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-8 lg:gap-12 bg-white rounded-2xl border border-borderui p-5 sm:p-8 lg:p-10 shadow-sm">
+          <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-8 lg:gap-12 bg-white rounded-xl border border-borderui p-5 sm:p-8 lg:p-10 shadow-sm">
             <div className="aspect-[2/3] max-w-[280px] lg:max-w-none w-full mx-auto rounded-xl overflow-hidden bg-stoneband border border-borderui/60">
               {book.cover_url ? (
                 <img src={book.cover_url} alt={book.title} className="h-full w-full object-cover" />
@@ -56,7 +56,7 @@ function PublicBookDetailPage() {
 
             <article className="min-w-0">
               {book.category && (
-                <p className="text-xs font-bold tracking-[0.16em] uppercase text-bronze mb-2.5">
+                <p className="text-xs font-bold tracking-[0.12em] uppercase text-bronze mb-2.5">
                   {book.category}
                 </p>
               )}
@@ -108,7 +108,7 @@ function PublicBookDetailPage() {
 function Meta({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-borderui bg-canvas p-4">
-      <dt className="text-xs font-bold tracking-[0.14em] uppercase text-bronze">{label}</dt>
+      <dt className="text-xs font-bold tracking-[0.12em] uppercase text-bronze">{label}</dt>
       <dd className="mt-1 text-navy font-semibold">{value}</dd>
     </div>
   );

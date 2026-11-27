@@ -115,7 +115,7 @@ function SessionCard({ session }: { session: LiveSessionSummary }) {
 function LiveBadge({ status }: { status: LiveSessionSummary["status"] }) {
   if (status === "live")
     return (
-      <span className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-destructive bg-destructive/10 border border-destructive/30">
+      <span className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-destructive bg-destructive/10 border border-destructive/30">
         <Radio className="h-3 w-3 animate-pulse" />
         Live now
       </span>
@@ -126,5 +126,5 @@ function LiveBadge({ status }: { status: LiveSessionSummary["status"] }) {
     cancelled: { label: "Cancelled", cls: "text-brand/40 border-brand/10 line-through" },
   };
   const m = map[status] ?? map.scheduled;
-  return <span className={`px-2.5 py-1 text-[11px] font-medium border ${m.cls}`}>{m.label}</span>;
+  return <span className={`px-2.5 py-1 text-xs font-medium border ${m.cls}`}>{m.label}</span>;
 }

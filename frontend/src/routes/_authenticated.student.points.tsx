@@ -99,7 +99,7 @@ function Page() {
               <Flame className="h-5 w-5 text-accent" />
               <div>
                 <p className="font-serif text-2xl">{data?.streak_days ?? 0} days</p>
-                <p className="text-[11px] text-brand/55">
+                <p className="text-xs text-brand/55">
                   Keep going — earn at least 1 point each day.
                 </p>
               </div>
@@ -136,7 +136,7 @@ function Page() {
           <SectionHeading title="Milestones" />
           <ul className="space-y-2 mt-4">
             {milestones.length === 0 && !isLoading && (
-              <li className="text-sm text-brand/55 border border-dashed border-brand/15 p-6 text-center">
+              <li className="text-sm text-slatebody rounded-lg border border-borderui bg-white p-6 text-center">
                 No milestones configured.
               </li>
             )}
@@ -161,7 +161,7 @@ function Page() {
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <p className="text-[11px] text-brand/55 mt-1">
+                    <p className="text-xs text-brand/55 mt-1">
                       {achieved
                         ? `Achieved ${new Date(m.achieved_at!).toLocaleDateString()}`
                         : `${(data?.total ?? 0).toLocaleString()} / ${m.threshold.toLocaleString()} pts`}

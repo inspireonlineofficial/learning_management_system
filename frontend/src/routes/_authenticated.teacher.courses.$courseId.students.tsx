@@ -36,7 +36,7 @@ function Page() {
           ))}
         </div>
       ) : !students.data || students.data.data.length === 0 ? (
-        <p className="mt-8 text-sm text-brand/55 border border-dashed border-brand/15 p-8 text-center">
+        <p className="mt-8 text-sm text-slatebody rounded-lg border border-borderui bg-white p-8 text-center">
           <Users className="h-6 w-6 mx-auto mb-3 text-brand/30" />
           No approved students yet.
         </p>
@@ -53,7 +53,7 @@ function Page() {
               </div>
               <div className="text-right shrink-0">
                 <p className="text-sm font-medium">{student.progress_percent}%</p>
-                <p className="text-[11px] text-brand/45">Progress</p>
+                <p className="text-xs text-brand/45">Progress</p>
               </div>
             </li>
           ))}

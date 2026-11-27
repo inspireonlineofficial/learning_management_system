@@ -35,7 +35,7 @@ function Page() {
       <SectionHeading title="Activity (last 30 days)" />
       {isLoading && <div className="h-48 border border-brand/10 bg-white/30 animate-pulse" />}
       {!isLoading && trend.length === 0 && (
-        <p className="text-sm text-brand/55 border border-dashed border-brand/15 p-8 text-center">
+        <p className="text-sm text-slatebody rounded-lg border border-borderui bg-white p-8 text-center">
           No trend data available yet.
         </p>
       )}

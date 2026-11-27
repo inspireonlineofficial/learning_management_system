@@ -339,7 +339,7 @@ function PlayerPage() {
                   style={{ width: `${Math.min(100, pct)}%` }}
                 />
               </div>
-              <p className="mt-2 text-[11px] text-brand/45">{Math.round(pct)}% complete</p>
+              <p className="mt-2 text-xs text-brand/45">{Math.round(pct)}% complete</p>
             </div>
 
             <nav className="overflow-y-auto flex-1 pb-6">
@@ -371,7 +371,7 @@ function PlayerPage() {
                             <span className="flex-1 min-w-0">
                               <span className="block">{l.title}</span>
                               {typeof l.duration_minutes === "number" && (
-                                <span className="text-[11px] text-brand/40">
+                                <span className="text-xs text-brand/40">
                                   {l.duration_minutes} min
                                 </span>
                               )}
@@ -405,7 +405,7 @@ function PlayerPage() {
                 style={{ width: `${Math.min(100, pct)}%` }}
               />
             </div>
-            <p className="mt-2 text-[11px] text-brand/45">{Math.round(pct)}% complete</p>
+            <p className="mt-2 text-xs text-brand/45">{Math.round(pct)}% complete</p>
           </div>
         </div>
         <nav className="overflow-y-auto flex-1">
@@ -437,9 +437,7 @@ function PlayerPage() {
                         <span className="flex-1 min-w-0">
                           <span className="block">{l.title}</span>
                           {typeof l.duration_minutes === "number" && (
-                            <span className="text-[11px] text-brand/40">
-                              {l.duration_minutes} min
-                            </span>
+                            <span className="text-xs text-brand/40">{l.duration_minutes} min</span>
                           )}
                         </span>
                       </button>
@@ -780,7 +778,7 @@ function LessonDiscussion({
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                   {comment.is_pinned && (
-                    <p className="mb-1 text-[10px] uppercase tracking-[0.18em] text-accent">
+                    <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-accent">
                       Pinned
                     </p>
                   )}
@@ -794,7 +792,7 @@ function LessonDiscussion({
                   ) : (
                     <p className="text-sm text-brand/75 whitespace-pre-wrap">{comment.content}</p>
                   )}
-                  <p className="mt-2 text-[11px] text-brand/40">
+                  <p className="mt-2 text-xs text-brand/40">
                     {new Date(comment.created_at).toLocaleString()}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-3 text-xs">
@@ -882,7 +880,7 @@ function LessonDiscussion({
                           <p className="text-sm text-brand/70 whitespace-pre-wrap">
                             {child.content}
                           </p>
-                          <p className="mt-2 text-[11px] text-brand/40">
+                          <p className="mt-2 text-xs text-brand/40">
                             {new Date(child.created_at).toLocaleString()}
                           </p>
                         </li>

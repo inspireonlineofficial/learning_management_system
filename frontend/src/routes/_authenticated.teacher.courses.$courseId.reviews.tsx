@@ -43,7 +43,7 @@ function Page() {
           ))}
         </div>
       ) : rows.length === 0 ? (
-        <p className="mt-8 text-sm text-brand/55 border border-dashed border-brand/15 p-8 text-center">
+        <p className="mt-8 text-sm text-slatebody rounded-lg border border-borderui bg-white p-8 text-center">
           No reviews yet.
         </p>
       ) : (
@@ -56,7 +56,7 @@ function Page() {
                 ))}
               </div>
               <p className="mt-3 text-sm text-brand/75">{review.comment || "No written review."}</p>
-              <p className="mt-3 text-[11px] text-brand/40">
+              <p className="mt-3 text-xs text-brand/40">
                 {new Date(review.updated_at || review.created_at).toLocaleDateString()}
               </p>
             </li>

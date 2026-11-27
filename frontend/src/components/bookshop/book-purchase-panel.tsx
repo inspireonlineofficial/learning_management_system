@@ -144,7 +144,7 @@ export function BookPurchasePanel({ book, returnTo }: { book: BookDetail; return
               href={preview.data.preview_url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 min-h-[44px] rounded-lg border border-borderui bg-white px-5 py-2.5 text-sm font-semibold text-navy hover:bg-stoneband transition-colors"
+              className="inline-flex items-center gap-2 min-h-11 rounded-lg border border-borderui bg-white px-5 py-2.5 text-sm font-semibold text-navy hover:bg-stoneband transition-colors"
             >
               <Eye className="h-4 w-4" aria-hidden="true" />
               Read a free sample
@@ -156,7 +156,7 @@ export function BookPurchasePanel({ book, returnTo }: { book: BookDetail; return
           <Link
             to="/login"
             search={{ return: returnTo } as never}
-            className="inline-flex items-center gap-2 min-h-[44px] rounded-lg border border-borderui bg-white px-5 py-2.5 text-sm font-semibold text-navy hover:bg-stoneband transition-colors"
+            className="inline-flex items-center gap-2 min-h-11 rounded-lg border border-borderui bg-white px-5 py-2.5 text-sm font-semibold text-navy hover:bg-stoneband transition-colors"
           >
             <Eye className="h-4 w-4" aria-hidden="true" />
             Sign in to read a free sample
@@ -168,14 +168,14 @@ export function BookPurchasePanel({ book, returnTo }: { book: BookDetail; return
           <Link
             to="/login"
             search={{ return: returnTo } as never}
-            className="inline-flex items-center justify-center gap-2 min-h-[46px] rounded-lg bg-navy text-white px-6 py-2.5 text-sm font-semibold hover:bg-navy-light shadow-sm transition-colors"
+            className="inline-flex items-center justify-center gap-2 min-h-11 rounded-lg bg-navy text-white px-6 py-2.5 text-sm font-semibold hover:bg-navy-light shadow-sm transition-colors"
           >
             <ShoppingBag className="h-4 w-4" aria-hidden="true" />
             Sign in to get this book
           </Link>
           <Link
             to="/register"
-            className="inline-flex items-center justify-center min-h-[46px] rounded-lg border border-borderui bg-white px-6 py-2.5 text-sm font-semibold text-navy hover:bg-stoneband transition-colors"
+            className="inline-flex items-center justify-center min-h-11 rounded-lg border border-borderui bg-white px-6 py-2.5 text-sm font-semibold text-navy hover:bg-stoneband transition-colors"
           >
             Create account
           </Link>
@@ -189,7 +189,7 @@ export function BookPurchasePanel({ book, returnTo }: { book: BookDetail; return
         >
           {digital && printed && (
             <fieldset>
-              <legend className="text-xs font-bold tracking-[0.14em] uppercase text-bronze mb-2.5">
+              <legend className="text-xs font-bold tracking-[0.12em] uppercase text-bronze mb-2.5">
                 Edition
               </legend>
               <div className="flex flex-wrap gap-2">
@@ -221,7 +221,7 @@ export function BookPurchasePanel({ book, returnTo }: { book: BookDetail; return
             <Link
               to="/student/bookshop/reader/$bookId"
               params={{ bookId: book.id }}
-              className="inline-flex items-center justify-center gap-2 min-h-[46px] rounded-lg bg-navy text-white px-6 py-2.5 text-sm font-semibold hover:bg-navy-light shadow-sm transition-colors"
+              className="inline-flex items-center justify-center gap-2 min-h-11 rounded-lg bg-navy text-white px-6 py-2.5 text-sm font-semibold hover:bg-navy-light shadow-sm transition-colors"
             >
               <BookOpen className="h-4 w-4" aria-hidden="true" />
               Read now
@@ -257,7 +257,7 @@ export function BookPurchasePanel({ book, returnTo }: { book: BookDetail; return
 
               {!book.is_free && (
                 <label className="block">
-                  <span className="text-xs font-bold tracking-[0.14em] uppercase text-bronze">
+                  <span className="text-xs font-bold tracking-[0.12em] uppercase text-bronze">
                     Payment reference
                   </span>
                   <input
@@ -265,7 +265,7 @@ export function BookPurchasePanel({ book, returnTo }: { book: BookDetail; return
                     onChange={(e) => setNote(e.target.value)}
                     maxLength={200}
                     placeholder="e.g. bKash / Nagad transaction ID"
-                    className="mt-2 w-full min-h-[44px] rounded-lg border border-borderui bg-white px-3.5 py-2 text-sm text-navy placeholder:text-slatebody focus-visible:outline focus-visible:outline-2 focus-visible:outline-navy"
+                    className="mt-2 w-full min-h-11 rounded-lg border border-borderui bg-white px-3.5 py-2 text-sm text-navy placeholder:text-slatebody focus-visible:outline focus-visible:outline-2 focus-visible:outline-navy"
                   />
                   <span className="mt-1.5 block text-xs text-slatebody">
                     An admin checks your payment and approves the purchase.
@@ -277,7 +277,7 @@ export function BookPurchasePanel({ book, returnTo }: { book: BookDetail; return
                 <button
                   type="submit"
                   disabled={busy}
-                  className="inline-flex items-center justify-center gap-2 min-h-[46px] rounded-lg bg-navy text-white px-6 py-2.5 text-sm font-semibold hover:bg-navy-light shadow-sm transition-colors disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 min-h-11 rounded-lg bg-navy text-white px-6 py-2.5 text-sm font-semibold hover:bg-navy-light shadow-sm transition-colors disabled:opacity-50"
                 >
                   {format === "physical" ? (
                     <Package className="h-4 w-4" aria-hidden="true" />
@@ -296,7 +296,7 @@ export function BookPurchasePanel({ book, returnTo }: { book: BookDetail; return
                   type="button"
                   onClick={() => cartAdd.mutate()}
                   disabled={cartAdd.isPending}
-                  className="inline-flex items-center justify-center gap-2 min-h-[46px] rounded-lg border border-borderui bg-white px-5 py-2.5 text-sm font-semibold text-navy hover:bg-stoneband transition-colors disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 min-h-11 rounded-lg border border-borderui bg-white px-5 py-2.5 text-sm font-semibold text-navy hover:bg-stoneband transition-colors disabled:opacity-50"
                 >
                   {cartAdd.isPending ? "Adding…" : "Add to cart"}
                 </button>

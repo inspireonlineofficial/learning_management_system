@@ -174,7 +174,7 @@ function CourseDetailPage() {
       <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 lg:py-16 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-10 lg:gap-12">
         <article className="order-2 lg:order-1 min-w-0">
           {course.category?.name && (
-            <p className="text-xs font-bold tracking-[0.16em] uppercase text-bronze mb-3">
+            <p className="text-xs font-bold tracking-[0.12em] uppercase text-bronze mb-3">
               {course.category.name}
             </p>
           )}
@@ -257,7 +257,7 @@ function CourseDetailPage() {
                   >
                     <summary className="px-5 py-4 cursor-pointer flex items-center justify-between gap-4 hover:bg-canvas transition-colors">
                       <div>
-                        <p className="text-xs font-bold tracking-[0.14em] uppercase text-bronze">
+                        <p className="text-xs font-bold tracking-[0.12em] uppercase text-bronze">
                           Module {idx + 1}
                         </p>
                         <p className="font-serif text-lg font-bold text-navy mt-0.5">{m.title}</p>
@@ -355,7 +355,7 @@ function CourseDetailPage() {
 
         {/* Enrollment card */}
         <aside className="lg:sticky lg:top-24 lg:self-start order-1 lg:order-2">
-          <div className="rounded-2xl border border-borderui bg-white shadow-md overflow-hidden">
+          <div className="rounded-xl border border-borderui bg-white shadow-md overflow-hidden">
             {course.cover_url ? (
               <img
                 src={course.cover_url}
@@ -486,7 +486,7 @@ function CourseReviewsSection({
             onSave(draftRating, comment);
           }}
         >
-          <label className="text-xs font-semibold uppercase tracking-[0.18em] text-brand/45">
+          <label className="text-xs font-semibold uppercase tracking-[0.12em] text-brand/45">
             Rating
           </label>
           <select
@@ -685,9 +685,9 @@ function ThreadedComment({
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex flex-wrap items-center gap-2">
             {comment.is_pinned && (
-              <span className="text-[10px] uppercase tracking-[0.18em] text-accent">Pinned</span>
+              <span className="text-[10px] uppercase tracking-[0.12em] text-accent">Pinned</span>
             )}
-            <span className="text-[10px] uppercase tracking-[0.18em] text-brand/35">
+            <span className="text-[10px] uppercase tracking-[0.12em] text-brand/35">
               {targetLabel}
             </span>
           </div>
@@ -701,7 +701,7 @@ function ThreadedComment({
           ) : (
             <p className="text-sm text-brand/75 whitespace-pre-wrap">{comment.content}</p>
           )}
-          <p className="mt-2 text-[11px] text-brand/40">
+          <p className="mt-2 text-xs text-brand/40">
             {new Date(comment.created_at).toLocaleString()}
           </p>
           <div className="mt-3 flex flex-wrap gap-3 text-xs">
@@ -787,7 +787,7 @@ function ThreadedComment({
           {replies.map((replyComment) => (
             <li key={replyComment.id} className="bg-white/60 p-3">
               <p className="text-sm text-brand/70 whitespace-pre-wrap">{replyComment.content}</p>
-              <p className="mt-2 text-[11px] text-brand/40">
+              <p className="mt-2 text-xs text-brand/40">
                 {new Date(replyComment.created_at).toLocaleString()}
               </p>
             </li>

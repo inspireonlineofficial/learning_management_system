@@ -32,7 +32,7 @@ export function PublicHeader({ active }: { active?: PublicHeaderSection }) {
   }, [mobileMenuOpen]);
 
   const linkClass = (isActive?: boolean) =>
-    `inline-flex items-center min-h-[44px] px-3.5 text-sm font-medium rounded-lg transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy ${
+    `inline-flex items-center min-h-11 px-3.5 text-sm font-medium rounded-lg transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy ${
       isActive
         ? "text-navy font-semibold underline underline-offset-4 decoration-2 decoration-gold"
         : "text-navy-light hover:text-navy hover:underline underline-offset-4 decoration-2 decoration-gold"
@@ -44,7 +44,7 @@ export function PublicHeader({ active }: { active?: PublicHeaderSection }) {
         <div className="flex items-center justify-between h-20 gap-4">
           {/* Existing Inspire Logo preserved as-is */}
           <BrandLogo
-            className="shrink-0 min-h-[44px] pr-2 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+            className="shrink-0 min-h-11 pr-2 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
             imageClassName="max-h-10 max-w-[160px] sm:max-h-12 sm:max-w-[200px]"
           />
 
@@ -73,7 +73,7 @@ export function PublicHeader({ active }: { active?: PublicHeaderSection }) {
           <button
             type="button"
             onClick={() => setMobileMenuOpen((prev) => !prev)}
-            className="md:hidden inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-lg border border-borderui text-navy hover:bg-stoneband transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
+            className="md:hidden inline-flex items-center justify-center min-w-[44px] min-h-11 rounded-lg border border-borderui text-navy hover:bg-stoneband transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy"
             aria-expanded={mobileMenuOpen}
             aria-controls="mobile-menu"
             aria-label={mobileMenuOpen ? "Close main navigation menu" : "Open main navigation menu"}
@@ -99,7 +99,7 @@ export function PublicHeader({ active }: { active?: PublicHeaderSection }) {
                 key={`${item.label}-${item.href}`}
                 href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center min-h-[44px] px-3 rounded-lg text-base font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-navy ${
+                className={`flex items-center min-h-11 px-3 rounded-lg text-base font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-navy ${
                   isActiveLink(item.href, active)
                     ? "bg-stoneband text-navy font-semibold"
                     : "text-navy-light hover:bg-stoneband"
