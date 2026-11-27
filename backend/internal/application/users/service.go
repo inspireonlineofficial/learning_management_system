@@ -418,8 +418,14 @@ func (s *serviceImpl) UpdateUser(ctx context.Context, actorID, targetUserID uuid
 		return nil, apperrors.NewInternalError("USER_UPDATE_FAILED", "Failed to update user")
 	}
 
-	// Record audit log for role change
+	// Record audit log, revoke active refresh tokens, and notify user on role change
 	if cmd.Role != nil && oldRole != *cmd.Role {
+		if s.deps.TokenStore != nil {
+			if err := s.deps.TokenStore.DeleteAllRefreshTokens(ctx, targetUserID); err != nil {
+				logger.Error(ctx, "Failed to delete refresh tokens on role change", "error", err, "user_id", targetUserID)
+			}
+		}
+
 		if err := s.deps.AuditLogger.LogAction(ctx, actorID, actor.FullName, "role_changed", "user", targetUserID, metadata, ""); err != nil {
 			logger.Error(ctx, "Failed to log audit action", "error", err)
 		}
