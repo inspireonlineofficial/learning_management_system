@@ -11,6 +11,7 @@ import {
 } from "react";
 
 import { logoutUser, getProfile } from "@/lib/api/auth";
+import { refreshSession } from "@/lib/api/client";
 import {
   clearStoredSession,
   getStoredSession,
@@ -19,6 +20,12 @@ import {
   type AuthUser,
   type Session,
 } from "@/lib/session";
+
+function portalHomeForRole(role: AuthUser["role"]): string {
+  if (role === "admin") return "/admin";
+  if (role === "teacher") return "/teacher";
+  return "/student";
+}
 
 type AuthContextValue = {
   session: Session | null;
@@ -37,19 +44,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isHydrated, setIsHydrated] = useState(false);
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    setSessionState(getStoredSession());
-    setIsHydrated(true);
-
-    const onStorage = (e: StorageEvent) => {
-      if (e.key && e.key !== SESSION_STORAGE_KEY) return;
-      setSessionState(getStoredSession());
-      queryClient.clear();
-    };
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, [queryClient]);
-
   const setSession = useCallback(
     (next: Session | null) => {
       if (next) setStoredSession(next);
@@ -65,7 +59,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!current) return null;
     try {
       const user = await getProfile();
-      const updated = { ...current, user };
+      const roleChanged = user.role !== current.user.role;
+      let baseSession = current;
+      if (roleChanged) {
+        // Re-issue the JWT so backend role claims immediately match the DB role.
+        const refreshed = await refreshSession();
+        if (refreshed) baseSession = refreshed;
+      }
+      const updated = { ...baseSession, user };
+      if (roleChanged && typeof window !== "undefined") {
+        setStoredSession(updated, { silent: true });
+        const path = window.location.pathname;
+        const onRolePortal =
+          path.startsWith("/admin") || path.startsWith("/teacher") || path.startsWith("/student");
+        if (onRolePortal) {
+          window.location.assign(portalHomeForRole(user.role));
+          return user;
+        }
+      }
       setStoredSession(updated);
       setSessionState(updated);
       return user;
@@ -73,6 +84,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return null;
     }
   }, []);
+
+  useEffect(() => {
+    const stored = getStoredSession();
+    setSessionState(stored);
+    setIsHydrated(true);
+    if (stored?.accessToken) {
+      void refreshProfile();
+    }
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key && e.key !== SESSION_STORAGE_KEY) return;
+      setSessionState(getStoredSession());
+      queryClient.clear();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [queryClient, refreshProfile]);
 
   const signOut = useCallback(async () => {
     const current = getStoredSession();

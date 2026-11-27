@@ -59,9 +59,25 @@ type RequestOptions = {
   keepalive?: boolean;
 };
 
+function extractRoleFromJwt(token: string): Session["user"]["role"] | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+    const payload = JSON.parse(atob(padded)) as { role?: string };
+    if (payload.role === "student" || payload.role === "teacher" || payload.role === "admin") {
+      return payload.role;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 let refreshPromise: Promise<Session | null> | null = null;
 
-async function refreshSession(): Promise<Session | null> {
+export async function refreshSession(): Promise<Session | null> {
   if (refreshPromise) return refreshPromise;
   const current = getStoredSession();
   if (!current?.refreshToken) return null;
@@ -80,10 +96,12 @@ async function refreshSession(): Promise<Session | null> {
         access_token: string;
         refresh_token?: string;
       };
+      const jwtRole = extractRoleFromJwt(data.access_token);
       const next: Session = {
         ...current,
         accessToken: data.access_token,
         refreshToken: data.refresh_token ?? current.refreshToken,
+        user: jwtRole ? { ...current.user, role: jwtRole } : current.user,
       };
       setStoredSession(next);
       return next;
